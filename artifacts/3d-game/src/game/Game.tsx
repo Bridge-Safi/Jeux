@@ -159,6 +159,7 @@ export function Game() {
         checkpointNumber={state.checkpointNumber}
         nextCheckpointAt={state.nextCheckpointAt}
         playTime={state.playTime}
+        totalDiamonds={profile?.diamonds_collected ?? 0}
         onStart={startGame}
         onRestart={startGame}
         onChangeLane={changeLane}

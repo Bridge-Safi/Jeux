@@ -53,6 +53,14 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - Auto-save on game over; sync every 10s during play
 - Test button (+1000 💎) visible on start/gameover screens
 
+### Bridge Eats integration
+- **Bridge Eats URL**: `https://44474adc-9074-4015-a3b9-4e111cb8be39-00-11nld147gir6y.kirk.replit.dev/`
+- "🍔 Bridge Eats" back button shown on start screen (top-left) and game over screen
+- **Reward system**: 500 💎 collectés (cumulatif Supabase) = 1 menu gratuit
+- Barre de progression visible sur l'écran de démarrage, game over, et pendant le jeu
+- Overlay de célébration animé quand le seuil est atteint → lien vers Bridge Eats
+- Config centralisée dans `GameUI.tsx` : `BRIDGE_EATS_URL` et `DIAMONDS_PER_MENU`
+
 ### Key files
 - `src/game/Game.tsx` — main Canvas, lighting (night), GameUI wiring
 - `src/game/GameUI.tsx` — start screen, HUD, touch controls, game over
