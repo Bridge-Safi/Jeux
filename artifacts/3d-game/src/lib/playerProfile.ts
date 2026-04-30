@@ -1,34 +1,45 @@
-import { supabase, type Profile } from "./supabase";
+import { supabase, isSupabaseConfigured, type Profile } from "./supabase";
 
-const PLAYER_ID_KEY = "safi_runner_player_id";
 const PLAYER_NAME_KEY = "safi_runner_player_name";
-
-function generateId(): string {
-  return "player_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-}
-
-export function getPlayerId(): string {
-  let id = localStorage.getItem(PLAYER_ID_KEY);
-  if (!id) {
-    id = generateId();
-    localStorage.setItem(PLAYER_ID_KEY, id);
-  }
-  return id;
-}
 
 export function getPlayerName(): string {
   return localStorage.getItem(PLAYER_NAME_KEY) ?? "Joueur Anonyme";
 }
 
-export async function ensureProfile(): Promise<Profile | null> {
-  const id = getPlayerId();
-  const username = getPlayerName();
+async function getOrCreateAuthUser(): Promise<string | null> {
+  if (!isSupabaseConfigured) return null;
 
   try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.user?.id) {
+      return sessionData.session.user.id;
+    }
+
+    const { data: signInData, error } = await supabase.auth.signInAnonymously();
+    if (error) {
+      console.warn("signInAnonymously error:", error.message);
+      return null;
+    }
+    return signInData.user?.id ?? null;
+  } catch (err) {
+    console.error("getOrCreateAuthUser exception:", err);
+    return null;
+  }
+}
+
+export async function ensureProfile(): Promise<Profile | null> {
+  if (!isSupabaseConfigured) return null;
+
+  try {
+    const userId = await getOrCreateAuthUser();
+    if (!userId) return null;
+
+    const username = getPlayerName();
+
     const { data: existing, error: fetchErr } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", id)
+      .eq("id", userId)
       .single();
 
     if (fetchErr && fetchErr.code !== "PGRST116") {
@@ -40,7 +51,7 @@ export async function ensureProfile(): Promise<Profile | null> {
 
     const { data: created, error: insertErr } = await supabase
       .from("profiles")
-      .insert({ id, username, sardines_points: 0, diamonds_collected: 0 })
+      .insert({ id: userId, username, sardines_points: 0, diamonds_collected: 0 })
       .select()
       .single();
 
@@ -57,32 +68,26 @@ export async function ensureProfile(): Promise<Profile | null> {
   }
 }
 
-export async function addDiamonds(count: number): Promise<Profile | null> {
-  const id = getPlayerId();
+async function getCurrentUserId(): Promise<string | null> {
+  if (!isSupabaseConfigured) return null;
   try {
-    const { data, error } = await supabase.rpc("increment_diamonds", {
-      player_id: id,
-      amount: count,
-    });
-
-    if (error) {
-      console.warn("RPC increment_diamonds non disponible, tentative UPDATE direct:", error.message);
-      return addDiamondsDirect(id, count);
-    }
-
-    return data as Profile;
-  } catch (err) {
-    console.error("addDiamonds exception:", err);
-    return addDiamondsDirect(id, count);
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.user?.id ?? null;
+  } catch {
+    return null;
   }
 }
 
-async function addDiamondsDirect(id: string, count: number): Promise<Profile | null> {
+export async function addDiamonds(count: number): Promise<Profile | null> {
+  if (!isSupabaseConfigured) return null;
+  const userId = await getCurrentUserId();
+  if (!userId) return null;
+
   try {
     const { data: current } = await supabase
       .from("profiles")
       .select("diamonds_collected")
-      .eq("id", id)
+      .eq("id", userId)
       .single();
 
     const newCount = ((current as Profile)?.diamonds_collected ?? 0) + count;
@@ -90,29 +95,32 @@ async function addDiamondsDirect(id: string, count: number): Promise<Profile | n
     const { data, error } = await supabase
       .from("profiles")
       .update({ diamonds_collected: newCount, updated_at: new Date().toISOString() })
-      .eq("id", id)
+      .eq("id", userId)
       .select()
       .single();
 
     if (error) {
-      console.error("Supabase addDiamondsDirect error:", error);
+      console.error("Supabase addDiamonds error:", error);
       return null;
     }
 
     return data as Profile;
   } catch (err) {
-    console.error("addDiamondsDirect exception:", err);
+    console.error("addDiamonds exception:", err);
     return null;
   }
 }
 
 export async function saveScore(diamondsSession: number, sardinesSession: number): Promise<void> {
-  const id = getPlayerId();
+  if (!isSupabaseConfigured) return;
+  const userId = await getCurrentUserId();
+  if (!userId) return;
+
   try {
     const { data: current } = await supabase
       .from("profiles")
       .select("diamonds_collected, sardines_points")
-      .eq("id", id)
+      .eq("id", userId)
       .single();
 
     const existing = current as Profile | null;
@@ -124,19 +132,22 @@ export async function saveScore(diamondsSession: number, sardinesSession: number
         sardines_points: (existing?.sardines_points ?? 0) + sardinesSession,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", id);
+      .eq("id", userId);
   } catch (err) {
     console.error("saveScore exception:", err);
   }
 }
 
 export async function getProfile(): Promise<Profile | null> {
-  const id = getPlayerId();
+  if (!isSupabaseConfigured) return null;
+  const userId = await getCurrentUserId();
+  if (!userId) return null;
+
   try {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", id)
+      .eq("id", userId)
       .single();
 
     if (error) {

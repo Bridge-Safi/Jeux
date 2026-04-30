@@ -22,7 +22,7 @@ enum Controls {
 const keyMap = [
   { name: Controls.left, keys: ["ArrowLeft", "KeyA"] },
   { name: Controls.right, keys: ["ArrowRight", "KeyD"] },
-  { name: Controls.jump, keys: ["Space"] },
+  { name: Controls.jump, keys: ["Space", "ArrowUp", "KeyW"] },
 ];
 
 function FollowCamera({ playerLane, playerY }: { playerLane: number; playerY: number }) {
@@ -32,7 +32,7 @@ function FollowCamera({ playerLane, playerY }: { playerLane: number; playerY: nu
 
   useFrame((_, delta) => {
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, delta * 8);
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, 4 + playerY * 0.5, delta * 8);
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, 3.8 + playerY * 0.5, delta * 8);
     camera.position.z = 7;
     camera.lookAt(camera.position.x, playerY + 0.5, -6);
   });
@@ -41,10 +41,7 @@ function FollowCamera({ playerLane, playerY }: { playerLane: number; playerY: nu
 }
 
 function GameLoop({
-  tick,
-  changeLane,
-  jump,
-  phase,
+  tick, changeLane, jump, phase,
 }: {
   tick: (dt: number) => void;
   changeLane: (dir: 1 | -1) => void;
@@ -63,18 +60,9 @@ function GameLoop({
     if (phase === "playing") {
       tick(dt);
 
-      if (controls.left && !prevLeft.current) {
-        changeLane(-1);
-        console.log("Lane: left");
-      }
-      if (controls.right && !prevRight.current) {
-        changeLane(1);
-        console.log("Lane: right");
-      }
-      if (controls.jump && !prevJump.current) {
-        jump();
-        console.log("Jump!");
-      }
+      if (controls.left && !prevLeft.current) changeLane(-1);
+      if (controls.right && !prevRight.current) changeLane(1);
+      if (controls.jump && !prevJump.current) jump();
     }
 
     prevLeft.current = controls.left;
@@ -85,25 +73,17 @@ function GameLoop({
   return null;
 }
 
-function GameScene({
-  state,
-  tick,
-  changeLane,
-  jump,
-}: ReturnType<typeof useGameState>) {
-  const trackSpeed = state.phase === "playing" ? state.speed : 0;
-
+function NightLighting() {
   return (
     <>
-      <FollowCamera playerLane={state.lane} playerY={state.playerY} />
-      <GameLoop tick={tick} changeLane={changeLane} jump={jump} phase={state.phase} />
+      {/* Lumière ambiante nuit — très faible, bleutée */}
+      <ambientLight intensity={0.15} color="#1a2a5e" />
 
-      {/* Lighting — daytime sunny */}
-      <ambientLight intensity={0.7} color="#fff8e1" />
+      {/* Lune — lumière froide directionnelle */}
       <directionalLight
-        position={[10, 30, -10]}
-        intensity={2.0}
-        color="#fff5cc"
+        position={[30, 50, -30]}
+        intensity={0.55}
+        color="#cce0ff"
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-camera-far={80}
@@ -112,12 +92,36 @@ function GameScene({
         shadow-camera-top={15}
         shadow-camera-bottom={-15}
       />
-      <directionalLight position={[-8, 10, 10]} intensity={0.5} color="#c8e6fa" />
-      <fog attach="fog" args={["#c8dff0", 40, 110]} />
 
-      <mesh position={[0, -0.12, -40]} receiveShadow>
-        <planeGeometry args={[60, 160]} />
-        <meshStandardMaterial color="#c8d8a0" roughness={1} />
+      {/* Lumière de remplissage douce (reflet ciel nuit) */}
+      <directionalLight position={[-10, 8, 10]} intensity={0.1} color="#2a3a7a" />
+
+      {/* Lumières lanternes globales sur la route */}
+      <pointLight position={[-3.85, 3.6, -5]} color="#ff8f00" intensity={1.8} distance={14} />
+      <pointLight position={[3.85, 3.6, -5]} color="#ff8f00" intensity={1.8} distance={14} />
+      <pointLight position={[-3.85, 3.6, -20]} color="#ff8f00" intensity={1.8} distance={14} />
+      <pointLight position={[3.85, 3.6, -20]} color="#ff8f00" intensity={1.8} distance={14} />
+    </>
+  );
+}
+
+function GameScene({ state, tick, changeLane, jump }: ReturnType<typeof useGameState>) {
+  const trackSpeed = state.phase === "playing" ? state.speed : 0;
+
+  return (
+    <>
+      <FollowCamera playerLane={state.lane} playerY={state.playerY} />
+      <GameLoop tick={tick} changeLane={changeLane} jump={jump} phase={state.phase} />
+
+      <NightLighting />
+
+      {/* Brouillard nocturne bleu-nuit */}
+      <fog attach="fog" args={["#060d1f", 25, 80]} />
+
+      {/* Sol nuit */}
+      <mesh position={[0, -0.12, -40]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[80, 200]} />
+        <meshStandardMaterial color="#0a0d08" roughness={1} />
       </mesh>
 
       <Scene />
@@ -136,19 +140,19 @@ export function Game() {
   const { profile, status, addTestDiamonds } = useSupabaseSync(state.score, state.phase);
 
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#87ceeb", overflow: "hidden" }}>
+    <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#060d1f", overflow: "hidden" }}>
       <KeyboardControls map={keyMap}>
         <Canvas
           shadows
-          camera={{ fov: 70, near: 0.1, far: 200, position: [0, 4, 7] }}
+          camera={{ fov: 68, near: 0.1, far: 200, position: [0, 3.8, 7] }}
           style={{ width: "100%", height: "100%" }}
-          gl={{ antialias: true }}
+          gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
         >
           <GameScene state={state} tick={tick} changeLane={changeLane} jump={jump} startGame={startGame} resumeGame={resumeGame} />
         </Canvas>
       </KeyboardControls>
 
-      {/* HUD principal */}
+      {/* HUD + Contrôles tactiles */}
       <GameUI
         phase={state.phase}
         score={state.score}
@@ -157,6 +161,8 @@ export function Game() {
         playTime={state.playTime}
         onStart={startGame}
         onRestart={startGame}
+        onChangeLane={changeLane}
+        onJump={jump}
       />
 
       {/* Overlay checkpoint */}
@@ -168,7 +174,7 @@ export function Game() {
         />
       )}
 
-      {/* Panneau Supabase + bouton test */}
+      {/* Panneau Supabase */}
       <SupabasePanel
         profile={profile}
         status={status}

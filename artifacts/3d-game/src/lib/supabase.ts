@@ -1,13 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("❌ Supabase: variables d'environnement manquantes (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)");
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
+
+export let supabase: SupabaseClient;
+
+if (isSupabaseConfigured) {
+  supabase = createClient(supabaseUrl!, supabaseAnonKey!);
+} else {
+  console.warn("⚠️ Supabase non configuré — le jeu fonctionne en mode hors-ligne. Ajoutez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY.");
+  supabase = null as unknown as SupabaseClient;
 }
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Profile = {
   id: string;

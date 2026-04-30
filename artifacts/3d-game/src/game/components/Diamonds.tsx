@@ -7,31 +7,49 @@ const LANE_X = [-2, 0, 2];
 
 function BlueDiamond({ x, z }: { x: number; z: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
 
   useFrame(() => {
+    const t = Date.now() * 0.004;
     if (meshRef.current) {
-      meshRef.current.rotation.y += 0.04;
-      meshRef.current.position.y = 0.9 + Math.sin(Date.now() * 0.004) * 0.12;
+      meshRef.current.rotation.y += 0.045;
+      meshRef.current.position.y = 0.95 + Math.sin(t) * 0.14;
+    }
+    if (glowRef.current) {
+      glowRef.current.position.y = 0.95 + Math.sin(t) * 0.14;
+      (glowRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity =
+        1.2 + Math.sin(t * 2) * 0.4;
     }
   });
 
   return (
     <group position={[x, 0, z]}>
+      {/* Corps diamant */}
       <mesh ref={meshRef} castShadow>
-        <octahedronGeometry args={[0.32, 0]} />
+        <octahedronGeometry args={[0.34, 0]} />
         <meshStandardMaterial
-          color="#2196f3"
-          metalness={0.8}
-          roughness={0.1}
-          emissive="#0d47a1"
-          emissiveIntensity={0.4}
+          color="#64b5f6"
+          metalness={0.9}
+          roughness={0.05}
+          emissive="#1565c0"
+          emissiveIntensity={0.9}
         />
       </mesh>
-      {/* Glow ring */}
-      <mesh position={[0, 0.9, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.35, 0.04, 8, 24]} />
-        <meshStandardMaterial color="#64b5f6" emissive="#1565c0" emissiveIntensity={0.6} transparent opacity={0.7} />
+
+      {/* Halo brillant */}
+      <mesh ref={glowRef} position={[0, 0.95, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.42, 0.05, 8, 28]} />
+        <meshStandardMaterial
+          color="#90caf9"
+          emissive="#1e88e5"
+          emissiveIntensity={1.2}
+          transparent
+          opacity={0.8}
+        />
       </mesh>
+
+      {/* Lumière ponctuelle bleue */}
+      <pointLight position={[0, 0.9, 0]} color="#2196f3" intensity={1.2} distance={5} />
     </group>
   );
 }
