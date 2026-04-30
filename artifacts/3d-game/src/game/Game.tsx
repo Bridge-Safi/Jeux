@@ -93,25 +93,28 @@ function GameScene({
       <FollowCamera playerLane={state.lane} playerY={state.playerY} />
       <GameLoop tick={tick} changeLane={changeLane} jump={jump} phase={state.phase} />
 
-      {/* Lighting */}
-      <ambientLight intensity={0.35} color="#c9d6f0" />
+      {/* Lighting — daytime sunny */}
+      <ambientLight intensity={0.7} color="#fff8e1" />
       <directionalLight
-        position={[8, 20, -10]}
-        intensity={1.0}
-        color="#ffe4b5"
+        position={[10, 30, -10]}
+        intensity={2.0}
+        color="#fff5cc"
         castShadow
         shadow-mapSize={[1024, 1024]}
+        shadow-camera-far={80}
+        shadow-camera-left={-15}
+        shadow-camera-right={15}
+        shadow-camera-top={15}
+        shadow-camera-bottom={-15}
       />
-      <directionalLight position={[-10, 8, 10]} intensity={0.3} color="#4fc3f7" />
-      {/* Moon glow */}
-      <pointLight position={[12, 18, -40]} intensity={1.5} color="#fffde7" distance={120} />
-      {/* Ambient atmospheric fog color */}
-      <fog attach="fog" args={["#0a0a2e", 30, 90]} />
+      <directionalLight position={[-8, 10, 10]} intensity={0.5} color="#c8e6fa" />
+      {/* Atmospheric haze */}
+      <fog attach="fog" args={["#c8dff0", 40, 110]} />
 
       {/* Ground extend beyond track */}
       <mesh position={[0, -0.12, -40]} receiveShadow>
         <planeGeometry args={[60, 160]} />
-        <meshStandardMaterial color="#1a3a1a" roughness={1} />
+        <meshStandardMaterial color="#c8d8a0" roughness={1} />
       </mesh>
 
       <Scene />
@@ -128,7 +131,7 @@ export function Game() {
   const { state, startGame, changeLane, jump, tick } = gameState;
 
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#0a0a2e", overflow: "hidden" }}>
+    <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#87ceeb", overflow: "hidden" }}>
       <KeyboardControls map={keyMap}>
         <Canvas
           shadows
