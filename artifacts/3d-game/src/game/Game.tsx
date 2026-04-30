@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { KeyboardControls, useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -9,6 +9,7 @@ import { Obstacles } from "./components/Obstacles";
 import { Diamonds } from "./components/Diamonds";
 import { Scene } from "./components/Scene";
 import { GameUI } from "./GameUI";
+import { CheckpointUI } from "./CheckpointUI";
 
 enum Controls {
   left = "left",
@@ -88,6 +89,9 @@ function GameScene({
   changeLane,
   jump,
 }: ReturnType<typeof useGameState>) {
+  const isRunning = state.phase === "playing";
+  const trackSpeed = isRunning ? state.speed : 0;
+
   return (
     <>
       <FollowCamera playerLane={state.lane} playerY={state.playerY} />
@@ -108,17 +112,16 @@ function GameScene({
         shadow-camera-bottom={-15}
       />
       <directionalLight position={[-8, 10, 10]} intensity={0.5} color="#c8e6fa" />
-      {/* Atmospheric haze */}
       <fog attach="fog" args={["#c8dff0", 40, 110]} />
 
-      {/* Ground extend beyond track */}
+      {/* Ground */}
       <mesh position={[0, -0.12, -40]} receiveShadow>
         <planeGeometry args={[60, 160]} />
         <meshStandardMaterial color="#c8d8a0" roughness={1} />
       </mesh>
 
       <Scene />
-      <Track speed={state.phase === "playing" ? state.speed : 0} />
+      <Track speed={trackSpeed} />
       <Obstacles obstacles={state.phase !== "start" ? state.obstacles : []} />
       <Diamonds diamonds={state.phase !== "start" ? state.diamonds : []} />
       <SharkPlayer lane={state.lane} playerY={state.playerY} isJumping={state.isJumping} />
@@ -128,7 +131,7 @@ function GameScene({
 
 export function Game() {
   const gameState = useGameState();
-  const { state, startGame, changeLane, jump, tick } = gameState;
+  const { state, startGame, resumeGame, changeLane, jump, tick } = gameState;
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#87ceeb", overflow: "hidden" }}>
@@ -139,16 +142,29 @@ export function Game() {
           style={{ width: "100%", height: "100%" }}
           gl={{ antialias: true }}
         >
-          <GameScene state={state} tick={tick} changeLane={changeLane} jump={jump} startGame={startGame} />
+          <GameScene state={state} tick={tick} changeLane={changeLane} jump={jump} startGame={startGame} resumeGame={resumeGame} />
         </Canvas>
       </KeyboardControls>
 
+      {/* HUD normal (score, contrôles) */}
       <GameUI
         phase={state.phase}
         score={state.score}
+        checkpointNumber={state.checkpointNumber}
+        nextCheckpointAt={state.nextCheckpointAt}
+        playTime={state.playTime}
         onStart={startGame}
         onRestart={startGame}
       />
+
+      {/* Overlay checkpoint */}
+      {state.phase === "checkpoint" && (
+        <CheckpointUI
+          checkpointNumber={state.checkpointNumber}
+          score={state.score}
+          onResume={resumeGame}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback } from "react";
 
-export type GamePhase = "start" | "playing" | "gameover";
+export type GamePhase = "start" | "playing" | "checkpoint" | "gameover";
 
 export interface Obstacle {
   id: number;
@@ -25,7 +25,12 @@ export interface GameState {
   diamonds: Diamond[];
   speed: number;
   distance: number;
+  playTime: number;
+  checkpointNumber: number;
+  nextCheckpointAt: number;
 }
+
+const CHECKPOINT_INTERVAL = 50;
 
 export function useGameState() {
   const idRef = useRef(0);
@@ -41,6 +46,9 @@ export function useGameState() {
     diamonds: [],
     speed: 8,
     distance: 0,
+    playTime: 0,
+    checkpointNumber: 0,
+    nextCheckpointAt: CHECKPOINT_INTERVAL,
   });
 
   const [state, setState] = useState<GameState>(initialState);
@@ -48,6 +56,16 @@ export function useGameState() {
   const startGame = useCallback(() => {
     idRef.current = 0;
     setState({ ...initialState(), phase: "playing" });
+  }, []);
+
+  const resumeGame = useCallback(() => {
+    setState((s) => ({
+      ...s,
+      phase: "playing",
+      obstacles: [],
+      diamonds: [],
+      nextCheckpointAt: s.playTime + CHECKPOINT_INTERVAL,
+    }));
   }, []);
 
   const changeLane = useCallback((dir: 1 | -1) => {
@@ -75,10 +93,29 @@ export function useGameState() {
       const DESPAWN_Z = 8;
       const PLAYER_Z = 0;
 
-      let { score, isJumping, jumpVelocity, playerY, obstacles, diamonds, speed, distance, phase } = s;
+      let {
+        score, isJumping, jumpVelocity, playerY,
+        obstacles, diamonds, speed, distance, phase,
+        playTime, checkpointNumber, nextCheckpointAt,
+      } = s;
 
+      playTime += dt;
       distance += dt * speed;
       speed = Math.min(20, 8 + distance / 200);
+
+      // Checkpoint trigger
+      if (playTime >= nextCheckpointAt) {
+        return {
+          ...s,
+          phase: "checkpoint",
+          playTime,
+          checkpointNumber: checkpointNumber + 1,
+          speed: 0,
+          isJumping: false,
+          jumpVelocity: 0,
+          playerY: 0,
+        };
+      }
 
       if (isJumping) {
         jumpVelocity -= GRAVITY * dt;
@@ -142,9 +179,12 @@ export function useGameState() {
         diamonds: newDiamonds,
         speed,
         distance,
+        playTime,
+        checkpointNumber,
+        nextCheckpointAt,
       };
     });
   }, []);
 
-  return { state, startGame, changeLane, jump, tick };
+  return { state, startGame, resumeGame, changeLane, jump, tick };
 }
