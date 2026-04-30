@@ -19,6 +19,9 @@ export type Profile = {
   username: string;
   sardines_points: number;
   diamonds_collected: number;
+  device_fingerprint?: string;
+  hardware_prefix?: string;
+  player_email?: string;
   created_at?: string;
   updated_at?: string;
 };

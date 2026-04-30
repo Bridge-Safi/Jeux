@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { GamePhase } from "./useGameState";
+import { registerEmail } from "../lib/playerProfile";
 
 /* ─── Configuration Bridge Eats ─────────────────────────────── */
 export const BRIDGE_EATS_URL = "https://44474adc-9074-4015-a3b9-4e111cb8be39-00-11nld147gir6y.kirk.replit.dev/";
@@ -248,65 +249,153 @@ function TouchControls({ onChangeLane, onJump }: {
 
 /* ─── Overlay récompense menu gratuit ───────────────────────── */
 function MenuUnlockOverlay({ menusCount, onClose }: { menusCount: number; onClose: () => void }) {
+  const [email, setEmail] = useState("");
+  const [step, setStep] = useState<"email" | "done">("email");
+  const [loading, setLoading] = useState(false);
+  const [errMsg, setErrMsg] = useState("");
+
+  const handleClaim = async () => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setErrMsg("Entrez un email valide pour réclamer.");
+      return;
+    }
+    setLoading(true);
+    setErrMsg("");
+    const result = await registerEmail(trimmed);
+    setLoading(false);
+    if (result.success) {
+      setStep("done");
+    } else {
+      setErrMsg(result.error ?? "Erreur — réessaie.");
+    }
+  };
+
   return (
     <div style={{
       position: "absolute", inset: 0,
-      background: "radial-gradient(ellipse at center,rgba(0,80,0,0.96) 0%,rgba(0,30,0,0.99) 100%)",
+      background: "radial-gradient(ellipse at center,rgba(0,70,0,0.97) 0%,rgba(0,20,0,0.99) 100%)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       zIndex: 200, pointerEvents: "auto",
       animation: "fadeIn 0.4s ease",
     }}>
-      <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}} @keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}`}</style>
+      <style>{`
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+        .email-input::placeholder{color:#aaa}
+      `}</style>
 
-      <div style={{ textAlign: "center", padding: "0 30px" }}>
-        {/* Emoji */}
-        <div style={{ fontSize: 90, marginBottom: 10, animation: "bounce 1s infinite" }}>🎉</div>
+      <div style={{ textAlign: "center", padding: "0 28px", maxWidth: 400, width: "100%" }}>
+        <div style={{ fontSize: 80, marginBottom: 8, animation: "bounce 1.2s infinite" }}>🎉</div>
 
-        {/* Titre */}
         <div style={{
-          fontSize: 36, fontWeight: 900, color: "#fff",
-          textShadow: "0 0 30px #4caf50, 0 4px 16px rgba(0,0,0,0.8)",
-          letterSpacing: 2, marginBottom: 8, lineHeight: 1.1,
+          fontSize: 34, fontWeight: 900, color: "#fff",
+          textShadow: "0 0 30px #4caf50",
+          letterSpacing: 2, marginBottom: 6, lineHeight: 1.1,
         }}>
           MENU GRATUIT<br />DÉBLOQUÉ !
         </div>
 
-        <div style={{ color: "#a5d6a7", fontSize: 15, marginBottom: 6 }}>
+        <div style={{ color: "#a5d6a7", fontSize: 14, marginBottom: 20 }}>
           Tu as collecté <strong style={{ color: "#ffd740" }}>{menusCount * DIAMONDS_PER_MENU} 💎</strong>
         </div>
-        <div style={{ color: "#81c784", fontSize: 13, marginBottom: 30, opacity: 0.85 }}>
-          Retourne sur Bridge Eats pour réclamer ton menu !
-        </div>
 
-        {/* Bouton Bridge Eats */}
-        <a
-          href={BRIDGE_EATS_URL}
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 10,
-            background: "linear-gradient(135deg,#2e7d32,#66bb6a)",
-            color: "#fff", borderRadius: 50,
-            padding: "18px 44px", fontSize: 18, fontWeight: 900,
-            textDecoration: "none", letterSpacing: 2,
-            boxShadow: "0 0 40px #4caf5088, 0 6px 24px rgba(0,0,0,0.5)",
-            marginBottom: 16,
-          }}
-          onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
-          onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-        >
-          🍔 RÉCLAMER MON MENU
-        </a>
+        {step === "email" ? (
+          <>
+            {/* Explication */}
+            <div style={{
+              background: "rgba(0,0,0,0.4)", border: "1px solid rgba(76,175,80,0.4)",
+              borderRadius: 14, padding: "14px 16px", marginBottom: 18, textAlign: "left",
+            }}>
+              <div style={{ color: "#fff", fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+                📧 Entre ton email Bridge Eats
+              </div>
+              <div style={{ color: "#aaa", fontSize: 11, lineHeight: 1.6 }}>
+                Ton email identifie ton compte Bridge Eats. Un seul menu par email — impossible d'utiliser plusieurs comptes.
+              </div>
+            </div>
 
-        <br />
-        <button
-          onClick={onClose}
-          style={{
-            background: "rgba(255,255,255,0.1)", color: "#bbb",
-            border: "1px solid rgba(255,255,255,0.2)", borderRadius: 30,
-            padding: "10px 28px", fontSize: 13, cursor: "pointer", marginTop: 8,
-          }}
-        >
-          Continuer à jouer
-        </button>
+            <input
+              className="email-input"
+              type="email"
+              value={email}
+              onChange={e => { setEmail(e.target.value); setErrMsg(""); }}
+              placeholder="ton@email.com"
+              style={{
+                width: "100%", padding: "14px 16px", borderRadius: 12,
+                border: errMsg ? "2px solid #f44336" : "2px solid rgba(76,175,80,0.5)",
+                background: "rgba(0,0,0,0.6)", color: "#fff",
+                fontSize: 15, marginBottom: 8, boxSizing: "border-box",
+                outline: "none",
+              }}
+              onKeyDown={e => { if (e.key === "Enter") handleClaim(); }}
+            />
+
+            {errMsg && (
+              <div style={{ color: "#ef9a9a", fontSize: 12, marginBottom: 10 }}>{errMsg}</div>
+            )}
+
+            <button
+              onClick={handleClaim}
+              disabled={loading}
+              style={{
+                width: "100%",
+                background: loading ? "#555" : "linear-gradient(135deg,#2e7d32,#66bb6a)",
+                color: "#fff", border: "none", borderRadius: 50,
+                padding: "16px", fontSize: 17, fontWeight: 900,
+                cursor: loading ? "not-allowed" : "pointer",
+                letterSpacing: 1, marginBottom: 12,
+                boxShadow: loading ? "none" : "0 0 30px #4caf5077",
+              }}
+            >
+              {loading ? "Vérification…" : "🍔 RÉCLAMER MON MENU"}
+            </button>
+
+            <button onClick={onClose} style={{
+              background: "transparent", color: "#888",
+              border: "none", fontSize: 12, cursor: "pointer",
+            }}>
+              Continuer à jouer sans réclamer
+            </button>
+          </>
+        ) : (
+          <>
+            {/* Étape 2 : confirmation → redirection */}
+            <div style={{
+              background: "rgba(0,0,0,0.45)", border: "1px solid #4caf50",
+              borderRadius: 14, padding: "16px", marginBottom: 22,
+            }}>
+              <div style={{ color: "#4caf50", fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
+                ✅ Email enregistré !
+              </div>
+              <div style={{ color: "#ccc", fontSize: 12 }}>
+                Clique ci-dessous pour réclamer ton menu sur Bridge Eats.
+              </div>
+            </div>
+
+            <a
+              href={BRIDGE_EATS_URL}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 10,
+                background: "linear-gradient(135deg,#2e7d32,#66bb6a)",
+                color: "#fff", borderRadius: 50,
+                padding: "18px 44px", fontSize: 18, fontWeight: 900,
+                textDecoration: "none", letterSpacing: 2,
+                boxShadow: "0 0 40px #4caf5088",
+                marginBottom: 14,
+              }}
+            >
+              🍔 ALLER SUR BRIDGE EATS
+            </a>
+            <br />
+            <button onClick={onClose} style={{
+              background: "transparent", color: "#888",
+              border: "none", fontSize: 12, cursor: "pointer",
+            }}>
+              Continuer à jouer
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
