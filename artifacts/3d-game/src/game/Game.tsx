@@ -10,6 +10,8 @@ import { Diamonds } from "./components/Diamonds";
 import { Scene } from "./components/Scene";
 import { GameUI } from "./GameUI";
 import { CheckpointUI } from "./CheckpointUI";
+import { SupabasePanel } from "./SupabasePanel";
+import { useSupabaseSync } from "../hooks/useSupabaseSync";
 
 enum Controls {
   left = "left",
@@ -89,8 +91,7 @@ function GameScene({
   changeLane,
   jump,
 }: ReturnType<typeof useGameState>) {
-  const isRunning = state.phase === "playing";
-  const trackSpeed = isRunning ? state.speed : 0;
+  const trackSpeed = state.phase === "playing" ? state.speed : 0;
 
   return (
     <>
@@ -114,7 +115,6 @@ function GameScene({
       <directionalLight position={[-8, 10, 10]} intensity={0.5} color="#c8e6fa" />
       <fog attach="fog" args={["#c8dff0", 40, 110]} />
 
-      {/* Ground */}
       <mesh position={[0, -0.12, -40]} receiveShadow>
         <planeGeometry args={[60, 160]} />
         <meshStandardMaterial color="#c8d8a0" roughness={1} />
@@ -133,6 +133,8 @@ export function Game() {
   const gameState = useGameState();
   const { state, startGame, resumeGame, changeLane, jump, tick } = gameState;
 
+  const { profile, status, addTestDiamonds } = useSupabaseSync(state.score, state.phase);
+
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#87ceeb", overflow: "hidden" }}>
       <KeyboardControls map={keyMap}>
@@ -146,7 +148,7 @@ export function Game() {
         </Canvas>
       </KeyboardControls>
 
-      {/* HUD normal (score, contrôles) */}
+      {/* HUD principal */}
       <GameUI
         phase={state.phase}
         score={state.score}
@@ -165,6 +167,14 @@ export function Game() {
           onResume={resumeGame}
         />
       )}
+
+      {/* Panneau Supabase + bouton test */}
+      <SupabasePanel
+        profile={profile}
+        status={status}
+        phase={state.phase}
+        onAddTestDiamonds={addTestDiamonds}
+      />
     </div>
   );
 }
