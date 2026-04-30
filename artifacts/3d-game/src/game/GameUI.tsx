@@ -151,7 +151,7 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, totalDiamond
   score: number; checkpointNumber: number; playTime: number; nextCheckpointAt: number; totalDiamonds: number;
 }) {
   const timeToNext = Math.max(0, Math.ceil(nextCheckpointAt - playTime));
-  const progress = Math.min(1, (50 - timeToNext) / 50);
+  const progress = Math.min(1, (40 - timeToNext) / 40);
   const sessionDiamonds = Math.floor(score / 10);
 
   return (
@@ -395,7 +395,7 @@ function StartScreen({ onStart, totalDiamonds }: { onStart: () => void; totalDia
         <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
           {[
             { icon: "💎", text: "Collecte des diamants" },
-            { icon: "🍽️", text: "Pauses toutes les 50s" },
+            { icon: "🍽️", text: "Pauses toutes les 40s" },
             { icon: "🏆", text: "Score en ligne" },
           ].map((b, i) => (
             <div key={i} style={{

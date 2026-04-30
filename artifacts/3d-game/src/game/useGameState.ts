@@ -30,10 +30,20 @@ export interface GameState {
   nextCheckpointAt: number;
 }
 
-const CHECKPOINT_INTERVAL = 50;
+/* ── Paramètres de difficulté ───────────────────────────────── */
+const CHECKPOINT_INTERVAL = 40;   // pub toutes les 40s (max de revenus)
+const SPEED_START       = 10;     // vitesse initiale plus rapide
+const SPEED_MAX         = 28;     // max speed pour sensation intense
+const SPEED_RAMP        = 120;    // rampe plus agressive (200 → 120)
+const OBSTACLE_RATE     = 2.4;    // obstacles plus fréquents (1.2 → 2.4)
+const DIAMOND_RATE      = 0.75;   // diamants rares (2.0 → 0.75) = 1 toutes ~1.3s
+const CLUSTER_CHANCE    = 0.25;   // 25% de chance de cluster (2 diamants d'affilée)
+const DOUBLE_OBS_CHANCE = 0.30;   // 30% de chance d'obstacle sur 2 voies simultanément
 
 export function useGameState() {
   const idRef = useRef(0);
+  const lastDiamondLane = useRef<number | null>(null);
+  const clusterCount = useRef(0);
 
   const initialState = (): GameState => ({
     phase: "start",
@@ -44,7 +54,7 @@ export function useGameState() {
     playerY: 0,
     obstacles: [],
     diamonds: [],
-    speed: 8,
+    speed: SPEED_START,
     distance: 0,
     playTime: 0,
     checkpointNumber: 0,
@@ -55,6 +65,8 @@ export function useGameState() {
 
   const startGame = useCallback(() => {
     idRef.current = 0;
+    lastDiamondLane.current = null;
+    clusterCount.current = 0;
     setState({ ...initialState(), phase: "playing" });
   }, []);
 
@@ -79,7 +91,7 @@ export function useGameState() {
   const jump = useCallback(() => {
     setState((s) => {
       if (s.phase !== "playing" || s.isJumping) return s;
-      return { ...s, isJumping: true, jumpVelocity: 12 };
+      return { ...s, isJumping: true, jumpVelocity: 13 };
     });
   }, []);
 
@@ -87,11 +99,11 @@ export function useGameState() {
     setState((s) => {
       if (s.phase !== "playing") return s;
 
-      const GRAVITY = 28;
-      const LANE_X = [-2, 0, 2];
-      const SPAWN_Z = -60;
+      const GRAVITY  = 32;          // gravité plus forte = saut plus nerveux
+      const LANE_X   = [-2, 0, 2];
+      const SPAWN_Z  = -65;
       const DESPAWN_Z = 8;
-      const PLAYER_Z = 0;
+      const PLAYER_Z  = 0;
 
       let {
         score, isJumping, jumpVelocity, playerY,
@@ -101,9 +113,11 @@ export function useGameState() {
 
       playTime += dt;
       distance += dt * speed;
-      speed = Math.min(20, 8 + distance / 200);
 
-      // Checkpoint trigger
+      // Vitesse : montée rapide et agressive
+      speed = Math.min(SPEED_MAX, SPEED_START + distance / SPEED_RAMP);
+
+      // Checkpoint → pub
       if (playTime >= nextCheckpointAt) {
         return {
           ...s,
@@ -117,6 +131,7 @@ export function useGameState() {
         };
       }
 
+      // Physique du saut
       if (isJumping) {
         jumpVelocity -= GRAVITY * dt;
         playerY += jumpVelocity * dt;
@@ -127,6 +142,7 @@ export function useGameState() {
         }
       }
 
+      // Déplacement obstacles & diamants
       obstacles = obstacles
         .map((o) => ({ ...o, z: o.z + speed * dt }))
         .filter((o) => o.z < DESPAWN_Z);
@@ -135,15 +151,36 @@ export function useGameState() {
         .map((d) => ({ ...d, z: d.z + speed * dt }))
         .filter((d) => d.z < DESPAWN_Z);
 
-      if (Math.random() < dt * 1.2) {
+      /* ── Spawn obstacles ────────────────────────────────────── */
+      if (Math.random() < dt * OBSTACLE_RATE) {
         const lane = Math.floor(Math.random() * 3) - 1;
         obstacles.push({ id: idRef.current++, lane, z: SPAWN_Z });
-      }
-      if (Math.random() < dt * 2.0) {
-        const lane = Math.floor(Math.random() * 3) - 1;
-        diamonds.push({ id: idRef.current++, lane, z: SPAWN_Z });
+
+        // Double obstacle : bloque 2 voies sur 3 = force le joueur à sauter ou à chercher la bonne voie
+        if (Math.random() < DOUBLE_OBS_CHANCE) {
+          let lane2: number;
+          do { lane2 = Math.floor(Math.random() * 3) - 1; } while (lane2 === lane);
+          // décalé légèrement pour garder le jeu jouable
+          obstacles.push({ id: idRef.current++, lane: lane2, z: SPAWN_Z - 4 });
+        }
       }
 
+      /* ── Spawn diamants (rares, mais avec clusters tentateurs) ── */
+      if (Math.random() < dt * DIAMOND_RATE) {
+        const lane = Math.floor(Math.random() * 3) - 1;
+        diamonds.push({ id: idRef.current++, lane, z: SPAWN_Z });
+
+        // Cluster : 25% de chance d'un 2ème diamant juste derrière (même voie)
+        if (Math.random() < CLUSTER_CHANCE) {
+          diamonds.push({ id: idRef.current++, lane, z: SPAWN_Z - 5 });
+          // 10% de chance d'un 3ème pour le combo (très tentant mais risqué)
+          if (Math.random() < 0.10) {
+            diamonds.push({ id: idRef.current++, lane, z: SPAWN_Z - 10 });
+          }
+        }
+      }
+
+      /* ── Détection collision obstacles ─────────────────────── */
       const playerX = LANE_X[s.lane + 1];
       const COLL_XR = 0.7;
       const COLL_ZR = 1.4;
@@ -157,6 +194,7 @@ export function useGameState() {
         }
       }
 
+      /* ── Collecte diamants ──────────────────────────────────── */
       const newDiamonds: Diamond[] = [];
       for (const d of diamonds) {
         const dx2 = Math.abs(playerX - LANE_X[d.lane + 1]);
