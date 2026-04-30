@@ -1,19 +1,22 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { isSupabaseConfigured } from "../lib/supabase";
-import { ensureProfile, saveScore, addDiamonds, getProfile } from "../lib/playerProfile";
+import { ensureProfile, saveScore, getProfile } from "../lib/playerProfile";
 import type { Profile } from "../lib/supabase";
 
-const AUTOSAVE_INTERVAL = 10000;
+const AUTOSAVE_INTERVAL = 10_000; // rafraîchit le profil toutes les 10s
 
-export function useSupabaseSync(score: number, phase: string) {
+export function useSupabaseSync(score: number, phase: string, playTime: number) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [status, setStatus] = useState<"connecting" | "ok" | "error" | "offline">(
-    isSupabaseConfigured ? "connecting" : "offline"
+    isSupabaseConfigured ? "connecting" : "offline",
   );
+
   const lastSyncedScore = useRef(0);
   const initialized = useRef(false);
   const lastScore = useRef(score);
+  const lastPlayTime = useRef(playTime);
 
+  /* Initialisation du profil au démarrage */
   useEffect(() => {
     if (!isSupabaseConfigured || initialized.current) return;
     initialized.current = true;
@@ -33,10 +36,11 @@ export function useSupabaseSync(score: number, phase: string) {
     })();
   }, []);
 
-  useEffect(() => {
-    lastScore.current = score;
-  }, [score]);
+  /* Suivi score + playTime en temps réel (sans re-render) */
+  useEffect(() => { lastScore.current = score; }, [score]);
+  useEffect(() => { lastPlayTime.current = playTime; }, [playTime]);
 
+  /* Auto-refresh du profil toutes les 10s pendant le jeu */
   useEffect(() => {
     if (!isSupabaseConfigured || (phase !== "playing" && phase !== "checkpoint")) return;
 
@@ -58,38 +62,22 @@ export function useSupabaseSync(score: number, phase: string) {
     return () => clearInterval(interval);
   }, [phase]);
 
+  /* Sauvegarde à la fin de la partie avec validation anti-triche */
   useEffect(() => {
     if (!isSupabaseConfigured || phase !== "gameover") return;
 
     (async () => {
-      const diamondsToSave = Math.floor(score / 10);
-      const sardines = Math.floor(score / 50);
-      await saveScore(diamondsToSave, sardines);
+      const diamondsToSave = Math.floor(lastScore.current / 10);
+      const sardines = Math.floor(lastScore.current / 50);
+      const sessionTime = lastPlayTime.current; // secondes réelles jouées
+
+      /* saveScore valide côté client avant d'écrire dans Supabase */
+      await saveScore(diamondsToSave, sardines, sessionTime);
+
       const updated = await getProfile();
       if (updated) setProfile(updated);
     })();
-  }, [phase, score]);
+  }, [phase]);
 
-  const addTestDiamonds = useCallback(async (count: number) => {
-    if (!isSupabaseConfigured) {
-      return { success: false, total: 0 };
-    }
-    setStatus("connecting");
-    try {
-      const result = await addDiamonds(count);
-      if (result) {
-        setProfile(result);
-        setStatus("ok");
-        return { success: true, total: result.diamonds_collected };
-      } else {
-        setStatus("error");
-        return { success: false };
-      }
-    } catch {
-      setStatus("error");
-      return { success: false };
-    }
-  }, []);
-
-  return { profile, status, addTestDiamonds };
+  return { profile, status };
 }

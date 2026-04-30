@@ -2,6 +2,13 @@ import { supabase, isSupabaseConfigured, type Profile } from "./supabase";
 
 const PLAYER_NAME_KEY = "safi_runner_player_name";
 
+/* ── Limite physique anti-triche ────────────────────────────────
+   Max atteignable : ~0.75 spawn/s × 70% collecte × clusters = ~0.8 💎/s
+   On autorise 1.2 💎/s avec une marge généreuse de ×1.5 = 1.8 max
+   Tout ce qui dépasse est écrêté silencieusement.
+──────────────────────────────────────────────────────────────── */
+const MAX_DIAMONDS_PER_SECOND = 1.8;
+
 export function getPlayerName(): string {
   return localStorage.getItem(PLAYER_NAME_KEY) ?? "Joueur Anonyme";
 }
@@ -60,7 +67,6 @@ export async function ensureProfile(): Promise<Profile | null> {
       return null;
     }
 
-    console.log("✅ Profil créé dans Supabase:", created);
     return created as Profile;
   } catch (err) {
     console.error("Supabase ensureProfile exception:", err);
@@ -78,43 +84,31 @@ async function getCurrentUserId(): Promise<string | null> {
   }
 }
 
-export async function addDiamonds(count: number): Promise<Profile | null> {
-  if (!isSupabaseConfigured) return null;
-  const userId = await getCurrentUserId();
-  if (!userId) return null;
-
-  try {
-    const { data: current } = await supabase
-      .from("profiles")
-      .select("diamonds_collected")
-      .eq("id", userId)
-      .single();
-
-    const newCount = ((current as Profile)?.diamonds_collected ?? 0) + count;
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .update({ diamonds_collected: newCount, updated_at: new Date().toISOString() })
-      .eq("id", userId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Supabase addDiamonds error:", error);
-      return null;
-    }
-
-    return data as Profile;
-  } catch (err) {
-    console.error("addDiamonds exception:", err);
-    return null;
-  }
-}
-
-export async function saveScore(diamondsSession: number, sardinesSession: number): Promise<void> {
+/**
+ * Sauvegarde le score d'une session avec validation anti-triche.
+ * @param diamondsSession  💎 collectés pendant la session
+ * @param sardinesSession  🐟 sardines
+ * @param playTimeSeconds  durée réelle de jeu en secondes
+ */
+export async function saveScore(
+  diamondsSession: number,
+  sardinesSession: number,
+  playTimeSeconds: number,
+): Promise<void> {
   if (!isSupabaseConfigured) return;
   const userId = await getCurrentUserId();
   if (!userId) return;
+
+  /* ── Validation : plafond physique ─────────────────────────── */
+  const maxAllowed = Math.ceil(playTimeSeconds * MAX_DIAMONDS_PER_SECOND);
+  const validatedDiamonds = Math.min(
+    Math.max(0, Math.floor(diamondsSession)), // pas de négatif
+    maxAllowed,
+  );
+  const validatedSardines = Math.max(0, Math.floor(sardinesSession));
+
+  /* Refuse silencieusement si 0 pour éviter les écritures inutiles */
+  if (validatedDiamonds === 0 && validatedSardines === 0) return;
 
   try {
     const { data: current } = await supabase
@@ -128,8 +122,8 @@ export async function saveScore(diamondsSession: number, sardinesSession: number
     await supabase
       .from("profiles")
       .update({
-        diamonds_collected: (existing?.diamonds_collected ?? 0) + diamondsSession,
-        sardines_points: (existing?.sardines_points ?? 0) + sardinesSession,
+        diamonds_collected: (existing?.diamonds_collected ?? 0) + validatedDiamonds,
+        sardines_points: (existing?.sardines_points ?? 0) + validatedSardines,
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId);

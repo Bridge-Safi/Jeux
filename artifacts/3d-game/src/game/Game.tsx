@@ -137,7 +137,7 @@ export function Game() {
   const gameState = useGameState();
   const { state, startGame, resumeGame, changeLane, jump, tick } = gameState;
 
-  const { profile, status, addTestDiamonds } = useSupabaseSync(state.score, state.phase);
+  const { profile, status } = useSupabaseSync(state.score, state.phase, state.playTime);
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#060d1f", overflow: "hidden" }}>
@@ -180,7 +180,6 @@ export function Game() {
         profile={profile}
         status={status}
         phase={state.phase}
-        onAddTestDiamonds={addTestDiamonds}
       />
     </div>
   );
