@@ -71,6 +71,11 @@ const DICT: Record<Lang, Record<string, string>> = {
     "ui.music": "Musique",
     "ui.musicOn": "Musique orientale activée",
     "ui.musicOff": "Musique coupée",
+    "auth.locked.kicker": "Connexion Bridge Eats requise",
+    "auth.locked.title": "🦈 SAFI RUNNER",
+    "auth.locked.body": "Pour jouer, connecte-toi d'abord sur Bridge Eats avec ton email et ton numéro. Tu seras automatiquement reconnu sur le jeu et tes diamants seront synchronisés.",
+    "auth.locked.cta": "Me connecter sur Bridge Eats",
+    "auth.locked.why": "🔐 Bridge Eats gère la connexion. Tes 💎 sont liés à ton compte — joue depuis n'importe quel appareil avec le même email.",
 
     /* Touch controls */
     "controls.swipeHint": "← SWIPE pour changer de voie · SWIPE ↑ pour sauter →",
@@ -285,6 +290,11 @@ const DICT: Record<Lang, Record<string, string>> = {
     "ui.music": "Music",
     "ui.musicOn": "Oriental music on",
     "ui.musicOff": "Music muted",
+    "auth.locked.kicker": "Bridge Eats login required",
+    "auth.locked.title": "🦈 SAFI RUNNER",
+    "auth.locked.body": "To play, sign in to Bridge Eats first with your email and phone. You'll be recognized automatically and your diamonds will sync across devices.",
+    "auth.locked.cta": "Sign in on Bridge Eats",
+    "auth.locked.why": "🔐 Bridge Eats handles the login. Your 💎 are tied to your account — play from any device with the same email.",
 
     "controls.swipeHint": "← SWIPE to switch lane · SWIPE ↑ to jump →",
 
@@ -486,6 +496,11 @@ const DICT: Record<Lang, Record<string, string>> = {
     "ui.music": "موسيقى",
     "ui.musicOn": "تم تفعيل الموسيقى الشرقية",
     "ui.musicOff": "تم كتم الموسيقى",
+    "auth.locked.kicker": "يلزم تسجيل الدخول عبر Bridge Eats",
+    "auth.locked.title": "🦈 SAFI RUNNER",
+    "auth.locked.body": "للعب، سجّل دخولك أولاً على Bridge Eats ببريدك ورقم هاتفك. سيتم التعرف عليك تلقائياً وستتم مزامنة ألماساتك بين كل أجهزتك.",
+    "auth.locked.cta": "تسجيل الدخول على Bridge Eats",
+    "auth.locked.why": "🔐 Bridge Eats يتولى تسجيل الدخول. ألماساتك مرتبطة بحسابك — العب من أي جهاز بنفس البريد الإلكتروني.",
 
     "controls.swipeHint": "← اسحب لتغيير المسار · اسحب لأعلى للقفز →",
 

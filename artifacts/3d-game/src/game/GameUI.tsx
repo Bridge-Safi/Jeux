@@ -15,6 +15,7 @@ import type { Profile } from "../lib/supabase";
 import { useT, formatNum, t as tStatic } from "../lib/i18n";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { useMusic } from "../hooks/useMusic";
+import { navigateInApp } from "../lib/inAppNav";
 
 /* ─── Configuration Bridge Eats ─────────────────────────────── */
 export const BRIDGE_EATS_URL = "https://44474adc-9074-4015-a3b9-4e111cb8be39-00-11nld147gir6y.kirk.replit.dev/";
@@ -175,16 +176,17 @@ function FloatingActions() {
       >
         <span aria-hidden>{dark ? "☀️" : "🌙"}</span>
       </button>
-      <a
-        href={BRIDGE_EATS_URL}
+      <button
+        onClick={() => navigateInApp(BRIDGE_EATS_URL, "bridge-eats")}
         title="Bridge Eats"
         aria-label="Ouvrir Bridge Eats"
+        type="button"
         style={{ ...baseBtn, background: "linear-gradient(135deg,#b71c1c,#e53935)", color: "#fff" }}
         onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
         onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
       >
         <span aria-hidden>🛵</span>
-      </a>
+      </button>
       <a
         href={WHATSAPP_URL}
         target="_blank"
@@ -205,8 +207,9 @@ function FloatingActions() {
 function BridgeEatsButton({ variant = "light" }: { variant?: "light" | "dark" }) {
   const isDark = variant === "dark";
   return (
-    <a
-      href={BRIDGE_EATS_URL}
+    <button
+      type="button"
+      onClick={() => navigateInApp(BRIDGE_EATS_URL, "bridge-eats")}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -222,7 +225,6 @@ function BridgeEatsButton({ variant = "light" }: { variant?: "light" | "dark" })
         fontSize: 13,
         fontWeight: 700,
         cursor: "pointer",
-        textDecoration: "none",
         letterSpacing: 0.5,
         boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
         transition: "transform 0.1s",
@@ -232,7 +234,7 @@ function BridgeEatsButton({ variant = "light" }: { variant?: "light" | "dark" })
     >
       <span style={{ fontSize: 16 }}>🛵🚕</span>
       <span>Bridge</span>
-    </a>
+    </button>
   );
 }
 
@@ -662,22 +664,21 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
                   <div style={{ color: "#e0f2e0", fontSize: 12, lineHeight: 1.5, marginBottom: 12 }}>
                     {t("shortfall.body", { miss: formatNum(miss), dh: formatNum(dh) })}
                   </div>
-                  <a
-                    href={buildShortfallUrl(miss, dh)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => navigateInApp(buildShortfallUrl(miss, dh), "bridge-eats")}
                     style={{
-                      display: "block", textAlign: "center",
+                      display: "block", textAlign: "center", width: "100%",
                       background: "linear-gradient(135deg,#2e7d32,#66bb6a)",
-                      color: "#fff", borderRadius: 50,
+                      color: "#fff", border: "none", borderRadius: 50,
                       padding: "13px 18px", fontSize: 15, fontWeight: 900,
-                      textDecoration: "none", letterSpacing: 1,
+                      letterSpacing: 1, cursor: "pointer",
                       boxShadow: "0 0 24px rgba(76,175,80,0.55)",
                       marginBottom: 8,
                     }}
                   >
                     {t("shortfall.cta", { dh: formatNum(dh) })}
-                  </a>
+                  </button>
                   <div style={{ color: "#aaa", fontSize: 10, lineHeight: 1.5 }}>
                     {t("shortfall.help")}
                   </div>
@@ -763,10 +764,11 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
               </div>
             </div>
 
-            <a
-              href={BRIDGE_EATS_URL}
+            <button
+              type="button"
+              onClick={() => navigateInApp(BRIDGE_EATS_URL, "bridge-eats")}
               style={{
-                display: "inline-flex", alignItems: "center", gap: 10,
+                display: "inline-flex", alignItems: "center", gap: 10, border: "none", cursor: "pointer",
                 background: "linear-gradient(135deg,#2e7d32,#66bb6a)",
                 color: "#fff", borderRadius: 50,
                 padding: "18px 44px", fontSize: 18, fontWeight: 900,
@@ -776,7 +778,7 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
               }}
             >
               {t("claim.done.cta")}
-            </a>
+            </button>
             <br />
             <button onClick={onClose} style={{
               background: "transparent", color: "#888",
