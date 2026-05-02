@@ -6,12 +6,12 @@ const MAX_DIAMONDS_PER_SECOND = 1.8;
 
 /* ─── Programme Bridge Eats (engagement strict) ───────────────
    - 30 000 💎 cumulés
-   - 3 jours distincts avec ≥ 1h de jeu chacun
+   - 3 jours distincts avec ≥ 3h de jeu chacun
    - 4ᵉ jour à partir du 1ᵉʳ jour personnel pour réclamer le menu
    ─────────────────────────────────────────────────────────────── */
 export const DIAMONDS_PER_MENU      = 30_000;
 export const REQUIRED_PLAY_DAYS     = 3;
-export const REQUIRED_SECONDS_PER_DAY = 3_600;        // 1h
+export const REQUIRED_SECONDS_PER_DAY = 10_800;       // 3h
 export const DAYS_BEFORE_CLAIM      = 4;              // J+0 = 1ᵉʳ jour ; réclame au J+3 calendaire
 
 /* Complément payant : 1 DH = 1 000 💎 manquants (arrondi au DH supérieur). */
@@ -34,7 +34,7 @@ export type BlockerInfo =
   | { key: "blocker.wait" | "blocker.waitPlural"; n: number };
 
 export type MenuEligibility = {
-  qualifyingDays: number;          // nb de jours avec ≥ 1h
+  qualifyingDays: number;          // nb de jours avec ≥ 3h
   daysSinceFirstPlay: number;      // nb de jours calendaires depuis le 1ᵉʳ jour
   todaySecondsRemaining: number;   // temps restant à jouer aujourd'hui pour valider la journée
   diamondsCollected: number;

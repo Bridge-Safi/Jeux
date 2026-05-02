@@ -131,7 +131,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- ║  BLOC 4 — RPC atomique : réclamer un menu                    ║
 -- ║  Vérifie côté SERVEUR les 3 conditions :                     ║
 -- ║   1. ≥ DIAMONDS_PER_MENU 💎 disponibles                      ║
--- ║   2. ≥ 3 jours actifs (≥ 1h chacun)                          ║
+-- ║   2. ≥ 3 jours actifs (≥ 3h chacun)                          ║
 -- ║   3. ≥ 4 jours calendaires depuis le 1ᵉʳ jour personnel      ║
 -- ║  Retourne TRUE si débloqué + incrémenté atomiquement.        ║
 -- ╚══════════════════════════════════════════════════════════════╝
@@ -141,7 +141,7 @@ RETURNS BOOLEAN AS $$
 DECLARE
   diamonds_per_menu CONSTANT INTEGER := 30000;
   required_days     CONSTANT INTEGER := 3;
-  required_secs     CONSTANT INTEGER := 3600;
+  required_secs     CONSTANT INTEGER := 10800;
   required_delay    CONSTANT INTEGER := 4;
 
   prof          RECORD;
@@ -161,7 +161,7 @@ BEGIN
     RETURN FALSE;
   END IF;
 
-  -- Compte les jours qualifiants (≥ 1h)
+  -- Compte les jours qualifiants (≥ 3h)
   IF prof.play_days IS NOT NULL THEN
     FOR i IN 0 .. (jsonb_array_length(prof.play_days) - 1) LOOP
       entry := prof.play_days -> i;

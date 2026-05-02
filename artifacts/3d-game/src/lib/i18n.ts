@@ -18,7 +18,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     /* Bridge / Engagement */
     "bridge.programTitle": "🛵🚕 Programme Bridge — Menu gratuit",
     "bridge.diamonds": "💎 Diamants",
-    "bridge.activeDays": "📅 Jours actifs (≥ 1h)",
+    "bridge.activeDays": "📅 Jours actifs (≥ 3h)",
     "bridge.todayLabel": "⏱️ Aujourd'hui : {time}",
     "bridge.dayBadge": "J{n}",
     "bridge.menusReady": "🎉 {n} menu gratuit prêt !",
@@ -30,8 +30,8 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     /* Blockers */
     "blocker.diamonds": "Encore {n} 💎 à collecter",
-    "blocker.days": "Encore {n} jour de jeu (≥ 1h) à valider",
-    "blocker.daysPlural": "Encore {n} jours de jeu (≥ 1h) à valider",
+    "blocker.days": "Encore {n} jour de jeu (≥ 3h) à valider",
+    "blocker.daysPlural": "Encore {n} jours de jeu (≥ 3h) à valider",
     "blocker.wait": "Reviens dans {n} jour pour réclamer",
     "blocker.waitPlural": "Reviens dans {n} jours pour réclamer",
 
@@ -205,7 +205,7 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     "bridge.programTitle": "🛵🚕 Bridge Program — Free Meal",
     "bridge.diamonds": "💎 Diamonds",
-    "bridge.activeDays": "📅 Active days (≥ 1h)",
+    "bridge.activeDays": "📅 Active days (≥ 3h)",
     "bridge.todayLabel": "⏱️ Today: {time}",
     "bridge.dayBadge": "D{n}",
     "bridge.menusReady": "🎉 {n} free meal ready!",
@@ -216,8 +216,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "bridge.timeRemaining.done": "✓ day validated",
 
     "blocker.diamonds": "{n} more 💎 to collect",
-    "blocker.days": "{n} more day of play (≥ 1h) to validate",
-    "blocker.daysPlural": "{n} more days of play (≥ 1h) to validate",
+    "blocker.days": "{n} more day of play (≥ 3h) to validate",
+    "blocker.daysPlural": "{n} more days of play (≥ 3h) to validate",
     "blocker.wait": "Come back in {n} day to claim",
     "blocker.waitPlural": "Come back in {n} days to claim",
 
@@ -376,7 +376,7 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     "bridge.programTitle": "🛵🚕 برنامج Bridge — وجبة مجانية",
     "bridge.diamonds": "💎 الألماس",
-    "bridge.activeDays": "📅 الأيام النشطة (≥ ساعة)",
+    "bridge.activeDays": "📅 الأيام النشطة (≥ 3 ساعات)",
     "bridge.todayLabel": "⏱️ اليوم : {time}",
     "bridge.dayBadge": "اليوم {n}",
     "bridge.menusReady": "🎉 {n} وجبة مجانية جاهزة!",
@@ -387,8 +387,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "bridge.timeRemaining.done": "✓ تم اعتماد اليوم",
 
     "blocker.diamonds": "اجمع {n} 💎 إضافية",
-    "blocker.days": "تبقى {n} يوم من اللعب (≥ ساعة) لاعتماده",
-    "blocker.daysPlural": "تبقى {n} أيام من اللعب (≥ ساعة) لاعتمادها",
+    "blocker.days": "تبقى {n} يوم من اللعب (≥ 3 ساعات) لاعتماده",
+    "blocker.daysPlural": "تبقى {n} أيام من اللعب (≥ 3 ساعات) لاعتمادها",
     "blocker.wait": "ارجع بعد {n} يوم للمطالبة",
     "blocker.waitPlural": "ارجع بعد {n} أيام للمطالبة",
 

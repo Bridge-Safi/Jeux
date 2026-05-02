@@ -41,7 +41,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 ### Bridge Eats engagement program (free menu unlock)
 Three cumulative criteria — all enforced server-side:
 1. **30,000 💎** total collected (DIAMONDS_PER_MENU)
-2. **3 distinct days** with **≥1h** play each (REQUIRED_PLAY_DAYS, REQUIRED_SECONDS_PER_DAY)
+2. **3 distinct days** with **≥3h** play each (REQUIRED_PLAY_DAYS, REQUIRED_SECONDS_PER_DAY=10800)
 3. **4th calendar day** from the player's personal first play date (DAYS_BEFORE_CLAIM)
 
 The Bridge customer link is the **phone number** (not email): `bridge_phone` column with UNIQUE constraint. One phone = one Bridge account = one menu per cycle.
