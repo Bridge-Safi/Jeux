@@ -5,11 +5,12 @@ import type { Diamond } from "../useGameState";
 
 const LANE_X = [-2, 0, 2];
 
-/* Pièce d'or façon Subway Surfers — disque qui tourne sur axe Y avec scintillement */
+/* Pièce d'or cyberpunk — bloom multicouches additif */
 function GoldCoin({ x, z }: { x: number; z: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const sparkRef = useRef<THREE.Mesh>(null);
-  const matRef = useRef<THREE.MeshBasicMaterial>(null);
+  const ringRef1 = useRef<THREE.Mesh>(null);
+  const ringRef2 = useRef<THREE.Mesh>(null);
+  const beamRef = useRef<THREE.Mesh>(null);
 
   useFrame(() => {
     const t = Date.now() * 0.005;
@@ -18,40 +19,67 @@ function GoldCoin({ x, z }: { x: number; z: number }) {
       meshRef.current.rotation.y += 0.18;
       meshRef.current.position.y = y;
     }
-    if (sparkRef.current) {
-      sparkRef.current.rotation.z += 0.05;
-      sparkRef.current.position.y = y;
+    if (ringRef1.current) {
+      ringRef1.current.rotation.z += 0.04;
+      ringRef1.current.position.y = y;
     }
-    if (matRef.current) {
-      const v = 0.85 + Math.sin(t * 3) * 0.15;
-      matRef.current.color.setRGB(1.0 * v, 0.85 * v, 0.15 * v);
+    if (ringRef2.current) {
+      ringRef2.current.rotation.z -= 0.03;
+      ringRef2.current.position.y = y;
+    }
+    if (beamRef.current) {
+      const mat = beamRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.25 + Math.sin(t * 4) * 0.1;
     }
   });
 
   return (
     <group position={[x, 0, z]}>
+      {/* Faisceau vertical de lumière qui traverse la pièce */}
+      <mesh ref={beamRef} position={[0, 1.5, 0]}>
+        <cylinderGeometry args={[0.12, 0.5, 4, 8, 1, true]} />
+        <meshBasicMaterial color="#ffd700" transparent opacity={0.3} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+
+      {/* Halo extérieur très large */}
+      <mesh position={[0, 1.0, 0]}>
+        <sphereGeometry args={[1.0, 12, 12]} />
+        <meshBasicMaterial color="#ff8c00" transparent opacity={0.08} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
+
+      {/* Halo médian doré */}
+      <mesh position={[0, 1.0, 0]}>
+        <sphereGeometry args={[0.65, 12, 12]} />
+        <meshBasicMaterial color="#ffd700" transparent opacity={0.18} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
+
       {/* Pièce dorée brillante */}
       <mesh ref={meshRef} position={[0, 1.0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.38, 0.38, 0.08, 16]} />
-        <meshBasicMaterial ref={matRef} color="#ffd700" toneMapped={false} />
+        <cylinderGeometry args={[0.36, 0.36, 0.07, 16]} />
+        <meshBasicMaterial color="#ffd700" toneMapped={false} />
       </mesh>
 
-      {/* Contour cartoon noir épais */}
-      <mesh position={[0, 1.0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.38, 0.045, 6, 18]} />
-        <meshBasicMaterial color="#5d3a00" />
+      {/* Anneau orbital 1 — cyan */}
+      <mesh ref={ringRef1} position={[0, 1.0, 0]} rotation={[0, 0, 0]}>
+        <ringGeometry args={[0.5, 0.58, 24, 1]} />
+        <meshBasicMaterial color="#00f0ff" transparent opacity={0.7} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Étoile scintillement style Subway Surfers */}
-      <mesh ref={sparkRef} position={[0, 1.0, 0]} rotation={[0, 0, 0]}>
-        <ringGeometry args={[0.5, 0.6, 8, 1]} />
-        <meshBasicMaterial color="#fff59d" transparent opacity={0.8} toneMapped={false} side={THREE.DoubleSide} />
+      {/* Anneau orbital 2 — magenta */}
+      <mesh ref={ringRef2} position={[0, 1.0, 0]} rotation={[Math.PI / 3, 0, 0]}>
+        <ringGeometry args={[0.62, 0.7, 24, 1]} />
+        <meshBasicMaterial color="#ff1493" transparent opacity={0.6} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Halo doré sous la pièce */}
-      <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.4, 12]} />
-        <meshBasicMaterial color="#ffa000" transparent opacity={0.5} toneMapped={false} />
+      {/* Disque réflexion dorée au sol */}
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.9, 16]} />
+        <meshBasicMaterial color="#ffa000" transparent opacity={0.4} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
+      {/* Plus large halo au sol */}
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[1.5, 16]} />
+        <meshBasicMaterial color="#ffd700" transparent opacity={0.18} blending={THREE.AdditiveBlending} toneMapped={false} />
       </mesh>
     </group>
   );

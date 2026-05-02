@@ -72,55 +72,20 @@ function GameLoop({
   return null;
 }
 
-function PlayerLight({ lane, playerY }: { lane: number; playerY: number }) {
-  const LANE_X = [-2, 0, 2];
-  const x = LANE_X[lane + 1];
+function CyberLighting() {
   return (
     <>
-      {/* Spot blanc puissant sur le joueur */}
-      <pointLight position={[x, playerY + 5, 1]} color="#ffffff" intensity={8} distance={14} />
-      {/* Halo doré au sol sous le joueur */}
-      <pointLight position={[x, playerY + 0.3, 0]} color="#ffd700" intensity={3} distance={6} />
-    </>
-  );
-}
+      {/* Ambiance nuit cyberpunk — bleu nuit */}
+      <ambientLight intensity={0.4} color="#3a2a6a" />
 
-function NightLighting() {
-  return (
-    <>
-      {/* Ambiance nuit — forte pour voir les détails */}
-      <ambientLight intensity={0.55} color="#4a5a9e" />
+      {/* Lumière magenta venant de la droite */}
+      <directionalLight position={[8, 6, 4]} intensity={0.4} color="#ff1493" />
 
-      {/* Lune — lumière principale froide */}
-      <directionalLight
-        position={[30, 50, -30]}
-        intensity={0.9}
-        color="#d0e8ff"
-        castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera-far={80}
-        shadow-camera-left={-15}
-        shadow-camera-right={15}
-        shadow-camera-top={15}
-        shadow-camera-bottom={-15}
-      />
+      {/* Lumière cyan venant de la gauche */}
+      <directionalLight position={[-8, 6, 4]} intensity={0.4} color="#00bcd4" />
 
-      {/* Lumière de remplissage — reflet sol humide */}
-      <directionalLight position={[-10, 8, 10]} intensity={0.25} color="#3a4a8a" />
-
-      {/* Lumière derrière le joueur — donne de la profondeur */}
-      <directionalLight position={[0, 5, 12]} intensity={0.3} color="#ff9040" />
-
-      {/* Lanternes chaudes sur la route — 6 points pour couvrir tout le tunnel visible */}
-      <pointLight position={[-3.85, 3.6,  0]} color="#ff8f00" intensity={3.0} distance={18} />
-      <pointLight position={[ 3.85, 3.6,  0]} color="#ff8f00" intensity={3.0} distance={18} />
-      <pointLight position={[-3.85, 3.6, -18]} color="#ff8f00" intensity={2.5} distance={18} />
-      <pointLight position={[ 3.85, 3.6, -18]} color="#ff8f00" intensity={2.5} distance={18} />
-      <pointLight position={[-3.85, 3.6, -36]} color="#ff8f00" intensity={2.5} distance={18} />
-      <pointLight position={[ 3.85, 3.6, -36]} color="#ff8f00" intensity={2.5} distance={18} />
-
-      {/* Halo bleu-blanc au sol devant le joueur */}
-      <pointLight position={[0, 1.5, -4]} color="#90c8ff" intensity={1.2} distance={12} />
+      {/* Lumière chaude orange au loin (horizon coucher de soleil) */}
+      <directionalLight position={[0, 3, -30]} intensity={0.3} color="#ff6b00" />
     </>
   );
 }
@@ -133,16 +98,15 @@ function GameScene({ state, tick, changeLane, jump }: ReturnType<typeof useGameS
       <FollowCamera playerLane={state.lane} playerY={state.playerY} />
       <GameLoop tick={tick} changeLane={changeLane} jump={jump} phase={state.phase} />
 
-      <NightLighting />
-      <PlayerLight lane={state.lane} playerY={state.playerY} />
+      <CyberLighting />
 
-      {/* Brouillard nocturne — commence plus loin pour mieux voir la route */}
-      <fog attach="fog" args={["#0a1228", 40, 120]} />
+      {/* Brouillard cyberpunk dense — purple/magenta atmosphérique */}
+      <fog attach="fog" args={["#1a0828", 25, 90]} />
 
-      {/* Sol nuit */}
-      <mesh position={[0, -0.12, -40]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Sol nuit très sombre */}
+      <mesh position={[0, -0.12, -40]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[80, 200]} />
-        <meshStandardMaterial color="#0a0d08" roughness={1} />
+        <meshBasicMaterial color="#050410" toneMapped={false} />
       </mesh>
 
       <Scene />
@@ -161,7 +125,7 @@ export function Game() {
   const { profile, status } = useSupabaseSync(state.score, state.phase, state.playTime);
 
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#060d1f", overflow: "hidden" }}>
+    <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#0a0822", overflow: "hidden" }}>
       <KeyboardControls map={keyMap}>
         <Canvas
           flat

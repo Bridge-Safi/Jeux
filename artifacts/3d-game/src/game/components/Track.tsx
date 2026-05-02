@@ -1,5 +1,5 @@
 import { useRef, useMemo } from "react";
-import { useFrame, useLoader } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 const TRACK_LENGTH = 100;
@@ -10,271 +10,377 @@ interface TrackProps {
   speed: number;
 }
 
-/* ── Sol ville — texture Safi vue de haut, teinté chaud ─── */
-function CityGround({ speed }: { speed: number }) {
-  const sat = useLoader(THREE.TextureLoader, `${import.meta.env.BASE_URL}safi-satellite.png`);
-
-  useMemo(() => {
-    sat.wrapS = THREE.RepeatWrapping;
-    sat.wrapT = THREE.RepeatWrapping;
-    sat.repeat.set(1.5, 6);
-    sat.minFilter = THREE.LinearFilter;
-    sat.magFilter = THREE.LinearFilter;
-    // @ts-ignore
-    sat.colorSpace = THREE.SRGBColorSpace ?? sat.colorSpace;
-  }, [sat]);
-
-  useFrame((_, delta) => {
-    sat.offset.y -= speed * delta * 0.012;
-  });
-
-  return (
-    <mesh position={[0, -0.06, -50]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[60, 220]} />
-      <meshBasicMaterial map={sat} color="#9bb3d6" toneMapped={false} />
-    </mesh>
-  );
-}
-
-/* ── Voie ferrée : rails métalliques + traverses bois ────── */
-function Railway({ zOffset }: { zOffset: number }) {
-  const sleepers = Math.floor(SEG_LENGTH / 1.2);
-
-  return (
-    <group>
-      {/* Ballast (cailloux) sous les rails */}
-      <mesh position={[0, -0.04, zOffset + SEG_LENGTH / 2]}>
-        <boxGeometry args={[6.8, 0.04, SEG_LENGTH]} />
-        <meshBasicMaterial color="#5d4e37" />
-      </mesh>
-
-      {/* Rails métalliques (4 rails pour 3 voies) */}
-      {[-2.7, -0.95, 0.95, 2.7].map((rx, i) => (
-        <group key={i}>
-          <mesh position={[rx, 0.04, zOffset + SEG_LENGTH / 2]}>
-            <boxGeometry args={[0.12, 0.08, SEG_LENGTH]} />
-            <meshBasicMaterial color="#9e9e9e" toneMapped={false} />
-          </mesh>
-          {/* Reflet brillant sur le rail */}
-          <mesh position={[rx, 0.085, zOffset + SEG_LENGTH / 2]}>
-            <boxGeometry args={[0.06, 0.005, SEG_LENGTH]} />
-            <meshBasicMaterial color="#ffffff" toneMapped={false} />
-          </mesh>
-        </group>
-      ))}
-
-      {/* Traverses bois */}
-      {Array.from({ length: sleepers }, (_, i) => (
-        <mesh key={`sl${i}`} position={[0, -0.005, zOffset + i * 1.2 + 0.6]}>
-          <boxGeometry args={[6.4, 0.06, 0.35]} />
-          <meshBasicMaterial color="#4e342e" />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-/* ── Mur graffiti coloré (à côté de la voie) ─────────────── */
-function GraffitiWall({ side, zOffset }: { side: -1 | 1; zOffset: number }) {
-  const colors = ["#ff5252", "#ffd740", "#69f0ae", "#40c4ff", "#e040fb"];
-  const palette = useMemo(() => {
-    const p: string[] = [];
-    for (let i = 0; i < 8; i++) p.push(colors[Math.floor(Math.random() * colors.length)]);
-    return p;
-  }, []);
-
-  return (
-    <group position={[side * 4.5, 0, zOffset]}>
-      {/* Mur béton de base */}
-      <mesh position={[0, 1.3, SEG_LENGTH / 2]}>
-        <boxGeometry args={[0.3, 2.6, SEG_LENGTH]} />
-        <meshBasicMaterial color="#bdbdbd" toneMapped={false} />
-      </mesh>
-
-      {/* Bandeau noir en haut (style cartoon) */}
-      <mesh position={[0, 2.6, SEG_LENGTH / 2]}>
-        <boxGeometry args={[0.35, 0.1, SEG_LENGTH]} />
-        <meshBasicMaterial color="#1a1a1a" />
-      </mesh>
-
-      {/* Tags graffitis colorés */}
-      {Array.from({ length: 5 }, (_, i) => {
-        const tagZ = i * (SEG_LENGTH / 5) + 2;
-        const isLetters = i % 2 === 0;
-        return (
-          <group key={i} position={[side * 0.16, 1 + (i % 3) * 0.3, tagZ]}>
-            {/* Bulle / forme du tag */}
-            <mesh rotation={[0, side > 0 ? -Math.PI / 2 : Math.PI / 2, 0]}>
-              <planeGeometry args={[2.2, 0.7]} />
-              <meshBasicMaterial color={palette[i]} toneMapped={false} side={THREE.DoubleSide} />
-            </mesh>
-            {/* Contour cartoon noir */}
-            {isLetters && (
-              <>
-                <mesh position={[0, 0.32, 0]} rotation={[0, side > 0 ? -Math.PI / 2 : Math.PI / 2, 0]}>
-                  <planeGeometry args={[2.2, 0.05]} />
-                  <meshBasicMaterial color="#1a1a1a" side={THREE.DoubleSide} />
-                </mesh>
-                <mesh position={[0, -0.32, 0]} rotation={[0, side > 0 ? -Math.PI / 2 : Math.PI / 2, 0]}>
-                  <planeGeometry args={[2.2, 0.05]} />
-                  <meshBasicMaterial color="#1a1a1a" side={THREE.DoubleSide} />
-                </mesh>
-              </>
-            )}
-          </group>
-        );
-      })}
-    </group>
-  );
-}
-
-/* ── Poteau électrique avec câbles ───────────────────────── */
-function PowerPole({ x, z }: { x: number; z: number }) {
-  return (
-    <group position={[x, 0, z]}>
-      {/* Poteau bois */}
-      <mesh position={[0, 3, 0]}>
-        <cylinderGeometry args={[0.1, 0.14, 6, 6]} />
-        <meshBasicMaterial color="#5d4037" />
-      </mesh>
-      {/* Traverse horizontale */}
-      <mesh position={[0, 5.4, 0]}>
-        <boxGeometry args={[1.6, 0.12, 0.12]} />
-        <meshBasicMaterial color="#4e342e" />
-      </mesh>
-      {/* Isolateurs blancs */}
-      {[-0.6, 0, 0.6].map((ox, i) => (
-        <mesh key={i} position={[ox, 5.55, 0]}>
-          <cylinderGeometry args={[0.06, 0.06, 0.18, 6]} />
-          <meshBasicMaterial color="#fafafa" toneMapped={false} />
-        </mesh>
-      ))}
-      {/* Mini-lampe orange en haut */}
-      <mesh position={[0, 5.9, 0]}>
-        <boxGeometry args={[0.18, 0.18, 0.18]} />
-        <meshBasicMaterial color="#ffeb3b" toneMapped={false} />
-      </mesh>
-    </group>
-  );
-}
-
-/* ── Train ONCF stationné en arrière-plan ────────────────── */
-function ParkedTrain({ side, z }: { side: -1 | 1; z: number }) {
-  const x = side * 8;
-  const carColors = ["#e53935", "#1e88e5", "#fdd835", "#43a047"];
-
-  return (
-    <group position={[x, 0, z]}>
-      {[0, 1, 2, 3].map((i) => {
-        const c = carColors[i % carColors.length];
-        return (
-          <group key={i} position={[0, 0, i * 5.5 - 8]}>
-            {/* Corps wagon */}
-            <mesh position={[0, 1.3, 0]}>
-              <boxGeometry args={[2.2, 2.2, 5]} />
-              <meshBasicMaterial color={c} toneMapped={false} />
-            </mesh>
-            {/* Toit cartoon noir */}
-            <mesh position={[0, 2.45, 0]}>
-              <boxGeometry args={[2.25, 0.12, 5.05]} />
-              <meshBasicMaterial color="#1a1a1a" />
-            </mesh>
-            {/* Bande blanche horizontale */}
-            <mesh position={[side * 1.11, 1.7, 0]}>
-              <boxGeometry args={[0.02, 0.2, 4.8]} />
-              <meshBasicMaterial color="#ffffff" toneMapped={false} />
-            </mesh>
-            {/* Fenêtres */}
-            {[-1.5, -0.5, 0.5, 1.5].map((wz, j) => (
-              <mesh key={j} position={[side * 1.11, 1.95, wz]}>
-                <boxGeometry args={[0.02, 0.45, 0.7]} />
-                <meshBasicMaterial color="#fff59d" toneMapped={false} />
-              </mesh>
-            ))}
-            {/* Roues */}
-            {[-1.5, 1.5].map((wz, j) => (
-              <mesh key={j} position={[side * 1.0, 0.25, wz]} rotation={[0, 0, Math.PI / 2]}>
-                <cylinderGeometry args={[0.25, 0.25, 0.15, 10]} />
-                <meshBasicMaterial color="#212121" />
-              </mesh>
-            ))}
-          </group>
-        );
-      })}
-    </group>
-  );
-}
-
-/* ── Bande "route" GPS au-dessus du ballast ─────────────── */
-function RoadStripe({ zOffset }: { zOffset: number }) {
-  const dashCount = Math.floor(SEG_LENGTH / 4);
-
-  return (
-    <group>
-      {/* Bordures cyan glow GPS */}
-      <mesh position={[-3.4, 0.105, zOffset + SEG_LENGTH / 2]}>
-        <boxGeometry args={[0.16, 0.04, SEG_LENGTH]} />
-        <meshBasicMaterial color="#00e5ff" toneMapped={false} />
-      </mesh>
-      <mesh position={[3.4, 0.105, zOffset + SEG_LENGTH / 2]}>
-        <boxGeometry args={[0.16, 0.04, SEG_LENGTH]} />
-        <meshBasicMaterial color="#00e5ff" toneMapped={false} />
-      </mesh>
-
-      {/* Halo glow extérieur */}
-      <mesh position={[-3.4, 0.101, zOffset + SEG_LENGTH / 2]}>
-        <boxGeometry args={[0.55, 0.01, SEG_LENGTH]} />
-        <meshBasicMaterial color="#00bcd4" transparent opacity={0.35} toneMapped={false} />
-      </mesh>
-      <mesh position={[3.4, 0.101, zOffset + SEG_LENGTH / 2]}>
-        <boxGeometry args={[0.55, 0.01, SEG_LENGTH]} />
-        <meshBasicMaterial color="#00bcd4" transparent opacity={0.35} toneMapped={false} />
-      </mesh>
-
-      {/* Chevrons jaunes */}
-      {Array.from({ length: dashCount }, (_, i) => (
-        <group key={`arrow${i}`} position={[0, 0.115, zOffset + i * 4 + 1]}>
-          <mesh rotation={[-Math.PI / 2, 0, Math.PI / 4]}>
-            <planeGeometry args={[0.55, 0.16]} />
-            <meshBasicMaterial color="#ffeb3b" toneMapped={false} />
-          </mesh>
-          <mesh rotation={[-Math.PI / 2, 0, -Math.PI / 4]}>
-            <planeGeometry args={[0.55, 0.16]} />
-            <meshBasicMaterial color="#ffeb3b" toneMapped={false} />
-          </mesh>
-        </group>
-      ))}
-    </group>
-  );
-}
-
-/* ── Décorations urbaines par segment ────────────────────── */
-function StreetProps({ zOffset, segIdx }: { zOffset: number; segIdx: number }) {
-  const poles = useMemo(() => [
-    { x: -4.2, z: zOffset + 5 },
-    { x:  4.2, z: zOffset + 11 },
-    { x: -4.2, z: zOffset + 17 },
-    { x:  4.2, z: zOffset + 23 },
-  ], [zOffset]);
-
-  const trains = useMemo(() => {
-    if (segIdx % 2 === 0) return [{ side: -1 as const, z: zOffset + 12 }];
-    return [{ side: 1 as const, z: zOffset + 14 }];
-  }, [zOffset, segIdx]);
-
+/* ─────────────────────────────────────────────────────────────
+   ASPHALTE HUMIDE — sol sombre avec reflets néon
+   ───────────────────────────────────────────────────────────── */
+function WetAsphalt() {
   return (
     <>
-      <Railway zOffset={zOffset} />
-      <RoadStripe zOffset={zOffset} />
-      <GraffitiWall side={-1} zOffset={zOffset} />
-      <GraffitiWall side={ 1} zOffset={zOffset} />
-      {poles.map((p, i) => <PowerPole key={`pp${i}`} x={p.x} z={p.z} />)}
-      {trains.map((t, i) => <ParkedTrain key={`tr${i}`} side={t.side} z={t.z} />)}
+      {/* Asphalte principal très sombre */}
+      <mesh position={[0, -0.05, -50]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[14, 220]} />
+        <meshBasicMaterial color="#080812" toneMapped={false} />
+      </mesh>
+
+      {/* Bandeau de reflet humide central — style mouillé après pluie */}
+      <mesh position={[0, -0.045, -50]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[7, 220]} />
+        <meshBasicMaterial color="#1a1a2e" transparent opacity={0.6} toneMapped={false} />
+      </mesh>
+
+      {/* Trottoirs latéraux gris foncé */}
+      <mesh position={[-7.5, -0.04, -50]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[3, 220]} />
+        <meshBasicMaterial color="#0a0a14" toneMapped={false} />
+      </mesh>
+      <mesh position={[7.5, -0.04, -50]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[3, 220]} />
+        <meshBasicMaterial color="#0a0a14" toneMapped={false} />
+      </mesh>
     </>
   );
 }
 
-/* ── Track principal ───────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   NEON LANE STRIPS — bandes lumineuses entre les voies
+   ───────────────────────────────────────────────────────────── */
+function NeonStrips({ zOffset }: { zOffset: number }) {
+  return (
+    <group>
+      {/* 2 lignes cyan brillantes entre les voies */}
+      {[-1, 1].map((side, i) => (
+        <group key={i}>
+          <mesh position={[side, 0.005, zOffset + SEG_LENGTH / 2]}>
+            <boxGeometry args={[0.18, 0.02, SEG_LENGTH]} />
+            <meshBasicMaterial color="#00f0ff" toneMapped={false} />
+          </mesh>
+          {/* Halo glow autour */}
+          <mesh position={[side, 0.003, zOffset + SEG_LENGTH / 2]}>
+            <planeGeometry args={[0.7, SEG_LENGTH]} />
+            <meshBasicMaterial color="#00bcd4" transparent opacity={0.45} blending={THREE.AdditiveBlending} toneMapped={false} />
+          </mesh>
+          <mesh position={[side, 0.002, zOffset + SEG_LENGTH / 2]}>
+            <planeGeometry args={[1.6, SEG_LENGTH]} />
+            <meshBasicMaterial color="#00bcd4" transparent opacity={0.18} blending={THREE.AdditiveBlending} toneMapped={false} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Bordures externes magenta */}
+      {[-3.5, 3.5].map((side, i) => (
+        <group key={i}>
+          <mesh position={[side, 0.005, zOffset + SEG_LENGTH / 2]}>
+            <boxGeometry args={[0.22, 0.02, SEG_LENGTH]} />
+            <meshBasicMaterial color="#ff1493" toneMapped={false} />
+          </mesh>
+          <mesh position={[side, 0.003, zOffset + SEG_LENGTH / 2]}>
+            <planeGeometry args={[0.9, SEG_LENGTH]} />
+            <meshBasicMaterial color="#e91e63" transparent opacity={0.5} blending={THREE.AdditiveBlending} toneMapped={false} />
+          </mesh>
+          <mesh position={[side, 0.002, zOffset + SEG_LENGTH / 2]}>
+            <planeGeometry args={[2.0, SEG_LENGTH]} />
+            <meshBasicMaterial color="#ff1493" transparent opacity={0.15} blending={THREE.AdditiveBlending} toneMapped={false} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LAMPADAIRE SCI-FI — pylône avec sphère lumineuse
+   ───────────────────────────────────────────────────────────── */
+function SciFiLamp({ x, z, color }: { x: number; z: number; color: string }) {
+  return (
+    <group position={[x, 0, z]}>
+      {/* Mât métallique noir */}
+      <mesh position={[0, 3, 0]}>
+        <cylinderGeometry args={[0.08, 0.12, 6, 6]} />
+        <meshBasicMaterial color="#1a1a28" toneMapped={false} />
+      </mesh>
+      {/* Bras horizontal au sommet */}
+      <mesh position={[x > 0 ? -0.5 : 0.5, 6, 0]}>
+        <boxGeometry args={[1, 0.1, 0.1]} />
+        <meshBasicMaterial color="#1a1a28" toneMapped={false} />
+      </mesh>
+      {/* Sphère lumineuse centrale */}
+      <mesh position={[x > 0 ? -1 : 1, 5.7, 0]}>
+        <sphereGeometry args={[0.25, 10, 10]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
+      </mesh>
+      {/* Halo additif autour de la sphère */}
+      <mesh position={[x > 0 ? -1 : 1, 5.7, 0]}>
+        <sphereGeometry args={[0.55, 10, 10]} />
+        <meshBasicMaterial color={color} transparent opacity={0.4} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
+      <mesh position={[x > 0 ? -1 : 1, 5.7, 0]}>
+        <sphereGeometry args={[1.0, 10, 10]} />
+        <meshBasicMaterial color={color} transparent opacity={0.15} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
+      {/* Cône de lumière vers le sol */}
+      <mesh position={[x > 0 ? -1 : 1, 3, 0]}>
+        <coneGeometry args={[1.8, 5.5, 8, 1, true]} />
+        <meshBasicMaterial color={color} transparent opacity={0.08} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Reflet humide au sol */}
+      <mesh position={[x > 0 ? -1 : 1, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[2.2, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={0.18} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PANNEAU HOLO LATÉRAL — billboard publicitaire animé
+   ───────────────────────────────────────────────────────────── */
+function HoloBoard({ side, z, label, color }: { side: -1 | 1; z: number; label: string; color: string }) {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(() => {
+    if (ref.current) {
+      const t = Date.now() * 0.002;
+      const mat = ref.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.45 + Math.sin(t + z) * 0.15;
+    }
+  });
+  return (
+    <group position={[side * 6, 4, z]} rotation={[0, side > 0 ? -0.4 : 0.4, 0]}>
+      {/* Cadre métallique */}
+      <mesh position={[0, 0, -0.05]}>
+        <boxGeometry args={[3.2, 1.8, 0.1]} />
+        <meshBasicMaterial color="#0a0a18" toneMapped={false} />
+      </mesh>
+      {/* Écran néon */}
+      <mesh ref={ref}>
+        <planeGeometry args={[3, 1.6]} />
+        <meshBasicMaterial color={color} transparent opacity={0.55} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Reflet glow */}
+      <mesh position={[0, 0, 0.05]}>
+        <planeGeometry args={[4.5, 2.5]} />
+        <meshBasicMaterial color={color} transparent opacity={0.1} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Texte décoratif blanc */}
+      <mesh position={[0, 0, 0.06]}>
+        <planeGeometry args={[2.4, 0.4]} />
+        <meshBasicMaterial color="#ffffff" toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Petits points décoratifs */}
+      <mesh position={[-1.3, -0.6, 0.06]}>
+        <circleGeometry args={[0.08, 8]} />
+        <meshBasicMaterial color="#ffffff" toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[1.3, -0.6, 0.06]}>
+        <circleGeometry args={[0.08, 8]} />
+        <meshBasicMaterial color="#ffffff" toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BARRIÈRE DE SÉCURITÉ NÉON — guard rail futuriste
+   ───────────────────────────────────────────────────────────── */
+function NeonRail({ side, zOffset }: { side: -1 | 1; zOffset: number }) {
+  return (
+    <group position={[side * 4.6, 0, zOffset]}>
+      {/* Rail bas */}
+      <mesh position={[0, 0.4, SEG_LENGTH / 2]}>
+        <boxGeometry args={[0.15, 0.15, SEG_LENGTH]} />
+        <meshBasicMaterial color="#00f0ff" toneMapped={false} />
+      </mesh>
+      {/* Rail haut */}
+      <mesh position={[0, 1.2, SEG_LENGTH / 2]}>
+        <boxGeometry args={[0.15, 0.15, SEG_LENGTH]} />
+        <meshBasicMaterial color="#ff1493" toneMapped={false} />
+      </mesh>
+      {/* Halo glow vertical */}
+      <mesh position={[0, 0.8, SEG_LENGTH / 2]}>
+        <planeGeometry args={[0.6, SEG_LENGTH]} />
+        <meshBasicMaterial color="#00f0ff" transparent opacity={0.15} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
+      {/* Poteaux verticaux */}
+      {Array.from({ length: 4 }, (_, i) => (
+        <mesh key={i} position={[0, 0.8, i * (SEG_LENGTH / 4) + 3]}>
+          <boxGeometry args={[0.12, 1.4, 0.12]} />
+          <meshBasicMaterial color="#1a1a28" toneMapped={false} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CHEVRONS LUMINEUX ANIMÉS sur la chaussée centrale
+   ───────────────────────────────────────────────────────────── */
+function GlowingChevrons({ zOffset }: { zOffset: number }) {
+  const dashCount = Math.floor(SEG_LENGTH / 5);
+  return (
+    <>
+      {Array.from({ length: dashCount }, (_, i) => (
+        <group key={i} position={[0, 0.01, zOffset + i * 5 + 1]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.6, 1.4]} />
+            <meshBasicMaterial color="#ffeb3b" toneMapped={false} />
+          </mesh>
+          {/* Glow halo additif */}
+          <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[1.4, 2.2]} />
+            <meshBasicMaterial color="#ffeb3b" transparent opacity={0.35} blending={THREE.AdditiveBlending} toneMapped={false} />
+          </mesh>
+        </group>
+      ))}
+    </>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BÂTIMENTS LATÉRAUX SCI-FI — passage rapide
+   ───────────────────────────────────────────────────────────── */
+function SciFiBuilding({ side, z, h, color, accentCol }: {
+  side: -1 | 1; z: number; h: number; color: string; accentCol: string;
+}) {
+  const x = side * 9.5;
+  return (
+    <group position={[x, 0, z]}>
+      {/* Corps principal */}
+      <mesh position={[0, h / 2, 0]}>
+        <boxGeometry args={[4, h, 4]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
+      </mesh>
+      {/* Bandes verticales néon */}
+      {[-1.5, 0, 1.5].map((bx, i) => (
+        <mesh key={i} position={[bx, h / 2, side > 0 ? -2.05 : 2.05]}>
+          <boxGeometry args={[0.08, h * 0.85, 0.02]} />
+          <meshBasicMaterial color={accentCol} toneMapped={false} />
+        </mesh>
+      ))}
+      {/* Bandeau lumineux horizontal en bas */}
+      <mesh position={[0, 0.4, side > 0 ? -2.05 : 2.05]}>
+        <boxGeometry args={[3.8, 0.15, 0.02]} />
+        <meshBasicMaterial color={accentCol} toneMapped={false} />
+      </mesh>
+      {/* Halo global de la façade */}
+      <mesh position={[0, h / 2, side > 0 ? -2.1 : 2.1]}>
+        <planeGeometry args={[5, h * 1.05]} />
+        <meshBasicMaterial color={accentCol} transparent opacity={0.1} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Toit avec antenne */}
+      <mesh position={[0, h + 0.4, 0]}>
+        <boxGeometry args={[3.5, 0.4, 3.5]} />
+        <meshBasicMaterial color="#0a0a14" toneMapped={false} />
+      </mesh>
+      <mesh position={[0, h + 1.5, 0]}>
+        <boxGeometry args={[0.06, 2, 0.06]} />
+        <meshBasicMaterial color="#1a1a28" toneMapped={false} />
+      </mesh>
+      <mesh position={[0, h + 2.5, 0]}>
+        <sphereGeometry args={[0.15, 6, 6]} />
+        <meshBasicMaterial color="#ff1744" toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ARCHE NÉON — porte sci-fi qui enjambe la route
+   ───────────────────────────────────────────────────────────── */
+function NeonArch({ z, color }: { z: number; color: string }) {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(() => {
+    if (ref.current) {
+      const t = Date.now() * 0.004;
+      const mat = ref.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.7 + Math.sin(t) * 0.25;
+    }
+  });
+
+  return (
+    <group position={[0, 0, z]}>
+      {/* Pied gauche */}
+      <mesh position={[-4, 4, 0]}>
+        <boxGeometry args={[0.5, 8, 0.5]} />
+        <meshBasicMaterial color="#0a0a18" toneMapped={false} />
+      </mesh>
+      {/* Pied droit */}
+      <mesh position={[4, 4, 0]}>
+        <boxGeometry args={[0.5, 8, 0.5]} />
+        <meshBasicMaterial color="#0a0a18" toneMapped={false} />
+      </mesh>
+      {/* Traverse haute */}
+      <mesh position={[0, 8.2, 0]}>
+        <boxGeometry args={[8.5, 0.6, 0.6]} />
+        <meshBasicMaterial color="#0a0a18" toneMapped={false} />
+      </mesh>
+      {/* Néon strip horizontal */}
+      <mesh ref={ref} position={[0, 8.2, 0.32]}>
+        <boxGeometry args={[8.4, 0.18, 0.05]} />
+        <meshBasicMaterial color={color} transparent opacity={0.85} toneMapped={false} />
+      </mesh>
+      {/* Néon vertical gauche */}
+      <mesh position={[-4, 4, 0.27]}>
+        <boxGeometry args={[0.18, 7.8, 0.05]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
+      </mesh>
+      {/* Néon vertical droit */}
+      <mesh position={[4, 4, 0.27]}>
+        <boxGeometry args={[0.18, 7.8, 0.05]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
+      </mesh>
+      {/* Halo arc */}
+      <mesh position={[0, 8.2, 0.5]}>
+        <planeGeometry args={[10, 1.2]} />
+        <meshBasicMaterial color={color} transparent opacity={0.3} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Logo central style holo */}
+      <mesh position={[0, 8.2, 0.4]}>
+        <circleGeometry args={[0.6, 6]} />
+        <meshBasicMaterial color="#ffffff" toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PROPS PAR SEGMENT
+   ───────────────────────────────────────────────────────────── */
+function StreetProps({ zOffset, segIdx }: { zOffset: number; segIdx: number }) {
+  const lampColor = segIdx % 2 === 0 ? "#ff1493" : "#00f0ff";
+  const accent2 = segIdx % 2 === 0 ? "#00f0ff" : "#ff1493";
+  const archColor = segIdx % 3 === 0 ? "#39ff14" : segIdx % 3 === 1 ? "#00f0ff" : "#ff1493";
+
+  return (
+    <>
+      <NeonStrips zOffset={zOffset} />
+      <GlowingChevrons zOffset={zOffset} />
+      <NeonRail side={-1} zOffset={zOffset} />
+      <NeonRail side={ 1} zOffset={zOffset} />
+
+      {/* Lampadaires sci-fi alternés */}
+      <SciFiLamp x={-4.5} z={zOffset + 6}  color={lampColor} />
+      <SciFiLamp x={ 4.5} z={zOffset + 12} color={accent2} />
+      <SciFiLamp x={-4.5} z={zOffset + 18} color={accent2} />
+      <SciFiLamp x={ 4.5} z={zOffset + 24} color={lampColor} />
+
+      {/* Arche sci-fi tous les 2 segments */}
+      {segIdx % 2 === 0 && <NeonArch z={zOffset + 14} color={archColor} />}
+
+      {/* Bâtiments latéraux */}
+      <SciFiBuilding side={-1} z={zOffset + 8}  h={9 + (segIdx % 3) * 3} color="#0a0814" accentCol={lampColor} />
+      <SciFiBuilding side={ 1} z={zOffset + 14} h={11 + (segIdx % 2) * 4} color="#0a0a18" accentCol={accent2} />
+      <SciFiBuilding side={-1} z={zOffset + 20} h={8 + (segIdx % 4) * 2} color="#080812" accentCol={accent2} />
+      <SciFiBuilding side={ 1} z={zOffset + 5}  h={13 + (segIdx % 2) * 2} color="#0a0814" accentCol={lampColor} />
+
+      {/* Holo-boards */}
+      <HoloBoard side={-1} z={zOffset + 11} label="SAFI" color={lampColor} />
+      <HoloBoard side={ 1} z={zOffset + 22} label="BRIDGE" color={accent2} />
+    </>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TRACK PRINCIPAL — défilement infini
+   ───────────────────────────────────────────────────────────── */
 export function Track({ speed }: TrackProps) {
   const groupRef = useRef<THREE.Group>(null);
 
@@ -296,7 +402,7 @@ export function Track({ speed }: TrackProps) {
 
   return (
     <>
-      <CityGround speed={speed} />
+      <WetAsphalt />
       <group ref={groupRef}>
         {segmentOffsets.map((offset, idx) => (
           <group key={offset}>
