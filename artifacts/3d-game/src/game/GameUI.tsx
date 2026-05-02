@@ -109,15 +109,17 @@ const WA_PREFILL = encodeURIComponent(
 );
 export const WHATSAPP_URL = `https://wa.me/${BRIDGE_EATS_WHATSAPP}?text=${WA_PREFILL}`;
 
-/* ─── Cluster de boutons flottants TOUJOURS visibles ──────────
-   Position : haut-droite, fixé à l'écran, par-dessus le canvas 3D
-   et toutes les UIs. 2 raccourcis : Bridge Eats + WhatsApp. */
+/* ─── Cluster de boutons flottants — visibles UNIQUEMENT en jeu ──
+   Position : milieu-droit, au-dessus du canvas 3D mais en dessous
+   des overlays (instructions, start, game-over, menu unlock).
+   Volontairement masqués sur les écrans plein-contenu pour ne PAS
+   recouvrir les boutons existants ("Démarrer", "Rejouer", etc.). */
 function FloatingActions() {
   const baseBtn: React.CSSProperties = {
-    width: 52, height: 52, borderRadius: "50%",
+    width: 48, height: 48, borderRadius: "50%",
     border: "2px solid rgba(255,255,255,0.3)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 26, cursor: "pointer", textDecoration: "none",
+    fontSize: 22, cursor: "pointer", textDecoration: "none",
     boxShadow: "0 6px 18px rgba(0,0,0,0.45)",
     transition: "transform 0.15s, box-shadow 0.15s",
     backdropFilter: "blur(8px)",
@@ -126,10 +128,11 @@ function FloatingActions() {
     <div
       style={{
         position: "fixed",
-        top: "max(12px, env(safe-area-inset-top, 12px))",
-        right: "max(12px, env(safe-area-inset-right, 12px))",
+        top: "50%",
+        right: "max(10px, env(safe-area-inset-right, 10px))",
+        transform: "translateY(-50%)",
         display: "flex", flexDirection: "column", gap: 10,
-        zIndex: 9999,
+        zIndex: 30,
         pointerEvents: "auto",
       }}
     >
@@ -1211,8 +1214,12 @@ export function GameUI({
         }
       `}</style>
 
-      {/* Boutons flottants TOUJOURS accessibles : Bridge Eats + WhatsApp */}
-      <FloatingActions />
+      {/* Boutons flottants — uniquement pendant le jeu pour ne PAS
+          se superposer aux écrans qui ont déjà leurs propres boutons
+          (instructions, start, game-over, réclamation menu). */}
+      {phase === "playing" && !showReward && !showInstructions && (
+        <FloatingActions />
+      )}
 
       {showReward && (
         <MenuUnlockOverlay
