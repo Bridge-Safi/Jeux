@@ -73,11 +73,24 @@ function GameLoop({
   return null;
 }
 
+function PlayerLight({ lane, playerY }: { lane: number; playerY: number }) {
+  const LANE_X = [-2, 0, 2];
+  const x = LANE_X[lane + 1];
+  return (
+    <>
+      {/* Spot blanc puissant sur le joueur */}
+      <pointLight position={[x, playerY + 5, 1]} color="#ffffff" intensity={8} distance={14} />
+      {/* Halo doré au sol sous le joueur */}
+      <pointLight position={[x, playerY + 0.3, 0]} color="#ffd700" intensity={3} distance={6} />
+    </>
+  );
+}
+
 function NightLighting() {
   return (
     <>
-      {/* Ambiance nuit — assez forte pour voir les détails */}
-      <ambientLight intensity={0.35} color="#2a3a6e" />
+      {/* Ambiance nuit — forte pour voir les détails */}
+      <ambientLight intensity={0.55} color="#4a5a9e" />
 
       {/* Lune — lumière principale froide */}
       <directionalLight
@@ -122,9 +135,10 @@ function GameScene({ state, tick, changeLane, jump }: ReturnType<typeof useGameS
       <GameLoop tick={tick} changeLane={changeLane} jump={jump} phase={state.phase} />
 
       <NightLighting />
+      <PlayerLight lane={state.lane} playerY={state.playerY} />
 
       {/* Brouillard nocturne — commence plus loin pour mieux voir la route */}
-      <fog attach="fog" args={["#060d1f", 35, 110]} />
+      <fog attach="fog" args={["#0a1228", 40, 120]} />
 
       {/* Sol nuit */}
       <mesh position={[0, -0.12, -40]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
@@ -154,7 +168,7 @@ export function Game() {
           shadows
           camera={{ fov: 68, near: 0.1, far: 200, position: [0, 3.8, 7] }}
           style={{ width: "100%", height: "100%" }}
-          gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+          gl={{ antialias: true, toneMapping: THREE.LinearToneMapping, toneMappingExposure: 2.2 }}
         >
           <GameScene state={state} tick={tick} changeLane={changeLane} jump={jump} startGame={startGame} resumeGame={resumeGame} />
         </Canvas>

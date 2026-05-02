@@ -401,6 +401,90 @@ function MenuUnlockOverlay({ menusCount, onClose }: { menusCount: number; onClos
   );
 }
 
+/* ─── Écran d'instructions (1ère fois) ──────────────────────── */
+function InstructionsScreen({ onStart }: { onStart: () => void }) {
+  const handlePlay = () => {
+    localStorage.setItem("safi_runner_saw_instructions", "1");
+    onStart();
+  };
+  return (
+    <div style={{
+      position: "absolute", inset: 0, zIndex: 50, pointerEvents: "auto",
+      background: "rgba(0,5,20,0.97)",
+      display: "flex", flexDirection: "column", alignItems: "center",
+    }}>
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 10,
+        overflowY: "auto", overflowX: "hidden",
+        WebkitOverflowScrolling: "touch" as never,
+        display: "flex", flexDirection: "column", alignItems: "center",
+        padding: "24px 20px 32px",
+      }}>
+        {/* Titre */}
+        <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", marginBottom: 4, textAlign: "center" }}>
+          🦈 COMMENT JOUER
+        </div>
+        <div style={{ fontSize: 12, color: "#90caf9", marginBottom: 20, letterSpacing: 2 }}>SAFI RUNNER</div>
+
+        {/* Contrôles */}
+        <div style={{ width: "100%", maxWidth: 420, marginBottom: 16 }}>
+          {[
+            { icon: "◀ ▶", label: "Changer de voie", desc: "Boutons GAUCHE / DROITE ou flèches clavier" },
+            { icon: "▲", label: "Sauter", desc: "Bouton SAUTER, flèche ↑ ou Espace" },
+            { icon: "💎", label: "Collecte les diamants", desc: "Cours sur les diamants bleus pour les ramasser" },
+            { icon: "🚧", label: "Évite les obstacles", desc: "Change de voie ou saute par-dessus" },
+          ].map((c, i) => (
+            <div key={i} style={{
+              display: "flex", gap: 14, alignItems: "center",
+              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 14, padding: "12px 16px", marginBottom: 10,
+            }}>
+              <div style={{ fontSize: 24, minWidth: 40, textAlign: "center" }}>{c.icon}</div>
+              <div>
+                <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{c.label}</div>
+                <div style={{ color: "#aaa", fontSize: 12, marginTop: 2 }}>{c.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Système de récompenses */}
+        <div style={{
+          width: "100%", maxWidth: 420,
+          background: "rgba(255,140,0,0.12)", border: "1px solid rgba(255,140,0,0.35)",
+          borderRadius: 16, padding: "14px 18px", marginBottom: 16,
+        }}>
+          <div style={{ color: "#ffa726", fontWeight: 800, fontSize: 14, marginBottom: 8 }}>
+            🛵🚕 Système Bridge Eats
+          </div>
+          {[
+            "Collecte 500 💎 = 1 menu gratuit Bridge Eats",
+            "Pause publicitaire toutes les 40 secondes",
+            "Quiz culture marocaine à chaque pause",
+            "Score classement mondial en ligne",
+          ].map((t, i) => (
+            <div key={i} style={{ color: "#e0e0e0", fontSize: 13, marginBottom: 4 }}>✓ {t}</div>
+          ))}
+        </div>
+
+        {/* Bouton jouer */}
+        <button
+          onClick={handlePlay}
+          style={{
+            background: "linear-gradient(135deg,#1565c0,#42a5f5)",
+            color: "#fff", border: "none", borderRadius: 50,
+            padding: "16px 52px", fontSize: 20, fontWeight: 900,
+            cursor: "pointer", letterSpacing: 3, width: "100%", maxWidth: 340,
+            boxShadow: "0 0 30px #1565c088",
+          }}
+        >
+          ▶ LANCER LE JEU
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Écran de démarrage ─────────────────────────────────────── */
 function StartScreen({ onStart, totalDiamonds }: { onStart: () => void; totalDiamonds: number }) {
   const menusEarned = Math.floor(totalDiamonds / DIAMONDS_PER_MENU);
@@ -676,7 +760,22 @@ export function GameUI({
   totalDiamonds, onStart, onRestart, onChangeLane, onJump,
 }: GameUIProps) {
   const [showReward, setShowReward] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const prevMenuCountRef = useRef(Math.floor(totalDiamonds / DIAMONDS_PER_MENU));
+
+  const handleStart = () => {
+    const saw = localStorage.getItem("safi_runner_saw_instructions");
+    if (!saw) {
+      setShowInstructions(true);
+    } else {
+      onStart();
+    }
+  };
+
+  const handleInstructionsDone = () => {
+    setShowInstructions(false);
+    onStart();
+  };
 
   const sessionDiamonds = Math.floor(score / 10);
   const totalNow = totalDiamonds + sessionDiamonds;
@@ -706,9 +805,14 @@ export function GameUI({
         />
       )}
 
+      {/* Instructions (1ère fois) */}
+      {showInstructions && (
+        <InstructionsScreen onStart={handleInstructionsDone} />
+      )}
+
       {/* Écran démarrage */}
-      {phase === "start" && !showReward && (
-        <StartScreen onStart={onStart} totalDiamonds={totalDiamonds} />
+      {phase === "start" && !showReward && !showInstructions && (
+        <StartScreen onStart={handleStart} totalDiamonds={totalDiamonds} />
       )}
 
       {/* Game Over */}

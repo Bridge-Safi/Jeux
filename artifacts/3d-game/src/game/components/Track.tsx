@@ -15,10 +15,10 @@ function RoadSegment({ zOffset }: { zOffset: number }) {
 
   return (
     <group>
-      {/* Asphalte nuit — plus sombre avec reflets */}
+      {/* Asphalte nuit — gris visible avec reflets humides */}
       <mesh position={[0, -0.02, zOffset + SEG_LENGTH / 2]} receiveShadow>
         <boxGeometry args={[7, 0.04, SEG_LENGTH]} />
-        <meshStandardMaterial color="#1a1a1a" roughness={0.7} metalness={0.1} />
+        <meshStandardMaterial color="#2a2e38" roughness={0.5} metalness={0.25} />
       </mesh>
 
       {/* Trottoir gauche — pierres de Safi */}
@@ -57,18 +57,18 @@ function RoadSegment({ zOffset }: { zOffset: number }) {
         <meshStandardMaterial color="#4a3518" roughness={0.85} />
       </mesh>
 
-      {/* Ligne de voie gauche — blanche lumineuse */}
+      {/* Ligne de voie gauche — néon blanc */}
       {Array.from({ length: dashCount }, (_, i) => (
         <mesh key={`ll${i}`} position={[-1.17, 0.01, zOffset + i * 4 + 1]}>
-          <boxGeometry args={[0.1, 0.02, 2.2]} />
-          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.3} roughness={0.4} />
+          <boxGeometry args={[0.12, 0.03, 2.4]} />
+          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.8} roughness={0.2} />
         </mesh>
       ))}
       {/* Ligne de voie droite */}
       {Array.from({ length: dashCount }, (_, i) => (
         <mesh key={`rl${i}`} position={[1.17, 0.01, zOffset + i * 4 + 1]}>
-          <boxGeometry args={[0.1, 0.02, 2.2]} />
-          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.3} roughness={0.4} />
+          <boxGeometry args={[0.12, 0.03, 2.4]} />
+          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.8} roughness={0.2} />
         </mesh>
       ))}
 
