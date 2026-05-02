@@ -100,6 +100,65 @@ function NFSButton({ icon, onClick, glow, size = 76, accent = "#00f0ff" }: {
   );
 }
 
+/* ─── WhatsApp Bridge Eats — modifiable ──────────────────────────
+   Numéro WhatsApp Business à atteindre depuis le jeu (format international
+   sans + ni espaces, conformément à wa.me). À remplacer par le vrai n°. */
+export const BRIDGE_EATS_WHATSAPP = "212600000000";
+const WA_PREFILL = encodeURIComponent(
+  "Salam ! J'arrive depuis le jeu Safi Runner 🦈🎮"
+);
+export const WHATSAPP_URL = `https://wa.me/${BRIDGE_EATS_WHATSAPP}?text=${WA_PREFILL}`;
+
+/* ─── Cluster de boutons flottants TOUJOURS visibles ──────────
+   Position : haut-droite, fixé à l'écran, par-dessus le canvas 3D
+   et toutes les UIs. 2 raccourcis : Bridge Eats + WhatsApp. */
+function FloatingActions() {
+  const baseBtn: React.CSSProperties = {
+    width: 52, height: 52, borderRadius: "50%",
+    border: "2px solid rgba(255,255,255,0.3)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 26, cursor: "pointer", textDecoration: "none",
+    boxShadow: "0 6px 18px rgba(0,0,0,0.45)",
+    transition: "transform 0.15s, box-shadow 0.15s",
+    backdropFilter: "blur(8px)",
+  };
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: "max(12px, env(safe-area-inset-top, 12px))",
+        right: "max(12px, env(safe-area-inset-right, 12px))",
+        display: "flex", flexDirection: "column", gap: 10,
+        zIndex: 9999,
+        pointerEvents: "auto",
+      }}
+    >
+      <a
+        href={BRIDGE_EATS_URL}
+        title="Bridge Eats"
+        aria-label="Ouvrir Bridge Eats"
+        style={{ ...baseBtn, background: "linear-gradient(135deg,#b71c1c,#e53935)", color: "#fff" }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        <span aria-hidden>🛵</span>
+      </a>
+      <a
+        href={WHATSAPP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="WhatsApp Bridge Eats"
+        aria-label="Contacter sur WhatsApp"
+        style={{ ...baseBtn, background: "linear-gradient(135deg,#25d366,#128c7e)", color: "#fff" }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        <span aria-hidden>💬</span>
+      </a>
+    </div>
+  );
+}
+
 /* ─── Bouton Bridge Eats ─────────────────────────────────────── */
 function BridgeEatsButton({ variant = "light" }: { variant?: "light" | "dark" }) {
   const isDark = variant === "dark";
@@ -1151,6 +1210,9 @@ export function GameUI({
           50%{box-shadow:0 0 50px #42a5f5cc,0 8px 32px rgba(0,0,0,0.7)}
         }
       `}</style>
+
+      {/* Boutons flottants TOUJOURS accessibles : Bridge Eats + WhatsApp */}
+      <FloatingActions />
 
       {showReward && (
         <MenuUnlockOverlay
