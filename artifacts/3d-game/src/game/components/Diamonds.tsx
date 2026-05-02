@@ -7,10 +7,9 @@ const LANE_X = [-2, 0, 2];
 
 /* Pièce d'or cyberpunk — bloom multicouches additif */
 function GoldCoin({ x, z }: { x: number; z: number }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef  = useRef<THREE.Mesh>(null);
   const ringRef1 = useRef<THREE.Mesh>(null);
   const ringRef2 = useRef<THREE.Mesh>(null);
-  const beamRef = useRef<THREE.Mesh>(null);
 
   useFrame(() => {
     const t = Date.now() * 0.005;
@@ -19,40 +18,12 @@ function GoldCoin({ x, z }: { x: number; z: number }) {
       meshRef.current.rotation.y += 0.18;
       meshRef.current.position.y = y;
     }
-    if (ringRef1.current) {
-      ringRef1.current.rotation.z += 0.04;
-      ringRef1.current.position.y = y;
-    }
-    if (ringRef2.current) {
-      ringRef2.current.rotation.z -= 0.03;
-      ringRef2.current.position.y = y;
-    }
-    if (beamRef.current) {
-      const mat = beamRef.current.material as THREE.MeshBasicMaterial;
-      mat.opacity = 0.25 + Math.sin(t * 4) * 0.1;
-    }
+    if (ringRef1.current) { ringRef1.current.rotation.z += 0.04; ringRef1.current.position.y = y; }
+    if (ringRef2.current) { ringRef2.current.rotation.z -= 0.03; ringRef2.current.position.y = y; }
   });
 
   return (
     <group position={[x, 0, z]}>
-      {/* Faisceau vertical de lumière qui traverse la pièce */}
-      <mesh ref={beamRef} position={[0, 1.5, 0]}>
-        <cylinderGeometry args={[0.12, 0.5, 4, 8, 1, true]} />
-        <meshBasicMaterial color="#ffd700" transparent opacity={0.3} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
-      </mesh>
-
-      {/* Halo extérieur très large */}
-      <mesh position={[0, 1.0, 0]}>
-        <sphereGeometry args={[1.0, 12, 12]} />
-        <meshBasicMaterial color="#ff8c00" transparent opacity={0.08} blending={THREE.AdditiveBlending} toneMapped={false} />
-      </mesh>
-
-      {/* Halo médian doré */}
-      <mesh position={[0, 1.0, 0]}>
-        <sphereGeometry args={[0.65, 12, 12]} />
-        <meshBasicMaterial color="#ffd700" transparent opacity={0.18} blending={THREE.AdditiveBlending} toneMapped={false} />
-      </mesh>
-
       {/* Pièce dorée brillante */}
       <mesh ref={meshRef} position={[0, 1.0, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.36, 0.36, 0.07, 16]} />
@@ -69,17 +40,6 @@ function GoldCoin({ x, z }: { x: number; z: number }) {
       <mesh ref={ringRef2} position={[0, 1.0, 0]} rotation={[Math.PI / 3, 0, 0]}>
         <ringGeometry args={[0.62, 0.7, 24, 1]} />
         <meshBasicMaterial color="#ff1493" transparent opacity={0.6} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
-      </mesh>
-
-      {/* Disque réflexion dorée au sol */}
-      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.9, 16]} />
-        <meshBasicMaterial color="#ffa000" transparent opacity={0.4} blending={THREE.AdditiveBlending} toneMapped={false} />
-      </mesh>
-      {/* Plus large halo au sol */}
-      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[1.5, 16]} />
-        <meshBasicMaterial color="#ffd700" transparent opacity={0.18} blending={THREE.AdditiveBlending} toneMapped={false} />
       </mesh>
     </group>
   );

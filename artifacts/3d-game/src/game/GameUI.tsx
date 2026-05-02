@@ -380,7 +380,7 @@ function TouchControls({ onChangeLane, onJump }: {
   return (
     <>
       <SwipeArea onChangeLane={onChangeLane} onJump={onJump} />
-      <div style={{
+      <div dir="ltr" style={{
         position: "absolute", bottom: 22, left: 0, right: 0,
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "0 24px", pointerEvents: "none", zIndex: 20,

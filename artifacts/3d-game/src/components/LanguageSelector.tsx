@@ -57,9 +57,9 @@ export function LanguageSelector({ position = "topRight" }: Props) {
       {open && (
         <div
           style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            right: 0,
+            position: "fixed",
+            top: 56,
+            right: 14,
             background: "rgba(10,15,30,0.96)",
             backdropFilter: "blur(14px)",
             WebkitBackdropFilter: "blur(14px)",
@@ -71,6 +71,7 @@ export function LanguageSelector({ position = "topRight" }: Props) {
             display: "flex",
             flexDirection: "column",
             gap: 2,
+            zIndex: 9999,
           }}
         >
           {LANGS.map((l) => {
