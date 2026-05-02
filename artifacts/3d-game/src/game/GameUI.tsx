@@ -848,7 +848,7 @@ function StartScreen({ onStart, eligibility, onClaim }: {
       backgroundImage: "url(/assets/shark-warrior-night.jpeg)",
       backgroundSize: "cover", backgroundPosition: "center top",
     }}>
-      {/* Voile sombre teinté vert (au lieu de bleu) */}
+      {/* Voile sombre teinté vert (mêmes tons que la médina nocturne) */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
         background: "linear-gradient(to bottom,rgba(0,30,15,0.45) 0%,rgba(0,20,10,0.7) 35%,rgba(0,15,8,0.94) 65%,rgba(0,10,5,0.99) 100%)",
@@ -871,48 +871,64 @@ function StartScreen({ onStart, eligibility, onClaim }: {
 
           {/* Avatar circulaire avec anneau vert + badge LIVE */}
           <div style={{
-            position: "relative", width: 156, height: 156, margin: "0 auto 14px",
+            position: "relative", width: 168, height: 168, margin: "0 auto 18px",
           }}>
             <div style={{
-              position: "absolute", inset: -6, borderRadius: "50%",
+              position: "absolute", inset: -8, borderRadius: "50%",
               background: "conic-gradient(from 0deg,#00e676,#00c853,#69f0ae,#00e676)",
               animation: "spin 6s linear infinite",
               filter: "blur(0.5px)",
-              opacity: 0.9,
+              opacity: 0.95,
             }} />
             <div style={{
               position: "absolute", inset: 0, borderRadius: "50%",
-              border: "3px solid rgba(0,230,118,0.85)",
+              border: "4px solid rgba(0,230,118,0.9)",
               background: "url(/assets/shark-warrior-night.jpeg) center/cover",
-              boxShadow: "0 0 32px rgba(0,230,118,0.55), 0 0 0 6px rgba(0,30,15,0.85) inset",
+              boxShadow: "0 0 36px rgba(0,230,118,0.6), 0 0 0 6px rgba(0,30,15,0.85) inset",
             }} />
             <div style={{
-              position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)",
+              position: "absolute", bottom: -6, left: "50%", transform: "translateX(-50%)",
               background: "linear-gradient(135deg,#00c853,#00e676)",
-              color: "#003311", fontWeight: 900, fontSize: 10, letterSpacing: 1.5,
-              padding: "3px 12px", borderRadius: 12,
-              boxShadow: "0 4px 12px rgba(0,200,80,0.55)",
+              color: "#003311", fontWeight: 900, fontSize: 11, letterSpacing: 1.5,
+              padding: "4px 14px", borderRadius: 14,
+              boxShadow: "0 4px 14px rgba(0,200,80,0.6)",
+              whiteSpace: "nowrap",
             }}>● LIVE</div>
           </div>
 
-          {/* Titre SAFI RUNNER */}
+          {/* Titre SAFI RUNNER — style comic avec icône requin */}
           <div style={{
-            fontFamily: "'Bangers', sans-serif",
-            fontSize: "clamp(38px,11vw,54px)", letterSpacing: 4, color: "#ffeb3b",
-            textShadow: "3px 3px 0 #003311, 6px 6px 0 #00c853, 0 0 40px rgba(0,230,118,0.5)",
-            lineHeight: 1, marginBottom: 2, transform: "rotate(-2deg)",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+            marginBottom: 6,
           }}>
-            {t("start.title")}
+            <span style={{ fontSize: "clamp(28px,7vw,38px)", filter: "drop-shadow(0 2px 8px rgba(0,230,118,0.6))" }} aria-hidden>🦈</span>
+            <div style={{
+              fontFamily: "'Bangers','Bowlby One SC','Impact',sans-serif",
+              fontSize: "clamp(44px,12vw,64px)",
+              letterSpacing: 3,
+              color: "#fff8b0",
+              WebkitTextStroke: "1.5px #1b3d1f",
+              textShadow: [
+                "2px 2px 0 #1b3d1f",
+                "4px 4px 0 #00c853",
+                "5px 5px 0 #1b3d1f",
+                "0 0 38px rgba(0,230,118,0.55)",
+              ].join(", "),
+              lineHeight: 1, transform: "rotate(-2deg) skew(-3deg,0)",
+              fontWeight: 900,
+            }}>
+              {t("start.title")}
+            </div>
           </div>
           <div style={{
-            display: "inline-block",
-            fontSize: 11, color: "#69f0ae", marginBottom: 16, letterSpacing: 3,
+            display: "inline-flex", alignItems: "center", gap: 10,
+            fontSize: 11, color: "#cfeed9", marginBottom: 18, letterSpacing: 3,
             fontWeight: 700, textTransform: "uppercase",
-            borderTop: "1px solid rgba(0,230,118,0.4)",
-            borderBottom: "1px solid rgba(0,230,118,0.4)",
-            padding: "3px 10px",
+            padding: "3px 4px",
           }}>
-            ─ {t("start.subtitle")} ─
+            <span style={{ display: "inline-block", width: 22, height: 1, background: "linear-gradient(90deg,transparent,#69f0ae)" }} />
+            <span>{t("start.subtitle")}</span>
+            <span style={{ display: "inline-block", width: 22, height: 1, background: "linear-gradient(90deg,#69f0ae,transparent)" }} />
           </div>
 
           {/* Cartes ID JOUEUR + SESSION (style Bridge Shark) */}
