@@ -356,6 +356,11 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility 
   const timeToNext = Math.max(0, Math.ceil(nextCheckpointAt - playTime));
   const progress = Math.min(1, (40 - timeToNext) / 40);
   const sessionDiamonds = Math.floor(score / 10);
+  /* Total = diamants persistés (depuis Bridge Eats / Supabase) + ceux gagnés
+     en live cette session. Ce nombre est IDENTIQUE à celui affiché dans la
+     carte "MES DIAMANTS" sur l'écran d'accueil Bridge Eats (voir StartScreen
+     `eligibility.diamondsCollected`). */
+  const totalDiamonds = (eligibility.diamondsCollected ?? 0) + sessionDiamonds;
 
   return (
     <div style={{
@@ -364,7 +369,7 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility 
       display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8,
       pointerEvents: "none",
     }}>
-      {/* Diamants session — gros compteur très visible */}
+      {/* Diamants TOTAL (cumul Bridge Eats + session live) — gros compteur visible */}
       <div style={{
         background: "linear-gradient(135deg,rgba(0,30,60,0.88),rgba(10,40,90,0.9))",
         backdropFilter: "blur(10px)",
@@ -385,7 +390,14 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility 
             color: "#fff", fontSize: 44, fontWeight: 900, lineHeight: 1,
             textShadow: "0 2px 0 #002040, 0 0 24px #4fc3f7, 0 0 40px rgba(100,200,255,0.5)",
             fontFamily: "'Bangers', sans-serif", letterSpacing: 1,
-          }}>{sessionDiamonds}</div>
+          }} dir="ltr">{formatNum(totalDiamonds)}</div>
+          {sessionDiamonds > 0 && (
+            <div style={{
+              color: "#80deea", fontSize: 11, fontWeight: 700,
+              fontFamily: "'Fredoka', sans-serif", letterSpacing: 0.5,
+              marginTop: 2, textShadow: "0 0 8px rgba(0,200,255,0.5)",
+            }} dir="ltr">+{formatNum(sessionDiamonds)} session</div>
+          )}
         </div>
       </div>
       <style>{`
