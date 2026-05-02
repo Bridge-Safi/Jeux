@@ -103,7 +103,7 @@ function NFSButton({ icon, onClick, glow, size = 76, accent = "#00f0ff" }: {
 /* ─── WhatsApp Bridge Eats — modifiable ──────────────────────────
    Numéro WhatsApp Business à atteindre depuis le jeu (format international
    sans + ni espaces, conformément à wa.me). À remplacer par le vrai n°. */
-export const BRIDGE_EATS_WHATSAPP = "212600000000";
+export const BRIDGE_EATS_WHATSAPP = "212764794856";
 const WA_PREFILL = encodeURIComponent(
   "Salam ! J'arrive depuis le jeu Safi Runner 🦈🎮"
 );
