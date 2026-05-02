@@ -80,15 +80,10 @@ function FuturisticCar({ x, z, colorIdx }: { x: number; z: number; colorIdx: num
         <meshBasicMaterial color={c.glow} toneMapped={false} />
       </mesh>
 
-      {/* UNDERGLOW néon sous la voiture (signature NFS) */}
+      {/* UNDERGLOW néon sous la voiture (signature NFS) — contenu sous la caisse */}
       <mesh ref={ref} position={[0, 0.05, 0.3]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[2.2, 2.4]} />
-        <meshBasicMaterial color={c.glow} transparent opacity={0.6} blending={THREE.AdditiveBlending} toneMapped={false} />
-      </mesh>
-      {/* Underglow extérieur plus large */}
-      <mesh position={[0, 0.03, 0.3]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[3.5, 4.0]} />
-        <meshBasicMaterial color={c.glow} transparent opacity={0.18} blending={THREE.AdditiveBlending} toneMapped={false} />
+        <planeGeometry args={[1.7, 1.9]} />
+        <meshBasicMaterial color={c.glow} transparent opacity={0.55} blending={THREE.AdditiveBlending} toneMapped={false} />
       </mesh>
 
       {/* Roues sportives basses */}
@@ -189,21 +184,16 @@ function LaserBarrier({ x, z }: { x: number; z: number }) {
         <meshBasicMaterial color="#ff1744" toneMapped={false} />
       </mesh>
 
-      {/* Halo glow rouge énorme */}
+      {/* Halo glow rouge contenu */}
       <mesh ref={ref2} position={[0, 0.55, 0]}>
-        <planeGeometry args={[1.8, 1.0]} />
-        <meshBasicMaterial color="#ff1744" transparent opacity={0.45} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
-      </mesh>
-      {/* Halo plus large encore */}
-      <mesh position={[0, 0.55, 0]}>
-        <planeGeometry args={[3, 1.8]} />
-        <meshBasicMaterial color="#ff1744" transparent opacity={0.12} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
+        <planeGeometry args={[1.6, 0.9]} />
+        <meshBasicMaterial color="#ff1744" transparent opacity={0.4} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
 
       {/* Reflet rouge au sol */}
       <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[2.2, 1.4]} />
-        <meshBasicMaterial color="#ff1744" transparent opacity={0.25} blending={THREE.AdditiveBlending} toneMapped={false} />
+        <planeGeometry args={[1.6, 1.0]} />
+        <meshBasicMaterial color="#ff1744" transparent opacity={0.2} blending={THREE.AdditiveBlending} toneMapped={false} />
       </mesh>
 
       {/* Symbole STOP central */}

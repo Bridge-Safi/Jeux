@@ -1,5 +1,4 @@
-import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useMemo } from "react";
 import * as THREE from "three";
 
 /* ─────────────────────────────────────────────────────────────
@@ -210,34 +209,6 @@ function CyberSkyline() {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   PANNEAU HOLO FLOTTANT — texte néon publicitaire
-   ───────────────────────────────────────────────────────────── */
-function HoloBillboard() {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame(() => {
-    if (ref.current) {
-      const t = Date.now() * 0.001;
-      const mat = ref.current.material as THREE.MeshBasicMaterial;
-      mat.opacity = 0.55 + Math.sin(t * 2) * 0.15;
-    }
-  });
-
-  return (
-    <group position={[-30, 22, -82]}>
-      <mesh ref={ref}>
-        <planeGeometry args={[12, 6]} />
-        <meshBasicMaterial color="#ff1493" transparent opacity={0.6} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
-      </mesh>
-      {/* Lettre "S" stylisée géante */}
-      <mesh position={[0, 0, 0.05]}>
-        <planeGeometry args={[8, 4]} />
-        <meshBasicMaterial color="#00f0ff" transparent opacity={0.4} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
-      </mesh>
-    </group>
-  );
-}
-
 export function Scene() {
   return (
     <>
@@ -246,7 +217,6 @@ export function Scene() {
       <Stars />
       <Moon />
       <CyberSkyline />
-      <HoloBillboard />
     </>
   );
 }

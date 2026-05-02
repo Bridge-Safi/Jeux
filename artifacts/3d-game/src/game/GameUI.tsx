@@ -20,45 +20,56 @@ interface GameUIProps {
   onJump: () => void;
 }
 
-/* ─── Bouton tactile cartoon Subway Surfers ─────────────── */
-function TouchButton({ icon, onClick, color, size = 78 }: {
-  icon: string; onClick: () => void; color: string; size?: number;
+/* ─── Bouton NFS Mobile — glass, glow néon, anti-double-tap ─── */
+function NFSButton({ icon, onClick, glow, size = 76, accent = "#00f0ff" }: {
+  icon: string; onClick: () => void; glow: string; size?: number; accent?: string;
 }) {
   const [pressed, setPressed] = useState(false);
+  const lastFireRef = useRef(0);
 
-  const handleStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+  /* onPointerDown unifie touch+mouse → AUCUN double-fire.
+     + debounce 60ms pour éviter le rebond accidentel.       */
+  const handleDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
+    const now = Date.now();
+    if (now - lastFireRef.current < 60) return;
+    lastFireRef.current = now;
     setPressed(true);
     onClick();
   }, [onClick]);
 
-  const handleEnd = useCallback(() => setPressed(false), []);
+  const handleUp = useCallback(() => setPressed(false), []);
 
   return (
     <button
-      onTouchStart={handleStart}
-      onTouchEnd={handleEnd}
-      onMouseDown={handleStart}
-      onMouseUp={handleEnd}
-      onMouseLeave={handleEnd}
+      onPointerDown={handleDown}
+      onPointerUp={handleUp}
+      onPointerCancel={handleUp}
+      onPointerLeave={handleUp}
+      onContextMenu={(e) => e.preventDefault()}
       style={{
         width: size, height: size, borderRadius: "50%",
-        border: "5px solid #1a1a1a",
-        background: `radial-gradient(circle at 30% 30%, ${color}, ${color}dd 60%, ${color}99)`,
-        color: "white", fontSize: size * 0.46, fontWeight: 900,
+        border: `2px solid ${accent}aa`,
+        background: pressed
+          ? `radial-gradient(circle at 50% 50%, ${glow}cc, rgba(10,10,30,0.85) 70%)`
+          : `radial-gradient(circle at 50% 50%, rgba(10,10,30,0.6), rgba(10,10,30,0.85) 70%)`,
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        color: accent, fontSize: size * 0.5, fontWeight: 900,
         cursor: "pointer",
         display: "flex", alignItems: "center", justifyContent: "center",
         boxShadow: pressed
-          ? `0 1px 0 #1a1a1a, 0 3px 6px rgba(0,0,0,0.5), inset 0 -3px 8px rgba(0,0,0,0.25)`
-          : `0 5px 0 #1a1a1a, 0 10px 18px rgba(0,0,0,0.5), inset 0 -4px 10px rgba(0,0,0,0.25), inset 0 4px 8px rgba(255,255,255,0.35)`,
-        transform: pressed ? "translateY(4px)" : "translateY(0)",
-        transition: "transform 0.08s ease, box-shadow 0.08s ease",
+          ? `inset 0 0 24px ${accent}88, 0 0 30px ${accent}aa, 0 0 50px ${glow}66`
+          : `inset 0 0 12px ${accent}33, 0 0 18px ${accent}44, 0 4px 14px rgba(0,0,0,0.6)`,
+        transform: pressed ? "scale(0.92)" : "scale(1)",
+        transition: "transform 0.08s ease, box-shadow 0.08s ease, background 0.1s",
         userSelect: "none", WebkitUserSelect: "none",
-        textShadow: "0 2px 0 rgba(0,0,0,0.5)",
-        fontFamily: "'Fredoka', sans-serif",
+        touchAction: "manipulation",
+        textShadow: `0 0 12px ${accent}, 0 0 24px ${glow}`,
+        fontFamily: "'Bangers', sans-serif",
       }}
     >
-      <span style={{ lineHeight: 1 }}>{icon}</span>
+      <span style={{ lineHeight: 1, marginTop: -2 }}>{icon}</span>
     </button>
   );
 }
@@ -231,20 +242,111 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, totalDiamond
   );
 }
 
-/* ─── Contrôles tactiles ─────────────────────────────────────── */
+/* ─── Zone SWIPE invisible plein écran — gestes NFS Mobile ─── */
+function SwipeArea({ onChangeLane, onJump }: {
+  onChangeLane: (dir: 1 | -1) => void; onJump: () => void;
+}) {
+  const startRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const firedRef = useRef(false);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType === "mouse") return; // souris = clavier seulement
+    startRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+    firedRef.current = false;
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!startRef.current || firedRef.current) return;
+    const dx = e.clientX - startRef.current.x;
+    const dy = e.clientY - startRef.current.y;
+    const adx = Math.abs(dx);
+    const ady = Math.abs(dy);
+
+    /* Swipe horizontal : > 35px et plus horizontal que vertical */
+    if (adx > 35 && adx > ady * 1.2) {
+      firedRef.current = true;
+      onChangeLane(dx > 0 ? 1 : -1);
+    }
+    /* Swipe vertical haut : > 35px vers le haut */
+    else if (-dy > 35 && ady > adx * 1.2) {
+      firedRef.current = true;
+      onJump();
+    }
+  }, [onChangeLane, onJump]);
+
+  const handlePointerUp = useCallback(() => {
+    startRef.current = null;
+  }, []);
+
+  return (
+    <div
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      style={{
+        position: "absolute",
+        top: 80,        // sous le HUD
+        bottom: 130,    // au-dessus des boutons
+        left: 0, right: 0,
+        zIndex: 10,
+        touchAction: "none",
+        pointerEvents: "auto",
+      }}
+    />
+  );
+}
+
+/* ─── Contrôles NFS Mobile : boutons glass + swipe ─────────── */
 function TouchControls({ onChangeLane, onJump }: {
   onChangeLane: (dir: 1 | -1) => void; onJump: () => void;
 }) {
   return (
-    <div style={{
-      position: "absolute", bottom: 20, left: 0, right: 0,
-      display: "flex", justifyContent: "space-between", alignItems: "flex-end",
-      padding: "0 18px", pointerEvents: "auto",
-    }}>
-      <TouchButton icon="←" color="#26c6da" onClick={() => onChangeLane(-1)} />
-      <TouchButton icon="↑" color="#ffca28" size={94} onClick={onJump} />
-      <TouchButton icon="→" color="#ec407a" onClick={() => onChangeLane(1)} />
-    </div>
+    <>
+      {/* Zone swipe sur tout l'écran de jeu */}
+      <SwipeArea onChangeLane={onChangeLane} onJump={onJump} />
+
+      {/* Boutons style NFS Heat Mobile, glassmorphism néon */}
+      <div style={{
+        position: "absolute", bottom: 22, left: 0, right: 0,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        padding: "0 24px", pointerEvents: "none", zIndex: 20,
+      }}>
+        <div style={{ pointerEvents: "auto" }}>
+          <NFSButton icon="‹" glow="#00f0ff" accent="#00f0ff" onClick={() => onChangeLane(-1)} />
+        </div>
+        <div style={{ pointerEvents: "auto" }}>
+          <NFSButton icon="▲" glow="#ffd700" accent="#ffd700" size={88} onClick={onJump} />
+        </div>
+        <div style={{ pointerEvents: "auto" }}>
+          <NFSButton icon="›" glow="#ff1493" accent="#ff1493" onClick={() => onChangeLane(1)} />
+        </div>
+      </div>
+
+      {/* Indice swipe discret au-dessus des boutons (dispar après 8s via animation CSS) */}
+      <div style={{
+        position: "absolute",
+        bottom: 130,
+        left: 0, right: 0,
+        textAlign: "center",
+        fontSize: 11,
+        color: "rgba(255,255,255,0.5)",
+        letterSpacing: 1.5,
+        fontWeight: 600,
+        pointerEvents: "none",
+        zIndex: 15,
+        textShadow: "0 0 10px rgba(0,0,0,0.8)",
+        animation: "fadeOutSwipe 8s forwards",
+      }}>
+        ← SWIPE pour changer de voie · SWIPE ↑ pour sauter →
+      </div>
+      <style>{`
+        @keyframes fadeOutSwipe {
+          0%, 70% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+      `}</style>
+    </>
   );
 }
 

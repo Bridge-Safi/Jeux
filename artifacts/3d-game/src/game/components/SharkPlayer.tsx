@@ -13,7 +13,6 @@ interface SharkPlayerProps {
 export function SharkPlayer({ lane, playerY, isJumping }: SharkPlayerProps) {
   const groupRef = useRef<THREE.Group>(null);
   const spriteRef = useRef<THREE.Mesh>(null);
-  const auraRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
 
   const texture = useLoader(THREE.TextureLoader, `${import.meta.env.BASE_URL}shark-warrior.png`);
@@ -27,7 +26,7 @@ export function SharkPlayer({ lane, playerY, isJumping }: SharkPlayerProps) {
   useFrame((_, delta) => {
     if (!groupRef.current) return;
     groupRef.current.position.x = THREE.MathUtils.lerp(
-      groupRef.current.position.x, targetX, Math.min(1, delta * 12)
+      groupRef.current.position.x, targetX, Math.min(1, delta * 14)
     );
     groupRef.current.position.y = playerY;
 
@@ -39,36 +38,17 @@ export function SharkPlayer({ lane, playerY, isJumping }: SharkPlayerProps) {
       spriteRef.current.rotation.z = 0;
     }
 
-    /* Aura cyan pulsante */
-    if (auraRef.current) {
-      const t = Date.now() * 0.004;
-      const mat = auraRef.current.material as THREE.MeshBasicMaterial;
-      mat.opacity = 0.25 + Math.sin(t * 2) * 0.1;
-      auraRef.current.scale.setScalar(1 + Math.sin(t * 2) * 0.08);
-    }
-
-    /* Anneau orbital sous le joueur */
     if (ringRef.current) {
       ringRef.current.rotation.z += 0.05;
     }
   });
 
-  const planeGeo = useMemo(() => new THREE.PlaneGeometry(2.2, 3.0), []);
+  const planeGeo = useMemo(() => new THREE.PlaneGeometry(2.0, 2.7), []);
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
-      {/* Aura cyan/magenta autour du shark */}
-      <mesh ref={auraRef} position={[0, 1.55, -0.05]}>
-        <planeGeometry args={[3.2, 4.0]} />
-        <meshBasicMaterial color="#00f0ff" transparent opacity={0.3} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, 1.55, -0.1]}>
-        <planeGeometry args={[4.5, 5.5]} />
-        <meshBasicMaterial color="#ff1493" transparent opacity={0.12} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
-      </mesh>
-
-      {/* Le Shark Warrior — image du personnage référence */}
-      <mesh ref={spriteRef} position={[0, 1.55, 0]} geometry={planeGeo}>
+      {/* Le Shark Warrior — pas d'aura devant pour ne pas bloquer la vue */}
+      <mesh ref={spriteRef} position={[0, 1.4, 0]} geometry={planeGeo}>
         <meshBasicMaterial
           map={texture}
           transparent
@@ -78,41 +58,22 @@ export function SharkPlayer({ lane, playerY, isJumping }: SharkPlayerProps) {
         />
       </mesh>
 
-      {/* Anneau orbital cyan brillant au sol (sous le joueur) */}
+      {/* Anneau orbital cyan AU SOL (sous le joueur) */}
       <mesh ref={ringRef} position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.7, 0.95, 6, 1]} />
+        <ringGeometry args={[0.65, 0.85, 6, 1]} />
         <meshBasicMaterial color="#00f0ff" transparent opacity={0.85} blending={THREE.AdditiveBlending} toneMapped={false} />
       </mesh>
 
-      {/* Disque réflexion néon au sol */}
+      {/* Halo sol unique (pas empilé) */}
       <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[1.2, 24]} />
-        <meshBasicMaterial color="#00f0ff" transparent opacity={0.35} blending={THREE.AdditiveBlending} toneMapped={false} />
-      </mesh>
-      {/* Halo magenta plus large */}
-      <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[1.8, 24]} />
-        <meshBasicMaterial color="#ff1493" transparent opacity={0.2} blending={THREE.AdditiveBlending} toneMapped={false} />
+        <circleGeometry args={[1.1, 16]} />
+        <meshBasicMaterial color="#00f0ff" transparent opacity={0.25} blending={THREE.AdditiveBlending} toneMapped={false} />
       </mesh>
 
-      {/* Speed lines / streaks derrière le shark (effet motion blur) */}
-      <mesh position={[0, 1.0, 0.8]}>
-        <planeGeometry args={[1.8, 0.06]} />
-        <meshBasicMaterial color="#00f0ff" transparent opacity={0.5} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, 1.6, 0.9]}>
-        <planeGeometry args={[2.0, 0.05]} />
-        <meshBasicMaterial color="#ff1493" transparent opacity={0.4} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, 2.2, 0.8]}>
-        <planeGeometry args={[1.5, 0.05]} />
-        <meshBasicMaterial color="#00f0ff" transparent opacity={0.4} blending={THREE.AdditiveBlending} toneMapped={false} side={THREE.DoubleSide} />
-      </mesh>
-
-      {/* Ombre douce sombre */}
+      {/* Ombre nette sous le joueur */}
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.55, 16]} />
-        <meshBasicMaterial color="#000000" transparent opacity={0.6} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.55} />
       </mesh>
     </group>
   );
