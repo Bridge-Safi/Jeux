@@ -529,26 +529,105 @@ const socialAccounts = [
   },
 ];
 
-type SocialAccount = typeof socialAccounts[0];
+/* Extrait le handle YouTube d'une URL https://www.youtube.com/@handle */
+function ytHandle(url: string): string {
+  const m = url.match(/youtube\.com\/@([^/?#]+)/i);
+  return m ? m[1] : "";
+}
+
+type PlatformKey = "insta" | "facebook" | "tiktok" | "youtube";
 
 function SocialFollowActivity({ onComplete }: { onComplete: () => void }) {
   const { t } = useT();
   const account = useMemo(() => socialAccounts[Math.floor(Math.random() * socialAccounts.length)], []);
-  const [followed, setFollowed] = useState({ insta: false, facebook: false, tiktok: false, youtube: false });
-
-  const handleFollow = (platform: keyof typeof followed, url: string) => {
-    setFollowed((f) => ({ ...f, [platform]: true }));
-    openSocialLink(url);
-  };
+  const [followed, setFollowed] = useState<Record<PlatformKey, boolean>>({ insta: false, facebook: false, tiktok: false, youtube: false });
+  const [openPanel, setOpenPanel] = useState<PlatformKey | null>(null);
 
   const allDone = followed.insta && followed.facebook && followed.tiktok && followed.youtube;
   const count = Object.values(followed).filter(Boolean).length;
 
-  const platforms: { key: keyof typeof followed; label: string; icon: string; color: string; url: string }[] = [
-    { key: "insta",    label: "Instagram", icon: "📸", color: "linear-gradient(135deg,#fd1d1d,#fcb045,#833ab4)", url: account.insta },
-    { key: "facebook", label: "Facebook",  icon: "👍", color: "linear-gradient(135deg,#1877f2,#0a4ea3)",        url: account.facebook },
-    { key: "tiktok",   label: "TikTok",    icon: "🎵", color: "linear-gradient(135deg,#000,#25f4ee 60%,#fe2c55)", url: account.tiktok },
-    { key: "youtube",  label: "YouTube",   icon: "▶️", color: "linear-gradient(135deg,#ff0000,#cc0000)",        url: account.youtube },
+  const togglePanel = (k: PlatformKey) => setOpenPanel((cur) => (cur === k ? null : k));
+  const markFollowed = (k: PlatformKey) => {
+    setFollowed((f) => ({ ...f, [k]: true }));
+    setOpenPanel(null);
+  };
+
+  /* Panneau intégré : iframe officielle ou popup flottante selon plateforme */
+  const renderInlinePanel = (k: PlatformKey) => {
+    if (k === "facebook") {
+      // Page Plugin officiel — bouton "J'aime" fonctionnel directement dans l'iframe
+      const href = encodeURIComponent(account.facebook);
+      const src = `https://www.facebook.com/plugins/page.php?href=${href}&tabs&width=340&height=200&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false`;
+      return (
+        <div style={{ background: "#f0f2f5", borderRadius: 12, padding: 10, border: "1px solid #dadde1" }}>
+          <iframe
+            src={src} title="Facebook Page"
+            style={{ width: "100%", height: 220, border: "none", borderRadius: 8, background: "#fff" }}
+            scrolling="no" allow="encrypted-media"
+          />
+          <div style={{ fontSize: 11, color: "#65676b", textAlign: "center", marginTop: 6 }}>
+            {t("soc.embed.fbHint")}
+          </div>
+          <button
+            onClick={() => markFollowed("facebook")}
+            style={{ ...BTN_PRIMARY, marginTop: 8, width: "100%", padding: "10px 0", fontSize: 14 }}
+          >✓ {t("soc.confirmFollowed")}</button>
+        </div>
+      );
+    }
+    if (k === "youtube") {
+      const handle = ytHandle(account.youtube);
+      // Bouton Subscribe officiel YouTube — fonctionne dans iframe (utilisateur connecté à YouTube)
+      const src = `https://www.youtube.com/subscribe_embed?usegapi=1&channel=${encodeURIComponent(handle)}&layout=full&count=default&theme=default`;
+      return (
+        <div style={{ background: "#0f0f0f", borderRadius: 12, padding: 14, border: "1px solid #303030", textAlign: "center" }}>
+          <div style={{ color: "#fff", fontWeight: 700, fontSize: 14, marginBottom: 8 }}>▶️ @{handle}</div>
+          <iframe
+            src={src} title="YouTube Subscribe"
+            style={{ width: 200, height: 36, border: "none", background: "transparent", colorScheme: "light" }}
+            scrolling="no"
+          />
+          <div style={{ fontSize: 11, color: "#aaa", marginTop: 8 }}>
+            {t("soc.embed.ytHint")}
+          </div>
+          <button
+            onClick={() => markFollowed("youtube")}
+            style={{ ...BTN_PRIMARY, marginTop: 10, width: "100%", padding: "10px 0", fontSize: 14 }}
+          >✓ {t("soc.confirmFollowed")}</button>
+        </div>
+      );
+    }
+    // Instagram & TikTok : pas d'embed officiel "Suivre" → popup flottante au-dessus du jeu
+    const isInsta = k === "insta";
+    const url = isInsta ? account.insta : account.tiktok;
+    const bg = isInsta ? "linear-gradient(135deg,#fd1d1d,#fcb045,#833ab4)" : "linear-gradient(135deg,#000,#25f4ee 60%,#fe2c55)";
+    const icon = isInsta ? "📸" : "🎵";
+    return (
+      <div style={{ background: "#fafafa", borderRadius: 12, padding: 14, border: "1px solid #e0e0e0" }}>
+        <div style={{ background: bg, color: "#fff", borderRadius: 10, padding: "14px 16px", textAlign: "center", marginBottom: 10 }}>
+          <div style={{ fontSize: 30 }}>{icon}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, opacity: 0.95 }}>{account.handle}</div>
+        </div>
+        <div style={{ fontSize: 12, color: "#666", textAlign: "center", marginBottom: 10, lineHeight: 1.5 }}>
+          {t("soc.embed.popupHint")}
+        </div>
+        <button
+          onClick={() => { openSocialLink(url); }}
+          style={{ width: "100%", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 10, padding: "11px 0", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 8 }}
+        >🔗 {t("soc.openInPopup")}</button>
+        <button
+          onClick={() => markFollowed(k)}
+          style={{ ...BTN_PRIMARY, width: "100%", padding: "10px 0", fontSize: 14 }}
+        >✓ {t("soc.confirmFollowed")}</button>
+      </div>
+    );
+  };
+
+  const platforms: { key: PlatformKey; label: string; icon: string; color: string }[] = [
+    { key: "facebook", label: "Facebook",  icon: "👍", color: "linear-gradient(135deg,#1877f2,#0a4ea3)" },
+    { key: "youtube",  label: "YouTube",   icon: "▶️", color: "linear-gradient(135deg,#ff0000,#cc0000)" },
+    { key: "insta",    label: "Instagram", icon: "📸", color: "linear-gradient(135deg,#fd1d1d,#fcb045,#833ab4)" },
+    { key: "tiktok",   label: "TikTok",    icon: "🎵", color: "linear-gradient(135deg,#000,#25f4ee 60%,#fe2c55)" },
   ];
 
   if (allDone) return (
@@ -566,98 +645,52 @@ function SocialFollowActivity({ onComplete }: { onComplete: () => void }) {
         <div style={{ fontSize: 18, fontWeight: 800, color: "#1a1a1a" }}>{t("soc.followCta", { handle: account.handle })}</div>
         <div style={{ fontSize: 13, color: "#777", marginTop: 4 }}>{t("soc.tapAll", { n: count })}</div>
       </div>
+
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
-        {platforms.map((p) => (
-          <button
-            key={p.key}
-            onClick={() => handleFollow(p.key, p.url)}
-            disabled={followed[p.key]}
-            style={{
-              background: followed[p.key] ? "linear-gradient(135deg,#43a047,#2e7d32)" : p.color,
-              color: "white", border: "3px solid #1a1a1a", borderRadius: 16,
-              padding: "16px 18px", fontSize: 17, fontWeight: 800,
-              cursor: followed[p.key] ? "default" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              boxShadow: followed[p.key] ? "0 2px 0 #1a1a1a" : "0 4px 0 #1a1a1a, 0 6px 16px rgba(0,0,0,0.3)",
-              transform: followed[p.key] ? "translateY(2px)" : "translateY(0)",
-              transition: "all 0.1s", fontFamily: "'Fredoka', sans-serif",
-            }}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{ fontSize: 26 }}>{p.icon}</span>
-              <span>{p.label}</span>
-            </span>
-            <span style={{ fontSize: 14, fontWeight: 700 }}>{followed[p.key] ? t("soc.followedBtn") : t("soc.followBtn")}</span>
-          </button>
-        ))}
+        {platforms.map((p) => {
+          const isOpen = openPanel === p.key;
+          const done   = followed[p.key];
+          return (
+            <div key={p.key}>
+              <button
+                onClick={() => !done && togglePanel(p.key)}
+                disabled={done}
+                style={{
+                  width: "100%",
+                  background: done ? "linear-gradient(135deg,#43a047,#2e7d32)" : p.color,
+                  color: "white", border: "3px solid #1a1a1a", borderRadius: 16,
+                  padding: "14px 16px", fontSize: 16, fontWeight: 800,
+                  cursor: done ? "default" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  boxShadow: done ? "0 2px 0 #1a1a1a" : "0 4px 0 #1a1a1a, 0 6px 16px rgba(0,0,0,0.3)",
+                  transform: done ? "translateY(2px)" : "translateY(0)",
+                  transition: "all 0.1s", fontFamily: "'Fredoka', sans-serif",
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontSize: 24 }}>{p.icon}</span>
+                  <span>{p.label}</span>
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 700 }}>
+                  {done ? `✓ ${t("soc.followedBtn")}` : isOpen ? "▲" : t("soc.followBtn")}
+                </span>
+              </button>
+              {isOpen && !done && (
+                <div style={{ marginTop: 8, animation: "fadeIn 0.2s" }}>
+                  {renderInlinePanel(p.key)}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
+
       <div style={{ height: 10, background: "#eee", borderRadius: 8, overflow: "hidden", marginBottom: 6 }}>
-        <div style={{ height: "100%", width: `${(count / 4) * 100}%`, background: "linear-gradient(90deg,#fd1d1d,#fcb045,#833ab4,#ff0000)", transition: "width 0.3s" }} />
+        <div style={{ height: "100%", width: `${(count / 4) * 100}%`, background: "linear-gradient(90deg,#1877f2,#ff0000,#fcb045,#fe2c55)", transition: "width 0.3s" }} />
       </div>
-      <div style={{ fontSize: 11, color: "#999", textAlign: "center" }}>{t("soc.closeHint")}</div>
-    </div>
-  );
-}
-
-// ──────────────────────────────────────────────────────────────────
-// MINI BULLE OBLIGATOIRE — 4 réseaux à suivre pendant chaque pause
-// ──────────────────────────────────────────────────────────────────
-function MiniBubble({ account, onAllDone }: { account: SocialAccount; onAllDone: () => void }) {
-  const { t } = useT();
-  const [tapped, setTapped] = useState({ insta: false, facebook: false, tiktok: false, youtube: false });
-  const allDone = tapped.insta && tapped.facebook && tapped.tiktok && tapped.youtube;
-  const count = Object.values(tapped).filter(Boolean).length;
-  const doneRef = useRef(false);
-
-  useEffect(() => {
-    if (allDone && !doneRef.current) {
-      doneRef.current = true;
-      onAllDone();
-    }
-  }, [allDone, onAllDone]);
-
-  const logos: { key: keyof typeof tapped; icon: string; color: string; url: string }[] = [
-    { key: "insta",    icon: "📸", color: "#e1306c",    url: account.insta },
-    { key: "facebook", icon: "👍", color: "#1877f2",    url: account.facebook },
-    { key: "tiktok",   icon: "🎵", color: "#010101",    url: account.tiktok },
-    { key: "youtube",  icon: "▶️", color: "#ff0000",    url: account.youtube },
-  ];
-
-  return (
-    <div style={{
-      background: allDone ? "#e8f5e9" : "#fff3e0",
-      border: `2px solid ${allDone ? "#4caf50" : "#ffd700"}`,
-      borderRadius: 16, padding: "10px 14px", marginTop: 16,
-    }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: allDone ? "#2e7d32" : "#e65100", marginBottom: allDone ? 0 : 8, textAlign: "center" }}>
-        {allDone ? t("bubble.done") : t("bubble.cta", { handle: account.handle, n: count })}
+      <div style={{ fontSize: 11, color: "#999", textAlign: "center" }}>
+        {count}/4 — {t("soc.closeHint")}
       </div>
-      {!allDone && (
-        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-          {logos.map((p) => (
-            <button
-              key={p.key}
-              onClick={() => {
-                setTapped((prev) => ({ ...prev, [p.key]: true }));
-                openSocialLink(p.url);
-              }}
-              disabled={tapped[p.key]}
-              title={tapped[p.key] ? "✓ Suivi" : `Suivre ${p.key}`}
-              style={{
-                background: tapped[p.key] ? "#4caf50" : p.color,
-                color: "white", border: "2px solid #fff", borderRadius: 12,
-                padding: "8px 14px", fontSize: 20,
-                cursor: tapped[p.key] ? "default" : "pointer",
-                opacity: tapped[p.key] ? 0.8 : 1,
-                boxShadow: tapped[p.key] ? "none" : "0 2px 8px rgba(0,0,0,0.3)",
-                transition: "all 0.15s",
-              }}
-            >
-              {p.icon}{tapped[p.key] ? " ✓" : ""}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -753,13 +786,11 @@ const ALL_ACTIVITIES: ActivityType[] = ["reel", "social", "quiz", "video", "spon
 let _shuffled: ActivityType[] = [];
 let _shuffleIdx = 0;
 
-function pickNextActivity(cpNum: number): ActivityType {
-  if (cpNum === 1) return "reel";
-  if (_shuffleIdx >= _shuffled.length) {
-    _shuffled = [...ALL_ACTIVITIES].sort(() => Math.random() - 0.5);
-    _shuffleIdx = 0;
-  }
-  return _shuffled[_shuffleIdx++];
+function pickNextActivity(_cpNum: number): ActivityType {
+  /* Demande utilisateur : UNE SEULE pub à chaque checkpoint, l'ad
+     sociale à 4 bulles (Facebook, YouTube, Instagram, TikTok) à suivre
+     obligatoirement. Pas de rotation aléatoire. */
+  return "social";
 }
 
 const activityTitleKey: Record<ActivityType, string> = {
@@ -802,13 +833,13 @@ export function CheckpointUI({ checkpointNumber, score, onResume }: CheckpointUI
   const { t } = useT();
   const [started, setStarted] = useState(false);
   const [activityDone, setActivityDone] = useState(false);
-  const [bubbleDone, setBubbleDone] = useState(false);
 
   const activity    = useMemo<ActivityType>(() => pickNextActivity(checkpointNumber), [checkpointNumber]);
   const venue       = useMemo(() => venueNames[(checkpointNumber - 1) % venueNames.length], [checkpointNumber]);
-  const bubbleAcct  = useMemo(() => socialAccounts[checkpointNumber % socialAccounts.length], [checkpointNumber]);
 
-  const showComplete = activityDone && bubbleDone;
+  /* Une seule pub mandatoire = l'activité sociale est aussi la bulle.
+     Plus de double étape (activity + bubble). */
+  const showComplete = activityDone;
 
   return (
     <div style={OVERLAY}>
@@ -854,14 +885,6 @@ export function CheckpointUI({ checkpointNumber, score, onResume }: CheckpointUI
               </>
             )}
 
-            {activityDone && !bubbleDone && (
-              <div style={{ textAlign: "center", padding: "12px 0", color: "#2e7d32", fontWeight: 700, fontSize: 14 }}>
-                ✅ {t("cp.completed")} — {t("bubble.followToContinue")}
-              </div>
-            )}
-
-            {/* Bulle obligatoire — toujours visible pendant l'activité */}
-            <MiniBubble account={bubbleAcct} onAllDone={() => setBubbleDone(true)} />
           </>
         )}
 
