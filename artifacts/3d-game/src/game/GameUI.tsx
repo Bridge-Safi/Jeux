@@ -1095,6 +1095,8 @@ function StartScreen({ onStart, eligibility, onClaim }: {
               t("bridge.how.rate"),
               t("bridge.how.shortfall"),
               t("bridge.how.bonus"),
+              t("bridge.how.social"),
+              t("bridge.how.obstacles"),
               t("bridge.how.claim"),
             ].map((line, i) => (
               <div key={i} style={{

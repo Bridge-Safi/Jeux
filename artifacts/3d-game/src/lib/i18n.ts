@@ -37,6 +37,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "bridge.how.rate": "💎 Récolte 1 000 💎 par heure — objectif 15 000 💎",
     "bridge.how.shortfall": "💰 Diamants manquants ? 1 000 💎 = 5 DH",
     "bridge.how.bonus": "🎁 Bonus : joue 2h DE PLUS → +2 000 💎 + livraison 100% GRATUITE",
+    "bridge.how.social": "📱 À chaque checkpoint : suis les 4 réseaux Bridge Eats (FB · YT · Insta · TikTok) pour reprendre",
+    "bridge.how.obstacles": "🍲 Évite les obstacles marocains : tajine · couscous · barbecue de sardines",
     "bridge.how.claim": "🛵🚕 Le 6ᵉ jour : réclame ton menu sur Bridge Eats",
 
     /* Blockers */
@@ -88,7 +90,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "instr.how.collect": "Collecte {n} 💎 au total (rythme : 1 000 💎/h)",
     "instr.how.play": "Joue 3 à 4h par jour pendant {d} jours CONSÉCUTIFS",
     "instr.how.day4": "Le 6ᵉ jour : entre ton n° Bridge Eats pour réclamer le menu",
-    "instr.how.ads": "Pause publicitaire toutes les 40 secondes",
+    "instr.how.ads": "📱 Pause toutes les 40s : suis les 4 réseaux Bridge Eats (FB · YT · Insta · TikTok)",
     "instr.how.shortfall": "💸 Pas assez de 💎 ? Complète : 1 000 💎 manquants = 5 DH",
     "instr.how.bonus": "🎁 Bonus : joue 2h DE PLUS → +2 000 💎 + livraison 100% GRATUITE",
     "instr.row.gamepad.label": "🎮 Manette PS4 / PS5",
@@ -252,6 +254,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "bridge.how.rate": "💎 Collect 1,000 💎 per hour — goal 15,000 💎",
     "bridge.how.shortfall": "💰 Missing diamonds? 1,000 💎 = 5 DH",
     "bridge.how.bonus": "🎁 Bonus: play 2h MORE → +2,000 💎 + 100% FREE delivery",
+    "bridge.how.social": "📱 At every checkpoint: follow all 4 Bridge Eats socials (FB · YT · Insta · TikTok) to resume",
+    "bridge.how.obstacles": "🍲 Dodge Moroccan obstacles: tajine · couscous · sardine BBQ",
     "bridge.how.claim": "🛵🚕 On day 6: claim your meal on Bridge Eats",
 
     "blocker.diamonds": "{n} more 💎 to collect",
@@ -298,7 +302,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "instr.how.collect": "Collect {n} 💎 total (rate: 1,000 💎/h)",
     "instr.how.play": "Play 3-4h per day for {d} CONSECUTIVE days",
     "instr.how.day4": "On day 6: enter your Bridge Eats phone to claim the meal",
-    "instr.how.ads": "Ad break every 40 seconds",
+    "instr.how.ads": "📱 Break every 40s: follow all 4 Bridge Eats socials (FB · YT · Insta · TikTok)",
     "instr.how.shortfall": "💸 Not enough 💎? Top up: 1,000 missing 💎 = 5 DH",
     "instr.how.bonus": "🎁 Bonus: play 2h MORE → +2,000 💎 + 100% FREE delivery",
     "instr.row.gamepad.label": "🎮 PS4 / PS5 Controller",
@@ -451,6 +455,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "bridge.how.rate": "💎 اجمع 1000 💎 في الساعة — الهدف 15000 💎",
     "bridge.how.shortfall": "💰 ينقصك ألماس؟ 1000 💎 = 5 درهم",
     "bridge.how.bonus": "🎁 مكافأة: العب ساعتين إضافيتين → +2000 💎 + توصيل مجاني 100%",
+    "bridge.how.social": "📱 عند كل توقف: تابع 4 صفحات Bridge Eats (FB · YT · إنستا · تيك توك) لمواصلة اللعب",
+    "bridge.how.obstacles": "🍲 تجنب العقبات المغربية: طاجين · كسكس · شواء السردين",
     "bridge.how.claim": "🛵🚕 في اليوم السادس: اطلب وجبتك من Bridge Eats",
 
     "blocker.diamonds": "اجمع {n} 💎 إضافية",
@@ -497,7 +503,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "instr.how.collect": "اجمع {n} 💎 إجمالاً (وتيرة: 1000 💎/ساعة)",
     "instr.how.play": "العب 3 إلى 4 ساعات يومياً لمدة {d} أيام متتالية",
     "instr.how.day4": "في اليوم السادس: أدخل رقمك في Bridge Eats للمطالبة بالوجبة",
-    "instr.how.ads": "فاصل إعلاني كل 40 ثانية",
+    "instr.how.ads": "📱 توقف كل 40 ثانية: تابع 4 صفحات Bridge Eats (FB · YT · إنستا · تيك توك)",
     "instr.how.shortfall": "💸 لا تكفي 💎؟ أكمل: 1000 💎 ناقصة = 5 درهم",
     "instr.how.bonus": "🎁 مكافأة: العب ساعتين إضافيتين → +2000 💎 + توصيل مجاني 100%",
     "instr.row.gamepad.label": "🎮 يد تحكم PS4 / PS5",
