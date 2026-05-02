@@ -165,10 +165,11 @@ export function Game() {
     <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#060d1f", overflow: "hidden" }}>
       <KeyboardControls map={keyMap}>
         <Canvas
-          shadows
+          flat
           camera={{ fov: 68, near: 0.1, far: 200, position: [0, 3.8, 7] }}
           style={{ width: "100%", height: "100%" }}
-          gl={{ antialias: true, toneMapping: THREE.LinearToneMapping, toneMappingExposure: 2.2 }}
+          dpr={[1, 2]}
+          gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}
         >
           <GameScene state={state} tick={tick} changeLane={changeLane} jump={jump} startGame={startGame} resumeGame={resumeGame} />
         </Canvas>

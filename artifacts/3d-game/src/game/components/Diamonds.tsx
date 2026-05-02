@@ -7,49 +7,45 @@ const LANE_X = [-2, 0, 2];
 
 function BlueDiamond({ x, z }: { x: number; z: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const glowRef = useRef<THREE.Mesh>(null);
+  const ringRef = useRef<THREE.Mesh>(null);
+  const matRef = useRef<THREE.MeshBasicMaterial>(null);
 
   useFrame(() => {
     const t = Date.now() * 0.004;
+    const y = 0.95 + Math.sin(t) * 0.14;
     if (meshRef.current) {
       meshRef.current.rotation.y += 0.045;
-      meshRef.current.position.y = 0.95 + Math.sin(t) * 0.14;
+      meshRef.current.position.y = y;
     }
-    if (glowRef.current) {
-      glowRef.current.position.y = 0.95 + Math.sin(t) * 0.14;
-      (glowRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity =
-        1.2 + Math.sin(t * 2) * 0.4;
+    if (ringRef.current) {
+      ringRef.current.position.y = y;
+    }
+    /* Pulse couleur */
+    if (matRef.current) {
+      const v = 0.75 + Math.sin(t * 2) * 0.25;
+      matRef.current.color.setRGB(0.39 * v, 0.71 * v, 0.96 * v);
     }
   });
 
   return (
     <group position={[x, 0, z]}>
-      {/* Corps diamant */}
-      <mesh ref={meshRef} castShadow>
+      {/* Corps diamant — meshBasicMaterial = toujours visible */}
+      <mesh ref={meshRef} position={[0, 0.95, 0]}>
         <octahedronGeometry args={[0.34, 0]} />
-        <meshStandardMaterial
-          color="#64b5f6"
-          metalness={0.9}
-          roughness={0.05}
-          emissive="#1565c0"
-          emissiveIntensity={0.9}
-        />
+        <meshBasicMaterial ref={matRef} color="#64b5f6" />
       </mesh>
 
-      {/* Halo brillant */}
-      <mesh ref={glowRef} position={[0, 0.95, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.42, 0.05, 8, 28]} />
-        <meshStandardMaterial
-          color="#90caf9"
-          emissive="#1e88e5"
-          emissiveIntensity={1.2}
-          transparent
-          opacity={0.8}
-        />
+      {/* Halo anneau */}
+      <mesh ref={ringRef} position={[0, 0.95, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.45, 0.055, 6, 24]} />
+        <meshBasicMaterial color="#90caf9" transparent opacity={0.7} />
       </mesh>
 
-      {/* Lumière ponctuelle bleue */}
-      <pointLight position={[0, 0.9, 0]} color="#2196f3" intensity={1.2} distance={5} />
+      {/* Éclat statique sous le diamant */}
+      <mesh position={[0, 0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.28, 12]} />
+        <meshBasicMaterial color="#1e88e5" transparent opacity={0.4} />
+      </mesh>
     </group>
   );
 }

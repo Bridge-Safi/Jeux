@@ -6,46 +6,45 @@ const LANE_X = [-2, 0, 2];
 function WoodenCrate({ x, z }: { x: number; z: number }) {
   return (
     <group position={[x, 0.5, z]}>
-      {/* Corps de la caisse */}
-      <mesh castShadow receiveShadow>
+      {/* Corps caisse — brun visible */}
+      <mesh castShadow>
         <boxGeometry args={[0.88, 0.88, 0.88]} />
-        <meshStandardMaterial color="#5d3a1a" roughness={0.92} />
+        <meshBasicMaterial color="#8d6e63" />
       </mesh>
-      {/* Planches horizontales */}
-      {[0.22, -0.22].map((y, i) => (
-        [0.44, -0.44].map((z2, j) => (
-          <mesh key={`${i}-${j}`} position={[0, y, z2]}>
-            <boxGeometry args={[0.87, 0.09, 0.02]} />
-            <meshStandardMaterial color="#4a2c12" roughness={0.95} />
-          </mesh>
-        ))
+      {/* Planches avant */}
+      {([0.22, -0.22] as number[]).map((y, i) => (
+        <mesh key={i} position={[0, y, 0.445]}>
+          <boxGeometry args={[0.87, 0.09, 0.02]} />
+          <meshBasicMaterial color="#6d4c41" />
+        </mesh>
       ))}
-      {/* Planches verticales avant */}
-      {[0.24, -0.24].map((bx, i) => (
-        <mesh key={i} position={[bx, 0, 0.44]}>
+      {/* Planches verticales */}
+      {([0.24, -0.24] as number[]).map((bx, i) => (
+        <mesh key={i} position={[bx, 0, 0.445]}>
           <boxGeometry args={[0.09, 0.87, 0.02]} />
-          <meshStandardMaterial color="#4a2c12" roughness={0.95} />
+          <meshBasicMaterial color="#6d4c41" />
         </mesh>
       ))}
-      {/* Renforts métalliques dorés aux coins */}
-      {[[-0.41, 0.41], [0.41, 0.41], [-0.41, -0.41], [0.41, -0.41]].map(([cx, cz], i) => (
-        <mesh key={i} position={[cx as number, 0.3, cz as number]}>
-          <boxGeometry args={[0.08, 0.22, 0.08]} />
-          <meshStandardMaterial color="#c9a227" metalness={0.85} roughness={0.15} />
+      {/* Renforts dorés coins — bien visibles */}
+      {([[-0.41, 0.41], [0.41, 0.41], [-0.41, -0.41], [0.41, -0.41]] as [number,number][]).map(([cx, cz], i) => (
+        <mesh key={i} position={[cx, 0.3, cz]}>
+          <boxGeometry args={[0.09, 0.24, 0.09]} />
+          <meshBasicMaterial color="#ffd54f" />
         </mesh>
       ))}
-      {/* Clous */}
-      {[
-        [0.24, 0.22, 0.45], [-0.24, 0.22, 0.45],
-        [0.24, -0.22, 0.45], [-0.24, -0.22, 0.45],
-      ].map(([cx, cy, cz], i) => (
-        <mesh key={i} position={[cx as number, cy as number, cz as number]}>
-          <boxGeometry args={[0.045, 0.045, 0.02]} />
-          <meshStandardMaterial color="#aaa" metalness={0.9} roughness={0.1} />
-        </mesh>
-      ))}
-      {/* Lumière rouge d'avertissement */}
-      <pointLight position={[0, 0.6, 0]} color="#ff1744" intensity={0.6} distance={4} />
+      {/* X rouge avertissement */}
+      <mesh position={[0, 0.1, 0.45]}>
+        <boxGeometry args={[0.5, 0.08, 0.02]} />
+        <meshBasicMaterial color="#ef5350" />
+      </mesh>
+      <mesh position={[0, 0.1, 0.45]} rotation={[0, 0, Math.PI / 2.5]}>
+        <boxGeometry args={[0.5, 0.08, 0.02]} />
+        <meshBasicMaterial color="#ef5350" />
+      </mesh>
+      <mesh position={[0, 0.1, 0.45]} rotation={[0, 0, -Math.PI / 2.5]}>
+        <boxGeometry args={[0.5, 0.08, 0.02]} />
+        <meshBasicMaterial color="#ef5350" />
+      </mesh>
     </group>
   );
 }
