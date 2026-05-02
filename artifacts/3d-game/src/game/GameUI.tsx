@@ -91,7 +91,7 @@ function BridgeEatsButton({ variant = "light" }: { variant?: "light" | "dark" })
       onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
     >
       <span style={{ fontSize: 16 }}>🛵🚕</span>
-      <span>Bridge Eats</span>
+      <span>Bridge</span>
     </a>
   );
 }

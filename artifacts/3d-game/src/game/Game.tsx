@@ -10,7 +10,6 @@ import { Diamonds } from "./components/Diamonds";
 import { Scene } from "./components/Scene";
 import { GameUI } from "./GameUI";
 import { CheckpointUI } from "./CheckpointUI";
-import { SupabasePanel } from "./SupabasePanel";
 import { useSupabaseSync } from "../hooks/useSupabaseSync";
 
 enum Controls {
@@ -198,12 +197,6 @@ export function Game() {
         />
       )}
 
-      {/* Panneau Supabase */}
-      <SupabasePanel
-        profile={profile}
-        status={status}
-        phase={state.phase}
-      />
     </div>
   );
 }
