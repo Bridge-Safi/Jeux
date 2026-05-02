@@ -1,6 +1,23 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useT } from "../lib/i18n";
 
+/* Ouvre une petite fenêtre flottante (popup) — le jeu reste visible.
+   Sur mobile Safari/Chrome le comportement tombe en fallback onglet. */
+function openSocialLink(url: string) {
+  const w = 440, h = 700;
+  const left = Math.max(0, Math.round((screen.width  - w) / 2));
+  const top  = Math.max(0, Math.round((screen.height - h) / 4));
+  const popup = window.open(
+    url,
+    "safi_social",
+    `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes,location=yes,toolbar=no`
+  );
+  if (!popup) {
+    // Popup bloqué → nouvel onglet
+    try { window.open(url, "_blank", "noopener"); } catch {}
+  }
+}
+
 interface CheckpointUIProps {
   checkpointNumber: number;
   score: number;
@@ -482,7 +499,7 @@ function SocialFollowActivity({ onComplete }: { onComplete: () => void }) {
 
   const handleFollow = (platform: keyof typeof followed, url: string) => {
     setFollowed((f) => ({ ...f, [platform]: true }));
-    try { window.open(url, "_blank", "noopener"); } catch {}
+    openSocialLink(url);
   };
 
   const allDone = followed.insta && followed.facebook && followed.tiktok && followed.youtube;
@@ -583,7 +600,7 @@ function MiniBubble({ account, onAllDone }: { account: SocialAccount; onAllDone:
               key={p.key}
               onClick={() => {
                 setTapped((prev) => ({ ...prev, [p.key]: true }));
-                try { window.open(p.url, "_blank", "noopener"); } catch {}
+                openSocialLink(p.url);
               }}
               disabled={tapped[p.key]}
               title={tapped[p.key] ? "✓ Suivi" : `Suivre ${p.key}`}
