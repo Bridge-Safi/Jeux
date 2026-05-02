@@ -50,24 +50,23 @@ export function SharkPlayer({ lane, playerY, isJumping }: SharkPlayerProps) {
     if (!spriteRef.current || !matRef.current) return;
 
     if (isJumping) {
-      /* Frame saut + légère rotation arrière */
+      /* Frame saut */
       matRef.current.map = texJump;
       matRef.current.needsUpdate = true;
-      spriteRef.current.position.y = 1.55;
-      spriteRef.current.rotation.x = -0.15;
+      spriteRef.current.position.y = 1.05;
+      spriteRef.current.rotation.x = 0;
       spriteRef.current.rotation.z = 0;
     } else {
-      /* Cycle de course rapide entre run1 et run2 (~6 fps = 165ms par frame) */
+      /* Cycle de course alternée (~6 fps) — uniquement les jambes, pas de danse */
       const t = Date.now() * 0.001;
-      const cycle = Math.floor(t * 6) % 2; // 0 ou 1
+      const cycle = Math.floor(t * 6) % 2;
       matRef.current.map = cycle === 0 ? texRun1 : texRun2;
       matRef.current.needsUpdate = true;
 
-      /* Bobbing vertical synchro avec la course */
-      spriteRef.current.position.y = 1.55 + Math.abs(Math.sin(t * 12)) * 0.08;
+      /* Léger bobbing vertical seulement (sensation de pas) — pas de roulis */
+      spriteRef.current.position.y = 1.05 + Math.abs(Math.sin(t * 12)) * 0.04;
       spriteRef.current.rotation.x = 0;
-      /* Léger roulis latéral pour dynamisme */
-      spriteRef.current.rotation.z = Math.sin(t * 6) * 0.04;
+      spriteRef.current.rotation.z = 0;
     }
 
     /* Anneau orbital qui tourne au sol */
@@ -76,13 +75,13 @@ export function SharkPlayer({ lane, playerY, isJumping }: SharkPlayerProps) {
     }
   });
 
-  /* Sprite plus grand pour bien voir l'armure et les jambes */
-  const planeGeo = useMemo(() => new THREE.PlaneGeometry(2.4, 3.2), []);
+  /* Sprite plus petit — taille réaliste de coureur */
+  const planeGeo = useMemo(() => new THREE.PlaneGeometry(1.5, 2.0), []);
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
       {/* Le Shark Warrior — vue de dos en course */}
-      <mesh ref={spriteRef} position={[0, 1.55, 0]} geometry={planeGeo}>
+      <mesh ref={spriteRef} position={[0, 1.05, 0]} geometry={planeGeo}>
         <meshBasicMaterial
           ref={matRef}
           map={texRun1}
@@ -93,22 +92,22 @@ export function SharkPlayer({ lane, playerY, isJumping }: SharkPlayerProps) {
         />
       </mesh>
 
-      {/* Anneau orbital cyan AU SOL */}
+      {/* Anneau orbital cyan AU SOL — plus petit */}
       <mesh ref={ringRef} position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.7, 0.95, 6, 1]} />
+        <ringGeometry args={[0.5, 0.7, 6, 1]} />
         <meshBasicMaterial color="#00f0ff" transparent opacity={0.85} blending={THREE.AdditiveBlending} toneMapped={false} />
       </mesh>
 
-      {/* Halo sol unique discret */}
+      {/* Halo sol discret */}
       <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[1.2, 16]} />
+        <circleGeometry args={[0.85, 16]} />
         <meshBasicMaterial color="#00f0ff" transparent opacity={0.22} blending={THREE.AdditiveBlending} toneMapped={false} />
       </mesh>
 
-      {/* Ombre sous le joueur — suit la position Y pour effet de saut */}
+      {/* Ombre sous le joueur — suit la position Y */}
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.6 - playerY * 0.1, 16]} />
-        <meshBasicMaterial color="#000000" transparent opacity={Math.max(0.2, 0.6 - playerY * 0.15)} />
+        <circleGeometry args={[Math.max(0.2, 0.45 - playerY * 0.08), 16]} />
+        <meshBasicMaterial color="#000000" transparent opacity={Math.max(0.2, 0.55 - playerY * 0.15)} />
       </mesh>
     </group>
   );
