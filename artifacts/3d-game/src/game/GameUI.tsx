@@ -90,7 +90,7 @@ function BridgeEatsButton({ variant = "light" }: { variant?: "light" | "dark" })
       onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
       onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
     >
-      <span style={{ fontSize: 16 }}>🍔</span>
+      <span style={{ fontSize: 16 }}>🛵🚕</span>
       <span>Bridge Eats</span>
     </a>
   );
@@ -348,7 +348,7 @@ function MenuUnlockOverlay({ menusCount, onClose }: { menusCount: number; onClos
                 boxShadow: loading ? "none" : "0 0 30px #4caf5077",
               }}
             >
-              {loading ? "Vérification…" : "🍔 RÉCLAMER MON MENU"}
+              {loading ? "Vérification…" : "🛵🚕 RÉCLAMER MON MENU"}
             </button>
 
             <button onClick={onClose} style={{
@@ -385,7 +385,7 @@ function MenuUnlockOverlay({ menusCount, onClose }: { menusCount: number; onClos
                 marginBottom: 14,
               }}
             >
-              🍔 ALLER SUR BRIDGE EATS
+              🛵🚕 ALLER SUR BRIDGE EATS
             </a>
             <br />
             <button onClick={onClose} style={{
@@ -471,7 +471,7 @@ function StartScreen({ onStart, totalDiamonds }: { onStart: () => void; totalDia
             ) : (
               <>
                 <div style={{ color: "#ffa726", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
-                  🍔 Collecte 💎 pour un menu gratuit Bridge Eats
+                  🛵🚕 Collecte 💎 pour un menu gratuit Bridge Eats
                 </div>
                 <div style={{ width: "100%", height: 7, background: "rgba(255,255,255,0.15)", borderRadius: 6, overflow: "hidden", marginBottom: 5 }}>
                   <div style={{
@@ -628,7 +628,7 @@ function GameOverScreen({ score, checkpointNumber, totalDiamonds, onRestart }: {
                 color: "#fff", borderRadius: 30, padding: "10px 24px",
                 fontSize: 13, fontWeight: 800, textDecoration: "none", letterSpacing: 1,
               }}>
-                🍔 Réclamer sur Bridge Eats
+                🛵🚕 Réclamer sur Bridge Eats
               </a>
             </>
           ) : (
