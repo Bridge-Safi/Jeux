@@ -13,6 +13,7 @@ import {
 } from "../lib/playerProfile";
 import type { Profile } from "../lib/supabase";
 import { useT, formatNum, t as tStatic } from "../lib/i18n";
+import { useDarkMode } from "../hooks/useDarkMode";
 
 /* ─── Configuration Bridge Eats ─────────────────────────────── */
 export const BRIDGE_EATS_URL = "https://44474adc-9074-4015-a3b9-4e111cb8be39-00-11nld147gir6y.kirk.replit.dev/";
@@ -115,6 +116,8 @@ export const WHATSAPP_URL = `https://wa.me/${BRIDGE_EATS_WHATSAPP}?text=${WA_PRE
    Volontairement masqués sur les écrans plein-contenu pour ne PAS
    recouvrir les boutons existants ("Démarrer", "Rejouer", etc.). */
 function FloatingActions() {
+  const { t } = useT();
+  const [dark, toggleDark] = useDarkMode();
   const baseBtn: React.CSSProperties = {
     width: 48, height: 48, borderRadius: "50%",
     border: "2px solid rgba(255,255,255,0.3)",
@@ -136,6 +139,23 @@ function FloatingActions() {
         pointerEvents: "auto",
       }}
     >
+      <button
+        onClick={toggleDark}
+        title={dark ? t("ui.light") : t("ui.dark")}
+        aria-label={dark ? t("ui.darkOn") : t("ui.darkOff")}
+        type="button"
+        style={{
+          ...baseBtn,
+          background: dark
+            ? "linear-gradient(135deg,#ffd54f,#ff9800)"
+            : "linear-gradient(135deg,#1a237e,#311b92)",
+          color: "#fff",
+        }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        <span aria-hidden>{dark ? "☀️" : "🌙"}</span>
+      </button>
       <a
         href={BRIDGE_EATS_URL}
         title="Bridge Eats"
@@ -325,21 +345,36 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility 
       display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8,
       pointerEvents: "none",
     }}>
-      {/* Diamants session */}
+      {/* Diamants session — gros compteur très visible */}
       <div style={{
-        background: "linear-gradient(135deg,rgba(0,0,0,0.8),rgba(10,20,60,0.85))",
+        background: "linear-gradient(135deg,rgba(0,30,60,0.88),rgba(10,40,90,0.9))",
         backdropFilter: "blur(10px)",
-        border: "1px solid rgba(100,180,255,0.3)",
-        borderRadius: 16, padding: "8px 16px",
-        display: "flex", alignItems: "center", gap: 8, minWidth: 110,
-        boxShadow: "0 4px 20px rgba(0,0,0,0.6)",
+        border: "2px solid rgba(100,180,255,0.55)",
+        borderRadius: 20, padding: "10px 18px",
+        display: "flex", alignItems: "center", gap: 12, minWidth: 150,
+        boxShadow: "0 6px 28px rgba(0,80,200,0.45), 0 0 0 1px rgba(255,255,255,0.06) inset",
+        animation: "diamondPulse 2.4s ease-in-out infinite",
       }}>
-        <span style={{ fontSize: 26 }}>🪙</span>
+        <span style={{ fontSize: 38, filter: "drop-shadow(0 0 14px rgba(100,200,255,0.8))" }} aria-hidden>💎</span>
         <div>
-          <div style={{ color: "#90caf9", fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Fredoka', sans-serif" }}>{t("hud.coins")}</div>
-          <div style={{ color: "#ffd54f", fontSize: 28, fontWeight: 900, lineHeight: 1, textShadow: "0 2px 0 #1a1a1a, 0 0 18px #ffa726", fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>{sessionDiamonds}</div>
+          <div style={{
+            color: "#bbdefb", fontSize: 10, fontWeight: 700,
+            letterSpacing: 1.2, textTransform: "uppercase",
+            fontFamily: "'Fredoka', sans-serif",
+          }}>{t("hud.diamonds")}</div>
+          <div style={{
+            color: "#fff", fontSize: 44, fontWeight: 900, lineHeight: 1,
+            textShadow: "0 2px 0 #002040, 0 0 24px #4fc3f7, 0 0 40px rgba(100,200,255,0.5)",
+            fontFamily: "'Bangers', sans-serif", letterSpacing: 1,
+          }}>{sessionDiamonds}</div>
         </div>
       </div>
+      <style>{`
+        @keyframes diamondPulse {
+          0%,100% { box-shadow: 0 6px 28px rgba(0,80,200,0.45), 0 0 0 1px rgba(255,255,255,0.06) inset; }
+          50%     { box-shadow: 0 6px 36px rgba(80,180,255,0.75), 0 0 0 1px rgba(255,255,255,0.1) inset; }
+        }
+      `}</style>
 
       {/* Barre checkpoint */}
       <div style={{

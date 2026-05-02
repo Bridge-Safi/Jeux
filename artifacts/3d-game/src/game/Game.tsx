@@ -14,6 +14,7 @@ import { LanguageSelector } from "../components/LanguageSelector";
 import { useSupabaseSync } from "../hooks/useSupabaseSync";
 import { useGamepad } from "../hooks/useGamepad";
 import { useT } from "../lib/i18n";
+import { useDarkMode } from "../hooks/useDarkMode";
 
 enum Controls {
   left = "left",
@@ -125,6 +126,7 @@ export function Game() {
   const gameState = useGameState();
   const { state, startGame, resumeGame, changeLane, jump, tick } = gameState;
   const { t } = useT();
+  const [dark] = useDarkMode();
 
   const { profile, status } = useSupabaseSync(state.score, state.phase, state.playTime);
 
@@ -142,8 +144,21 @@ export function Game() {
       width: "100vw",
       height: "100vh",
       minHeight: "100dvh" as never,
-      position: "relative", background: "#0a0822", overflow: "hidden",
+      position: "relative",
+      background: dark ? "#000" : "#0a0822",
+      overflow: "hidden",
     }}>
+      {/* Voile sombre global appliqué au-dessus du canvas 3D quand le
+          mode sombre est activé. Sous les UIs (HUD, overlays) pour ne
+          pas affecter leur lisibilité. */}
+      {dark && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 1,
+          background: "rgba(0,0,0,0.45)",
+          mixBlendMode: "multiply",
+          pointerEvents: "none",
+        }} />
+      )}
       <KeyboardControls map={keyMap}>
         <Canvas
           flat

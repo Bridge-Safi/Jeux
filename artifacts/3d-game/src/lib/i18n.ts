@@ -59,8 +59,13 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     /* HUD */
     "hud.coins": "Pièces",
+    "hud.diamonds": "Diamants",
     "hud.score": "Score",
     "hud.nextStop": "🍽️ Prochain arrêt · {s}s",
+    "ui.darkOn": "Mode sombre activé",
+    "ui.darkOff": "Mode sombre désactivé",
+    "ui.dark": "Sombre",
+    "ui.light": "Clair",
 
     /* Touch controls */
     "controls.swipeHint": "← SWIPE pour changer de voie · SWIPE ↑ pour sauter →",
@@ -263,8 +268,13 @@ const DICT: Record<Lang, Record<string, string>> = {
     "start.badge.menu": "Free meal on day 6",
 
     "hud.coins": "Coins",
+    "hud.diamonds": "Diamonds",
     "hud.score": "Score",
     "hud.nextStop": "🍽️ Next stop · {s}s",
+    "ui.darkOn": "Dark mode on",
+    "ui.darkOff": "Dark mode off",
+    "ui.dark": "Dark",
+    "ui.light": "Light",
 
     "controls.swipeHint": "← SWIPE to switch lane · SWIPE ↑ to jump →",
 
@@ -454,8 +464,13 @@ const DICT: Record<Lang, Record<string, string>> = {
     "start.badge.menu": "وجبة مجانية في اليوم السادس",
 
     "hud.coins": "العملات",
+    "hud.diamonds": "ألماس",
     "hud.score": "النتيجة",
     "hud.nextStop": "🍽️ المحطة التالية · {s}ث",
+    "ui.darkOn": "تم تفعيل الوضع الداكن",
+    "ui.darkOff": "تم إيقاف الوضع الداكن",
+    "ui.dark": "داكن",
+    "ui.light": "فاتح",
 
     "controls.swipeHint": "← اسحب لتغيير المسار · اسحب لأعلى للقفز →",
 
