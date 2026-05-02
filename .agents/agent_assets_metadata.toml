@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "7gr3TwHoRQZ0tzXpS6FHJ"
+uri = "file://artifacts/3d-game/public/shark-warrior-run1.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "rM1UibLRUkr4i6UXb2VE8"
+uri = "file://artifacts/3d-game/public/shark-warrior-run2.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Ge38m6rR5cBTK2ITP7vLG"
+uri = "file://artifacts/3d-game/public/shark-warrior-jump.png"
+type = "image"
+title = "generated_image"
