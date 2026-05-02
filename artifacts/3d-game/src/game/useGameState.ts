@@ -30,15 +30,36 @@ export interface GameState {
   nextCheckpointAt: number;
 }
 
-/* ── Paramètres de difficulté ───────────────────────────────── */
-const CHECKPOINT_INTERVAL = 40;   // pub toutes les 40s (max de revenus)
-const SPEED_START       = 10;     // vitesse initiale plus rapide
-const SPEED_MAX         = 28;     // max speed pour sensation intense
-const SPEED_RAMP        = 120;    // rampe plus agressive (200 → 120)
-const OBSTACLE_RATE     = 2.4;    // obstacles plus fréquents (1.2 → 2.4)
-const DIAMOND_RATE      = 0.75;   // diamants rares (2.0 → 0.75) = 1 toutes ~1.3s
-const CLUSTER_CHANCE    = 0.25;   // 25% de chance de cluster (2 diamants d'affilée)
-const DOUBLE_OBS_CHANCE = 0.30;   // 30% de chance d'obstacle sur 2 voies simultanément
+/* ── Paramètres de difficulté progressive ──────────────────────
+   Le jeu démarre TRÈS facile (échauffement 15s) puis monte
+   progressivement. Pour atteindre 1000 il faudra ~80s à fond.
+   ─────────────────────────────────────────────────────────────── */
+const CHECKPOINT_INTERVAL = 60;   // pub toutes les 60s
+
+/* Vitesse — progression douce */
+const SPEED_START = 8;            // démarrage zen
+const SPEED_MAX   = 30;           // intense après ~90s
+const SPEED_RAMP_TIME = 90;       // 90s pour atteindre le max
+
+/* Spawn obstacles — quasi vide au début, dense à la fin */
+const OBSTACLE_RATE_MIN = 0.6;    // 0-15s : 1 obstacle / 1.7s (très facile)
+const OBSTACLE_RATE_MAX = 3.2;    // 90s+ : 1 obstacle toutes ~0.3s (intense)
+
+/* Double obstacle (bloque 2 voies) — apparaît seulement après 30s */
+const DOUBLE_OBS_START_TIME = 30; // pas de double avant 30s
+const DOUBLE_OBS_MAX_CHANCE = 0.45;
+
+/* Triple obstacle (force le saut) — apparaît seulement après 60s */
+const TRIPLE_OBS_START_TIME = 60;
+const TRIPLE_OBS_MAX_CHANCE = 0.15;
+
+/* Pièces d'or — généreuses au début pour la satisfaction */
+const DIAMOND_RATE_MIN = 1.4;     // au début beaucoup de pièces
+const DIAMOND_RATE_MAX = 0.7;     // à la fin moins de pièces (plus risquées)
+const CLUSTER_CHANCE   = 0.35;    // 35% de chance de cluster
+
+/* Helper : interpolation linéaire bornée */
+const lerp = (a: number, b: number, t: number) => a + (b - a) * Math.max(0, Math.min(1, t));
 
 export function useGameState() {
   const idRef = useRef(0);
@@ -68,23 +89,23 @@ export function useGameState() {
     lastDiamondLane.current = null;
     clusterCount.current = 0;
 
-    /* Pré-charger diamants et obstacles so the game feels full immediately */
+    /* Démarrage doux : peu d'obstacles, beaucoup de pièces visibles */
     const preObstacles: Obstacle[] = [];
     const preDiamonds: Diamond[] = [];
 
-    // Obstacles à 3 distances différentes (pas trop proches au départ)
-    [-55, -85, -120, -155].forEach((z) => {
+    // Seulement 2 obstacles loin pour ne pas effrayer le débutant
+    [-95, -150].forEach((z) => {
       const lane = Math.floor(Math.random() * 3) - 1;
       preObstacles.push({ id: idRef.current++, lane, z });
     });
 
-    // Diamants répartis sur toute la profondeur visible
-    [-12, -22, -35, -48, -62, -78, -95, -115, -138, -160].forEach((z) => {
+    // Beaucoup de pièces tentantes au démarrage
+    [-12, -22, -32, -42, -55, -68, -82, -100, -120, -140, -165].forEach((z) => {
       const lane = Math.floor(Math.random() * 3) - 1;
       preDiamonds.push({ id: idRef.current++, lane, z });
-      // quelques clusters
-      if (Math.random() < 0.35) {
-        preDiamonds.push({ id: idRef.current++, lane, z: z - 6 });
+      // Clusters généreux au début
+      if (Math.random() < 0.5) {
+        preDiamonds.push({ id: idRef.current++, lane, z: z - 5 });
       }
     });
 
@@ -135,8 +156,24 @@ export function useGameState() {
       playTime += dt;
       distance += dt * speed;
 
-      // Vitesse : montée rapide et agressive
-      speed = Math.min(SPEED_MAX, SPEED_START + distance / SPEED_RAMP);
+      /* ── Progression de difficulté basée sur le temps de jeu ─ */
+      const t = playTime / SPEED_RAMP_TIME;             // 0 → 1 sur 90s
+      speed = lerp(SPEED_START, SPEED_MAX, t);
+
+      // Easing : facile au début, plus intense après 30s (courbe quadratique)
+      const dt15 = Math.max(0, (playTime - 15) / 75);   // démarre à 15s
+      const obstacleRate = lerp(OBSTACLE_RATE_MIN, OBSTACLE_RATE_MAX, dt15 * dt15);
+
+      // Pièces : décroissent légèrement (forcent le risque pour les coins)
+      const diamondRate = lerp(DIAMOND_RATE_MIN, DIAMOND_RATE_MAX, t);
+
+      // Double / triple obstacles : déblocages temporels
+      const doubleChance = playTime < DOUBLE_OBS_START_TIME
+        ? 0
+        : lerp(0, DOUBLE_OBS_MAX_CHANCE, (playTime - DOUBLE_OBS_START_TIME) / 60);
+      const tripleChance = playTime < TRIPLE_OBS_START_TIME
+        ? 0
+        : lerp(0, TRIPLE_OBS_MAX_CHANCE, (playTime - TRIPLE_OBS_START_TIME) / 60);
 
       // Checkpoint → pub
       if (playTime >= nextCheckpointAt) {
@@ -172,30 +209,33 @@ export function useGameState() {
         .map((d) => ({ ...d, z: d.z + speed * dt }))
         .filter((d) => d.z < DESPAWN_Z);
 
-      /* ── Spawn obstacles ────────────────────────────────────── */
-      if (Math.random() < dt * OBSTACLE_RATE) {
+      /* ── Spawn obstacles (rate progressif) ─────────────────── */
+      if (Math.random() < dt * obstacleRate) {
         const lane = Math.floor(Math.random() * 3) - 1;
         obstacles.push({ id: idRef.current++, lane, z: SPAWN_Z });
 
-        // Double obstacle : bloque 2 voies sur 3 = force le joueur à sauter ou à chercher la bonne voie
-        if (Math.random() < DOUBLE_OBS_CHANCE) {
+        // Double obstacle (après 30s) — bloque 2 voies
+        if (Math.random() < doubleChance) {
           let lane2: number;
           do { lane2 = Math.floor(Math.random() * 3) - 1; } while (lane2 === lane);
-          // décalé légèrement pour garder le jeu jouable
           obstacles.push({ id: idRef.current++, lane: lane2, z: SPAWN_Z - 4 });
+
+          // Triple (après 60s) — bloque les 3 voies → FORCE le saut
+          if (Math.random() < tripleChance) {
+            const lane3 = [-1, 0, 1].find((l) => l !== lane && l !== lane2)!;
+            obstacles.push({ id: idRef.current++, lane: lane3, z: SPAWN_Z - 8 });
+          }
         }
       }
 
-      /* ── Spawn diamants (rares, mais avec clusters tentateurs) ── */
-      if (Math.random() < dt * DIAMOND_RATE) {
+      /* ── Spawn pièces (généreuses au début, plus risquées après) ── */
+      if (Math.random() < dt * diamondRate) {
         const lane = Math.floor(Math.random() * 3) - 1;
         diamonds.push({ id: idRef.current++, lane, z: SPAWN_Z });
 
-        // Cluster : 25% de chance d'un 2ème diamant juste derrière (même voie)
         if (Math.random() < CLUSTER_CHANCE) {
           diamonds.push({ id: idRef.current++, lane, z: SPAWN_Z - 5 });
-          // 10% de chance d'un 3ème pour le combo (très tentant mais risqué)
-          if (Math.random() < 0.10) {
+          if (Math.random() < 0.15) {
             diamonds.push({ id: idRef.current++, lane, z: SPAWN_Z - 10 });
           }
         }

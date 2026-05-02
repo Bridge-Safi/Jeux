@@ -1,8 +1,7 @@
+/* Police cartoon style Subway Surfers — DOIT être en premier */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Bangers&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
-
-/* Police cartoon style Subway Surfers */
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Bangers&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
