@@ -20,9 +20,9 @@ interface GameUIProps {
   onJump: () => void;
 }
 
-/* ─── Bouton tactile ────────────────────────────────────────── */
-function TouchButton({ label, icon, onClick, color, style }: {
-  label: string; icon: string; onClick: () => void; color: string; style?: React.CSSProperties;
+/* ─── Bouton tactile cartoon Subway Surfers ─────────────── */
+function TouchButton({ icon, onClick, color, size = 78 }: {
+  icon: string; onClick: () => void; color: string; size?: number;
 }) {
   const [pressed, setPressed] = useState(false);
 
@@ -42,21 +42,23 @@ function TouchButton({ label, icon, onClick, color, style }: {
       onMouseUp={handleEnd}
       onMouseLeave={handleEnd}
       style={{
-        width: 74, height: 74, borderRadius: 18,
-        border: `2px solid ${color}`,
-        background: pressed ? `${color}55` : `linear-gradient(145deg,rgba(0,0,0,0.7),rgba(0,0,0,0.4))`,
-        color: "white", fontSize: 28, fontWeight: 700, cursor: "pointer",
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1,
-        boxShadow: pressed ? `0 0 20px ${color}88` : `0 4px 16px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.15)`,
-        transform: pressed ? "scale(0.92)" : "scale(1)",
-        transition: "all 0.08s ease",
+        width: size, height: size, borderRadius: "50%",
+        border: "5px solid #1a1a1a",
+        background: `radial-gradient(circle at 30% 30%, ${color}, ${color}dd 60%, ${color}99)`,
+        color: "white", fontSize: size * 0.46, fontWeight: 900,
+        cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: pressed
+          ? `0 1px 0 #1a1a1a, 0 3px 6px rgba(0,0,0,0.5), inset 0 -3px 8px rgba(0,0,0,0.25)`
+          : `0 5px 0 #1a1a1a, 0 10px 18px rgba(0,0,0,0.5), inset 0 -4px 10px rgba(0,0,0,0.25), inset 0 4px 8px rgba(255,255,255,0.35)`,
+        transform: pressed ? "translateY(4px)" : "translateY(0)",
+        transition: "transform 0.08s ease, box-shadow 0.08s ease",
         userSelect: "none", WebkitUserSelect: "none",
-        backdropFilter: "blur(6px)",
-        ...style,
+        textShadow: "0 2px 0 rgba(0,0,0,0.5)",
+        fontFamily: "'Fredoka', sans-serif",
       }}
     >
       <span style={{ lineHeight: 1 }}>{icon}</span>
-      <span style={{ fontSize: 9, opacity: 0.7, letterSpacing: 0.5, fontWeight: 600 }}>{label}</span>
     </button>
   );
 }
@@ -171,10 +173,10 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, totalDiamond
         display: "flex", alignItems: "center", gap: 8, minWidth: 110,
         boxShadow: "0 4px 20px rgba(0,0,0,0.6)",
       }}>
-        <span style={{ fontSize: 26 }}>💎</span>
+        <span style={{ fontSize: 26 }}>🪙</span>
         <div>
-          <div style={{ color: "#90caf9", fontSize: 10, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>Session</div>
-          <div style={{ color: "#fff", fontSize: 24, fontWeight: 900, lineHeight: 1, textShadow: "0 0 12px #42a5f5" }}>{sessionDiamonds}</div>
+          <div style={{ color: "#90caf9", fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Fredoka', sans-serif" }}>Pièces</div>
+          <div style={{ color: "#ffd54f", fontSize: 28, fontWeight: 900, lineHeight: 1, textShadow: "0 2px 0 #1a1a1a, 0 0 18px #ffa726", fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>{sessionDiamonds}</div>
         </div>
       </div>
 
@@ -207,8 +209,8 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, totalDiamond
         borderRadius: 16, padding: "8px 14px", textAlign: "center",
         boxShadow: "0 4px 20px rgba(0,0,0,0.6)",
       }}>
-        <div style={{ color: "#a5d6a7", fontSize: 10, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>Score</div>
-        <div style={{ color: "#fff", fontSize: 22, fontWeight: 900, lineHeight: 1.1, textShadow: "0 0 10px #66bb6a" }}>{score}</div>
+        <div style={{ color: "#a5d6a7", fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Fredoka', sans-serif" }}>Score</div>
+        <div style={{ color: "#fff", fontSize: 26, fontWeight: 900, lineHeight: 1.1, textShadow: "0 2px 0 #1a1a1a, 0 0 12px #66bb6a", fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>{score}</div>
         {checkpointNumber > 0 && (
           <div style={{ color: "#ffd54f", fontSize: 10, marginTop: 2 }}>🏁 ×{checkpointNumber}</div>
         )}
@@ -239,10 +241,9 @@ function TouchControls({ onChangeLane, onJump }: {
       display: "flex", justifyContent: "space-between", alignItems: "flex-end",
       padding: "0 18px", pointerEvents: "auto",
     }}>
-      <TouchButton icon="◀" label="GAUCHE" color="#42a5f5" onClick={() => onChangeLane(-1)} />
-      <TouchButton icon="▲" label="SAUTER" color="#ffd740" onClick={onJump}
-        style={{ width: 88, height: 88, borderRadius: 24, fontSize: 32 }} />
-      <TouchButton icon="▶" label="DROITE" color="#42a5f5" onClick={() => onChangeLane(1)} />
+      <TouchButton icon="←" color="#26c6da" onClick={() => onChangeLane(-1)} />
+      <TouchButton icon="↑" color="#ffca28" size={94} onClick={onJump} />
+      <TouchButton icon="→" color="#ec407a" onClick={() => onChangeLane(1)} />
     </div>
   );
 }
@@ -523,9 +524,11 @@ function StartScreen({ onStart, totalDiamonds }: { onStart: () => void; totalDia
 
           {/* Titre */}
           <div style={{
-            fontSize: "clamp(32px,10vw,46px)", fontWeight: 900, letterSpacing: 3, color: "#fff",
-            textShadow: "0 0 40px #1565c0, 0 4px 24px rgba(0,0,0,0.9)",
+            fontFamily: "'Bangers', sans-serif",
+            fontSize: "clamp(40px,12vw,58px)", letterSpacing: 4, color: "#ffeb3b",
+            textShadow: "3px 3px 0 #1a1a1a, 6px 6px 0 #c62828, 0 0 40px #ff8f00",
             lineHeight: 1, marginBottom: 4,
+            transform: "rotate(-2deg)",
           }}>
             🦈 SAFI RUNNER
           </div>

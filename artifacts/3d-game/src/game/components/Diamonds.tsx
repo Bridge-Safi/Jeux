@@ -5,46 +5,53 @@ import type { Diamond } from "../useGameState";
 
 const LANE_X = [-2, 0, 2];
 
-function BlueDiamond({ x, z }: { x: number; z: number }) {
+/* Pièce d'or façon Subway Surfers — disque qui tourne sur axe Y avec scintillement */
+function GoldCoin({ x, z }: { x: number; z: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const ringRef = useRef<THREE.Mesh>(null);
+  const sparkRef = useRef<THREE.Mesh>(null);
   const matRef = useRef<THREE.MeshBasicMaterial>(null);
 
   useFrame(() => {
-    const t = Date.now() * 0.004;
-    const y = 0.95 + Math.sin(t) * 0.14;
+    const t = Date.now() * 0.005;
+    const y = 1.0 + Math.sin(t) * 0.12;
     if (meshRef.current) {
-      meshRef.current.rotation.y += 0.045;
+      meshRef.current.rotation.y += 0.18;
       meshRef.current.position.y = y;
     }
-    if (ringRef.current) {
-      ringRef.current.position.y = y;
+    if (sparkRef.current) {
+      sparkRef.current.rotation.z += 0.05;
+      sparkRef.current.position.y = y;
     }
-    /* Pulse couleur */
     if (matRef.current) {
-      const v = 0.75 + Math.sin(t * 2) * 0.25;
-      matRef.current.color.setRGB(0.39 * v, 0.71 * v, 0.96 * v);
+      const v = 0.85 + Math.sin(t * 3) * 0.15;
+      matRef.current.color.setRGB(1.0 * v, 0.85 * v, 0.15 * v);
     }
   });
 
   return (
     <group position={[x, 0, z]}>
-      {/* Corps diamant — meshBasicMaterial = toujours visible */}
-      <mesh ref={meshRef} position={[0, 0.95, 0]}>
-        <octahedronGeometry args={[0.34, 0]} />
-        <meshBasicMaterial ref={matRef} color="#64b5f6" />
+      {/* Pièce dorée brillante */}
+      <mesh ref={meshRef} position={[0, 1.0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.38, 0.38, 0.08, 16]} />
+        <meshBasicMaterial ref={matRef} color="#ffd700" toneMapped={false} />
       </mesh>
 
-      {/* Halo anneau */}
-      <mesh ref={ringRef} position={[0, 0.95, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.45, 0.055, 6, 24]} />
-        <meshBasicMaterial color="#90caf9" transparent opacity={0.7} />
+      {/* Contour cartoon noir épais */}
+      <mesh position={[0, 1.0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.38, 0.045, 6, 18]} />
+        <meshBasicMaterial color="#5d3a00" />
       </mesh>
 
-      {/* Éclat statique sous le diamant */}
-      <mesh position={[0, 0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.28, 12]} />
-        <meshBasicMaterial color="#1e88e5" transparent opacity={0.4} />
+      {/* Étoile scintillement style Subway Surfers */}
+      <mesh ref={sparkRef} position={[0, 1.0, 0]} rotation={[0, 0, 0]}>
+        <ringGeometry args={[0.5, 0.6, 8, 1]} />
+        <meshBasicMaterial color="#fff59d" transparent opacity={0.8} toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+
+      {/* Halo doré sous la pièce */}
+      <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.4, 12]} />
+        <meshBasicMaterial color="#ffa000" transparent opacity={0.5} toneMapped={false} />
       </mesh>
     </group>
   );
@@ -54,7 +61,7 @@ export function Diamonds({ diamonds }: { diamonds: Diamond[] }) {
   return (
     <>
       {diamonds.map((d) => (
-        <BlueDiamond key={d.id} x={LANE_X[d.lane + 1]} z={d.z} />
+        <GoldCoin key={d.id} x={LANE_X[d.lane + 1]} z={d.z} />
       ))}
     </>
   );
