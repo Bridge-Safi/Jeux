@@ -17,6 +17,13 @@ export const DAYS_BEFORE_CLAIM      = 4;              // J+0 = 1ᵉʳ jour ; ré
 /* ─── Types ──────────────────────────────────────────────────── */
 export type PlayDay = { date: string; playSeconds: number };
 
+/* Raison de blocage exprimée comme clé i18n + paramètres,
+   localisée par l'UI via t(). */
+export type BlockerInfo =
+  | { key: "blocker.diamonds"; n: number }
+  | { key: "blocker.days" | "blocker.daysPlural"; n: number }
+  | { key: "blocker.wait" | "blocker.waitPlural"; n: number };
+
 export type MenuEligibility = {
   qualifyingDays: number;          // nb de jours avec ≥ 1h
   daysSinceFirstPlay: number;      // nb de jours calendaires depuis le 1ᵉʳ jour
@@ -26,7 +33,7 @@ export type MenuEligibility = {
   menusClaimed: number;
   menusAvailable: number;
   eligible: boolean;               // peut réclamer un menu MAINTENANT
-  blockerReason: string | null;    // raison du blocage (à afficher)
+  blocker: BlockerInfo | null;     // raison du blocage (à afficher via t())
 };
 
 export function getPlayerName(): string {
@@ -225,20 +232,20 @@ export function getMenuEligibility(profile: Profile | null): MenuEligibility {
 
   /* Conditions cumulatives pour réclamer */
   let eligible = true;
-  let blockerReason: string | null = null;
+  let blocker: BlockerInfo | null = null;
 
   if (menusAvailable < 1) {
     eligible = false;
     const left = DIAMONDS_PER_MENU - (diamondsCollected % DIAMONDS_PER_MENU);
-    blockerReason = `Encore ${left.toLocaleString("fr-FR")} 💎 à collecter`;
+    blocker = { key: "blocker.diamonds", n: left };
   } else if (qualifyingDays < REQUIRED_PLAY_DAYS) {
     eligible = false;
     const missing = REQUIRED_PLAY_DAYS - qualifyingDays;
-    blockerReason = `Encore ${missing} jour${missing > 1 ? "s" : ""} de jeu (≥ 1h) à valider`;
+    blocker = { key: missing > 1 ? "blocker.daysPlural" : "blocker.days", n: missing };
   } else if (daysSinceFirstPlay < DAYS_BEFORE_CLAIM) {
     eligible = false;
     const wait = DAYS_BEFORE_CLAIM - daysSinceFirstPlay;
-    blockerReason = `Reviens dans ${wait} jour${wait > 1 ? "s" : ""} pour réclamer`;
+    blocker = { key: wait > 1 ? "blocker.waitPlural" : "blocker.wait", n: wait };
   }
 
   return {
@@ -250,7 +257,7 @@ export function getMenuEligibility(profile: Profile | null): MenuEligibility {
     menusClaimed,
     menusAvailable,
     eligible,
-    blockerReason,
+    blocker,
   };
 }
 
@@ -259,22 +266,23 @@ export async function registerBridgePhone(rawPhone: string): Promise<{ success: 
   if (!isSupabaseConfigured) return { success: false, error: "Hors-ligne" };
 
   /* Normalisation : on garde uniquement chiffres et +.
-     Format MA accepté : +212XXXXXXXXX ou 0XXXXXXXXX. */
+     Format MA accepté : +212XXXXXXXXX ou 0XXXXXXXXX.
+     Codes d'erreur localisés par l'UI via t(). */
   const normalized = rawPhone.replace(/[^\d+]/g, "");
   if (normalized.length < 9 || normalized.length > 15) {
-    return { success: false, error: "Numéro invalide. Format : +212XXXXXXXXX ou 0XXXXXXXXX" };
+    return { success: false, error: "claim.phone.invalid" };
   }
 
   const byDevice = await findByDevice();
   const targetId = byDevice?.id ?? await getCurrentUserId();
-  if (!targetId) return { success: false, error: "Profil introuvable" };
+  if (!targetId) return { success: false, error: "claim.error.generic" };
 
   try {
     /* Vérifier unicité du téléphone */
     const { data: exists } = await supabase
       .from("profiles").select("id").eq("bridge_phone", normalized).maybeSingle();
     if (exists && (exists as { id: string }).id !== targetId) {
-      return { success: false, error: "Un compte Bridge utilise déjà ce numéro." };
+      return { success: false, error: "claim.phone.taken" };
     }
 
     const { error } = await supabase
@@ -287,7 +295,7 @@ export async function registerBridgePhone(rawPhone: string): Promise<{ success: 
     return { success: true };
   } catch (err) {
     console.error("registerBridgePhone:", err);
-    return { success: false, error: "Erreur serveur" };
+    return { success: false, error: "claim.error.generic" };
   }
 }
 
@@ -299,11 +307,11 @@ export async function registerBridgePhone(rawPhone: string): Promise<{ success: 
    Si la RPC n'existe pas encore (DB pas migrée), on accepte (fallback).
    ─────────────────────────────────────────────────────────────── */
 export async function markMenuClaimed(): Promise<{ success: boolean; error?: string }> {
-  if (!isSupabaseConfigured) return { success: false, error: "Hors-ligne" };
+  if (!isSupabaseConfigured) return { success: false, error: "claim.error.generic" };
 
   const byDevice = await findByDevice();
   const targetId = byDevice?.id ?? await getCurrentUserId();
-  if (!targetId) return { success: false, error: "Profil introuvable" };
+  if (!targetId) return { success: false, error: "claim.error.generic" };
 
   try {
     const { data, error } = await supabase.rpc("claim_menu", { p_id: targetId });
@@ -313,12 +321,12 @@ export async function markMenuClaimed(): Promise<{ success: boolean; error?: str
       return { success: false, error: error.message };
     }
     if (data === false) {
-      return { success: false, error: "Conditions de réclamation non remplies (vérifié côté serveur)." };
+      return { success: false, error: "claim.error.notMet" };
     }
     return { success: true };
   } catch (err) {
     console.error("markMenuClaimed:", err);
-    return { success: false, error: "Erreur serveur" };
+    return { success: false, error: "claim.error.generic" };
   }
 }
 

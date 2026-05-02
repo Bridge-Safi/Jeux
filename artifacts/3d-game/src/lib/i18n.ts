@@ -1,0 +1,572 @@
+import { useEffect, useState } from "react";
+
+export type Lang = "fr" | "en" | "ar";
+
+export const LANGS: ReadonlyArray<{ code: Lang; label: string; flag: string; dir: "ltr" | "rtl" }> = [
+  { code: "fr", label: "Français", flag: "🇫🇷", dir: "ltr" },
+  { code: "en", label: "English",  flag: "🇬🇧", dir: "ltr" },
+  { code: "ar", label: "العربية",  flag: "🇲🇦", dir: "rtl" },
+];
+
+const STORAGE_KEY = "safi_runner_lang";
+
+const DICT: Record<Lang, Record<string, string>> = {
+  /* ─────────────────── FRANÇAIS ─────────────────── */
+  fr: {
+    "lang.label": "Langue",
+
+    /* Bridge / Engagement */
+    "bridge.programTitle": "🛵🚕 Programme Bridge — Menu gratuit",
+    "bridge.diamonds": "💎 Diamants",
+    "bridge.activeDays": "📅 Jours actifs (≥ 1h)",
+    "bridge.todayLabel": "⏱️ Aujourd'hui : {time}",
+    "bridge.dayBadge": "J{n}",
+    "bridge.menusReady": "🎉 {n} menu gratuit prêt !",
+    "bridge.menusReadyPlural": "🎉 {n} menus gratuits prêts !",
+    "bridge.claimHint": "Réclame ton menu sur Bridge Eats avec ton n° de téléphone",
+    "bridge.timeRemaining.minutes": "{m} min restantes",
+    "bridge.timeRemaining.hours": "{h}h{rest} restantes",
+    "bridge.timeRemaining.done": "✓ jour validé",
+
+    /* Blockers */
+    "blocker.diamonds": "Encore {n} 💎 à collecter",
+    "blocker.days": "Encore {n} jour de jeu (≥ 1h) à valider",
+    "blocker.daysPlural": "Encore {n} jours de jeu (≥ 1h) à valider",
+    "blocker.wait": "Reviens dans {n} jour pour réclamer",
+    "blocker.waitPlural": "Reviens dans {n} jours pour réclamer",
+
+    /* Start screen */
+    "start.title": "🦈 SAFI RUNNER",
+    "start.subtitle": "Médina de Safi · Course Infinie 3D",
+    "start.play": "▶ JOUER",
+    "start.controls.lanes": "◀ ▶ Voies",
+    "start.controls.jump": "↑ / Espace Sauter",
+    "start.controls.touch": "Boutons tactiles ✓",
+    "start.badge.diamonds": "Collecte des diamants",
+    "start.badge.days": "{n} jours de jeu",
+    "start.badge.menu": "Menu offert au 4ᵉ jour",
+
+    /* HUD */
+    "hud.coins": "Pièces",
+    "hud.score": "Score",
+    "hud.nextStop": "🍽️ Prochain arrêt · {s}s",
+
+    /* Touch controls */
+    "controls.swipeHint": "← SWIPE pour changer de voie · SWIPE ↑ pour sauter →",
+
+    /* Instructions */
+    "instr.title": "🦈 COMMENT JOUER",
+    "instr.subtitle": "SAFI RUNNER",
+    "instr.row.lanes.label": "Changer de voie",
+    "instr.row.lanes.desc": "Boutons GAUCHE / DROITE ou flèches clavier",
+    "instr.row.jump.label": "Sauter",
+    "instr.row.jump.desc": "Bouton SAUTER, flèche ↑ ou Espace",
+    "instr.row.diamonds.label": "Collecte les diamants",
+    "instr.row.diamonds.desc": "Cours sur les diamants bleus pour les ramasser",
+    "instr.row.obstacles.label": "Évite les obstacles",
+    "instr.row.obstacles.desc": "Change de voie ou saute par-dessus",
+    "instr.howTitle": "🛵🚕 Comment gagner un menu Bridge Eats",
+    "instr.how.collect": "Collecte {n} 💎 au total",
+    "instr.how.play": "Joue au moins {h}h par jour pendant {d} jours différents",
+    "instr.how.day4": "Le 4ᵉ jour : entre ton n° Bridge Eats pour réclamer le menu",
+    "instr.how.ads": "Pause publicitaire toutes les 40 secondes",
+    "instr.launch": "▶ LANCER LE JEU",
+
+    /* Claim overlay */
+    "claim.unlocked.title": "MENU GRATUIT\nDÉBLOQUÉ !",
+    "claim.unlocked.body": "Tu as joué {days} jours et collecté {diamonds} 💎",
+    "claim.unlocked.daySingular": "Tu as joué {days} jour et collecté {diamonds} 💎",
+    "claim.notReady.title": "Pas encore prêt",
+    "claim.phone.label": "📱 Ton n° de téléphone Bridge Eats",
+    "claim.phone.help": "Ce numéro identifie ton compte Bridge — c'est lui qui recevra ton menu gratuit. Un seul menu par numéro.",
+    "claim.phone.placeholder": "+212 6XX XXXXXX  ou  06XX XXXXXX",
+    "claim.phone.empty": "Entre ton numéro Bridge Eats.",
+    "claim.phone.invalid": "Numéro invalide. Format : +212XXXXXXXXX ou 0XXXXXXXXX",
+    "claim.phone.taken": "Un compte Bridge utilise déjà ce numéro.",
+    "claim.error.generic": "Erreur — réessaie.",
+    "claim.error.notMet": "Conditions de réclamation non remplies (vérifié côté serveur).",
+    "claim.button.claim": "🛵🚕 RÉCLAMER MON MENU",
+    "claim.button.checking": "Vérification…",
+    "claim.button.continue": "Continuer à jouer",
+    "claim.button.continuePlay": "▶ Continuer à jouer",
+    "claim.done.title": "✅ Numéro enregistré !",
+    "claim.done.body": "Ton menu sera lié à ton compte Bridge Eats. Clique ci-dessous pour le commander.",
+    "claim.done.cta": "🛵🚕 ALLER SUR BRIDGE EATS",
+
+    /* Game Over */
+    "over.title": "GAME OVER",
+    "over.subtitle": "Le Requin Guerrier s'est arrêté !",
+    "over.stat.session": "Session",
+    "over.stat.score": "Score",
+    "over.stat.stops": "Pauses",
+    "over.stat.sardines": "Sardines",
+    "over.restart": "🔄 RECOMMENCER",
+
+    /* Supabase panel */
+    "db.connected": "● Connecté",
+    "db.connecting": "● Connexion…",
+    "db.offline": "● Hors-ligne",
+    "db.error": "● Erreur",
+    "db.loading": "Chargement du profil…",
+    "db.unavailable": "Profil non disponible.",
+    "db.user": "👤",
+    "db.totalDiamonds": "💎 Total :",
+    "db.sardines": "🐟 Sardines :",
+
+    /* Checkpoint — common */
+    "cp.resume": "Reprendre la course 🏃",
+    "cp.next": "Question suivante →",
+    "cp.seeResult": "Voir le résultat",
+    "cp.header.stop": "Arrêt #{n} — {venue}",
+    "cp.currentScore": "Score actuel : {n} 💎",
+    "cp.completePrompt": "Complète l'activité pour reprendre ta course dans la médina de Safi !",
+    "cp.startActivity": "Commencer l'activité →",
+    "cp.completed": "Activité complétée !",
+    "cp.completedBody": "Le requin reprend sa course dans la médina…",
+    "act.title.quiz": "🕌 Quiz Culture Marocaine",
+    "act.title.form": "📝 Sondage Satisfaction",
+    "act.title.video": "📺 Pause Publicitaire",
+    "act.title.sponsorQuiz": "🤝 Quiz Sponsor",
+    "act.title.social": "💖 Suis-nous sur les réseaux !",
+    "act.title.reel": "🎬 Reel Resto Safi",
+    "act.sub.quiz": "Testez votre connaissance de Safi et du Maroc !",
+    "act.sub.form": "Partagez votre avis sur Safi Runner",
+    "act.sub.video": "Découvrez nos partenaires locaux",
+    "act.sub.sponsorQuiz": "Répondez et découvrez une info sur Safi !",
+    "act.sub.social": "3 taps rapides : Insta, Facebook, TikTok",
+    "act.sub.reel": "Découvre une pépite de la médina en 8s",
+    "soc.followCta": "Suis {handle}",
+    "soc.tapAll": "Tape les 3 boutons pour continuer ({n}/3)",
+    "soc.followBtn": "Suivre",
+    "soc.followedBtn": "✓ Suivi",
+    "soc.closeHint": "Tu peux fermer chaque page après l'avoir suivi",
+    "reel.wait": "Patienter… {s}s",
+    "reel.share": "Partager",
+
+    /* Checkpoint — quiz */
+    "quiz.questionOf": "Question {n} / {total}",
+    "quiz.score": "{n}/{total} bonnes réponses !",
+    "quiz.feedback.perfect": "Parfait ! Tu connais bien la médina de Safi !",
+    "quiz.feedback.good": "Très bien ! Continue à explorer la culture marocaine.",
+    "quiz.feedback.try": "Continue à apprendre ! Safi est une ville fascinante.",
+
+    /* Checkpoint — form */
+    "form.intro": "Pendant votre pause au restaurant, partagez votre expérience avec nous !",
+    "form.field.name": "Votre prénom",
+    "form.field.namePh": "Ex : Ahmed",
+    "form.field.city": "Votre ville",
+    "form.field.cityPh": "Ex : Safi",
+    "form.field.email": "Email (optionnel)",
+    "form.field.emailPh": "votre@email.com",
+    "form.field.opinion": "Que pensez-vous du jeu Safi Runner ?",
+    "form.field.opinionPh": "Votre avis...",
+    "form.rating": "Note globale du jeu",
+    "form.submit": "Envoyer mon avis ✓",
+    "form.error.name": "Veuillez entrer votre prénom.",
+    "form.error.city": "Veuillez entrer votre ville.",
+    "form.error.rating": "Veuillez donner une note au jeu.",
+    "form.thanks.title": "Merci pour votre avis !",
+    "form.thanks.body": "Votre retour aide à améliorer Safi Runner.",
+
+    /* Checkpoint — video ad */
+    "ad.sponsored": "📢 MESSAGE SPONSORISÉ",
+    "ad.playing": "Publicité en cours…",
+    "ad.timeLeft": "Encore {s}s",
+    "ad.done": "Terminée !",
+    "ad.continue": "Continuer →",
+    "ad.wait": "Patienter {s}s…",
+    "ad.thanks": "Merci d'avoir regardé !",
+
+    /* Checkpoint — sponsor quiz */
+    "spq.sponsoredBy": "🤝 Quiz Sponsorisé par {brand}",
+    "spq.didYouKnow": "💡 Le saviez-vous ? {fact}",
+
+    /* Checkpoint — social */
+    "soc.thanks.title": "Merci de nous suivre !",
+    "soc.thanks.body": "Ton soutien aide la médina de Safi à briller en ligne 🌟",
+  },
+
+  /* ─────────────────── ENGLISH ─────────────────── */
+  en: {
+    "lang.label": "Language",
+
+    "bridge.programTitle": "🛵🚕 Bridge Program — Free Meal",
+    "bridge.diamonds": "💎 Diamonds",
+    "bridge.activeDays": "📅 Active days (≥ 1h)",
+    "bridge.todayLabel": "⏱️ Today: {time}",
+    "bridge.dayBadge": "D{n}",
+    "bridge.menusReady": "🎉 {n} free meal ready!",
+    "bridge.menusReadyPlural": "🎉 {n} free meals ready!",
+    "bridge.claimHint": "Claim your meal on Bridge Eats with your phone number",
+    "bridge.timeRemaining.minutes": "{m} min left",
+    "bridge.timeRemaining.hours": "{h}h{rest} left",
+    "bridge.timeRemaining.done": "✓ day validated",
+
+    "blocker.diamonds": "{n} more 💎 to collect",
+    "blocker.days": "{n} more day of play (≥ 1h) to validate",
+    "blocker.daysPlural": "{n} more days of play (≥ 1h) to validate",
+    "blocker.wait": "Come back in {n} day to claim",
+    "blocker.waitPlural": "Come back in {n} days to claim",
+
+    "start.title": "🦈 SAFI RUNNER",
+    "start.subtitle": "Medina of Safi · 3D Endless Runner",
+    "start.play": "▶ PLAY",
+    "start.controls.lanes": "◀ ▶ Lanes",
+    "start.controls.jump": "↑ / Space Jump",
+    "start.controls.touch": "Touch buttons ✓",
+    "start.badge.diamonds": "Collect diamonds",
+    "start.badge.days": "{n} play days",
+    "start.badge.menu": "Free meal on day 4",
+
+    "hud.coins": "Coins",
+    "hud.score": "Score",
+    "hud.nextStop": "🍽️ Next stop · {s}s",
+
+    "controls.swipeHint": "← SWIPE to switch lane · SWIPE ↑ to jump →",
+
+    "instr.title": "🦈 HOW TO PLAY",
+    "instr.subtitle": "SAFI RUNNER",
+    "instr.row.lanes.label": "Switch lane",
+    "instr.row.lanes.desc": "LEFT / RIGHT buttons or arrow keys",
+    "instr.row.jump.label": "Jump",
+    "instr.row.jump.desc": "JUMP button, ↑ arrow or Space",
+    "instr.row.diamonds.label": "Collect diamonds",
+    "instr.row.diamonds.desc": "Run over the blue diamonds to grab them",
+    "instr.row.obstacles.label": "Avoid obstacles",
+    "instr.row.obstacles.desc": "Switch lane or jump over",
+    "instr.howTitle": "🛵🚕 How to win a Bridge Eats meal",
+    "instr.how.collect": "Collect {n} 💎 in total",
+    "instr.how.play": "Play at least {h}h per day for {d} different days",
+    "instr.how.day4": "On day 4: enter your Bridge Eats phone to claim the meal",
+    "instr.how.ads": "Ad break every 40 seconds",
+    "instr.launch": "▶ START THE GAME",
+
+    "claim.unlocked.title": "FREE MEAL\nUNLOCKED!",
+    "claim.unlocked.body": "You played {days} days and collected {diamonds} 💎",
+    "claim.unlocked.daySingular": "You played {days} day and collected {diamonds} 💎",
+    "claim.notReady.title": "Not ready yet",
+    "claim.phone.label": "📱 Your Bridge Eats phone number",
+    "claim.phone.help": "This number identifies your Bridge account — it will receive your free meal. One meal per number.",
+    "claim.phone.placeholder": "+212 6XX XXXXXX  or  06XX XXXXXX",
+    "claim.phone.empty": "Enter your Bridge Eats number.",
+    "claim.phone.invalid": "Invalid number. Format: +212XXXXXXXXX or 0XXXXXXXXX",
+    "claim.phone.taken": "A Bridge account already uses this number.",
+    "claim.error.generic": "Error — try again.",
+    "claim.error.notMet": "Claim conditions not met (verified server-side).",
+    "claim.button.claim": "🛵🚕 CLAIM MY MEAL",
+    "claim.button.checking": "Checking…",
+    "claim.button.continue": "Keep playing",
+    "claim.button.continuePlay": "▶ Keep playing",
+    "claim.done.title": "✅ Number registered!",
+    "claim.done.body": "Your meal will be linked to your Bridge Eats account. Click below to order.",
+    "claim.done.cta": "🛵🚕 GO TO BRIDGE EATS",
+
+    "over.title": "GAME OVER",
+    "over.subtitle": "The Shark Warrior has stopped!",
+    "over.stat.session": "Session",
+    "over.stat.score": "Score",
+    "over.stat.stops": "Stops",
+    "over.stat.sardines": "Sardines",
+    "over.restart": "🔄 RESTART",
+
+    "db.connected": "● Connected",
+    "db.connecting": "● Connecting…",
+    "db.offline": "● Offline",
+    "db.error": "● Error",
+    "db.loading": "Loading profile…",
+    "db.unavailable": "Profile unavailable.",
+    "db.user": "👤",
+    "db.totalDiamonds": "💎 Total:",
+    "db.sardines": "🐟 Sardines:",
+
+    "cp.resume": "Resume the run 🏃",
+    "cp.next": "Next question →",
+    "cp.seeResult": "See the result",
+    "cp.header.stop": "Stop #{n} — {venue}",
+    "cp.currentScore": "Current score: {n} 💎",
+    "cp.completePrompt": "Complete the activity to keep running through the Safi medina!",
+    "cp.startActivity": "Start the activity →",
+    "cp.completed": "Activity completed!",
+    "cp.completedBody": "The shark is back on the run through the medina…",
+    "act.title.quiz": "🕌 Moroccan Culture Quiz",
+    "act.title.form": "📝 Satisfaction Survey",
+    "act.title.video": "📺 Ad Break",
+    "act.title.sponsorQuiz": "🤝 Sponsor Quiz",
+    "act.title.social": "💖 Follow us on social!",
+    "act.title.reel": "🎬 Safi Resto Reel",
+    "act.sub.quiz": "Test your knowledge of Safi and Morocco!",
+    "act.sub.form": "Share your opinion about Safi Runner",
+    "act.sub.video": "Discover our local partners",
+    "act.sub.sponsorQuiz": "Answer and learn a fun fact about Safi!",
+    "act.sub.social": "3 quick taps: Insta, Facebook, TikTok",
+    "act.sub.reel": "Discover a medina gem in 8s",
+    "soc.followCta": "Follow {handle}",
+    "soc.tapAll": "Tap all 3 buttons to continue ({n}/3)",
+    "soc.followBtn": "Follow",
+    "soc.followedBtn": "✓ Followed",
+    "soc.closeHint": "You can close each page after following",
+    "reel.wait": "Wait… {s}s",
+    "reel.share": "Share",
+
+    "quiz.questionOf": "Question {n} / {total}",
+    "quiz.score": "{n}/{total} correct answers!",
+    "quiz.feedback.perfect": "Perfect! You really know the Safi medina!",
+    "quiz.feedback.good": "Well done! Keep exploring Moroccan culture.",
+    "quiz.feedback.try": "Keep learning! Safi is a fascinating city.",
+
+    "form.intro": "While you take a restaurant break, share your experience with us!",
+    "form.field.name": "Your first name",
+    "form.field.namePh": "e.g. Ahmed",
+    "form.field.city": "Your city",
+    "form.field.cityPh": "e.g. Safi",
+    "form.field.email": "Email (optional)",
+    "form.field.emailPh": "your@email.com",
+    "form.field.opinion": "What do you think of Safi Runner?",
+    "form.field.opinionPh": "Your opinion...",
+    "form.rating": "Overall rating",
+    "form.submit": "Submit my review ✓",
+    "form.error.name": "Please enter your first name.",
+    "form.error.city": "Please enter your city.",
+    "form.error.rating": "Please rate the game.",
+    "form.thanks.title": "Thanks for your feedback!",
+    "form.thanks.body": "Your input helps improve Safi Runner.",
+
+    "ad.sponsored": "📢 SPONSORED MESSAGE",
+    "ad.playing": "Ad playing…",
+    "ad.timeLeft": "{s}s left",
+    "ad.done": "Done!",
+    "ad.continue": "Continue →",
+    "ad.wait": "Wait {s}s…",
+    "ad.thanks": "Thanks for watching!",
+
+    "spq.sponsoredBy": "🤝 Quiz sponsored by {brand}",
+    "spq.didYouKnow": "💡 Did you know? {fact}",
+
+    "soc.thanks.title": "Thanks for following us!",
+    "soc.thanks.body": "Your support helps the Safi medina shine online 🌟",
+  },
+
+  /* ─────────────────── العربية ─────────────────── */
+  ar: {
+    "lang.label": "اللغة",
+
+    "bridge.programTitle": "🛵🚕 برنامج Bridge — وجبة مجانية",
+    "bridge.diamonds": "💎 الألماس",
+    "bridge.activeDays": "📅 الأيام النشطة (≥ ساعة)",
+    "bridge.todayLabel": "⏱️ اليوم : {time}",
+    "bridge.dayBadge": "اليوم {n}",
+    "bridge.menusReady": "🎉 {n} وجبة مجانية جاهزة!",
+    "bridge.menusReadyPlural": "🎉 {n} وجبات مجانية جاهزة!",
+    "bridge.claimHint": "اطلب وجبتك على Bridge Eats برقم هاتفك",
+    "bridge.timeRemaining.minutes": "{m} دقيقة متبقية",
+    "bridge.timeRemaining.hours": "{h}س{rest} متبقية",
+    "bridge.timeRemaining.done": "✓ تم اعتماد اليوم",
+
+    "blocker.diamonds": "اجمع {n} 💎 إضافية",
+    "blocker.days": "تبقى {n} يوم من اللعب (≥ ساعة) لاعتماده",
+    "blocker.daysPlural": "تبقى {n} أيام من اللعب (≥ ساعة) لاعتمادها",
+    "blocker.wait": "ارجع بعد {n} يوم للمطالبة",
+    "blocker.waitPlural": "ارجع بعد {n} أيام للمطالبة",
+
+    "start.title": "🦈 سافي رنر",
+    "start.subtitle": "المدينة العتيقة بآسفي · سباق ثلاثي الأبعاد لا نهائي",
+    "start.play": "▶ العب",
+    "start.controls.lanes": "◀ ▶ المسارات",
+    "start.controls.jump": "↑ / مسافة للقفز",
+    "start.controls.touch": "أزرار اللمس ✓",
+    "start.badge.diamonds": "اجمع الألماس",
+    "start.badge.days": "{n} أيام لعب",
+    "start.badge.menu": "وجبة مجانية في اليوم الرابع",
+
+    "hud.coins": "العملات",
+    "hud.score": "النتيجة",
+    "hud.nextStop": "🍽️ المحطة التالية · {s}ث",
+
+    "controls.swipeHint": "← اسحب لتغيير المسار · اسحب لأعلى للقفز →",
+
+    "instr.title": "🦈 كيف تلعب",
+    "instr.subtitle": "سافي رنر",
+    "instr.row.lanes.label": "تغيير المسار",
+    "instr.row.lanes.desc": "أزرار يسار / يمين أو أسهم لوحة المفاتيح",
+    "instr.row.jump.label": "القفز",
+    "instr.row.jump.desc": "زر القفز، السهم لأعلى أو مسافة",
+    "instr.row.diamonds.label": "اجمع الألماس",
+    "instr.row.diamonds.desc": "اركض فوق الألماس الأزرق لجمعه",
+    "instr.row.obstacles.label": "تجنب العوائق",
+    "instr.row.obstacles.desc": "غيّر المسار أو اقفز فوقها",
+    "instr.howTitle": "🛵🚕 كيف تربح وجبة Bridge Eats",
+    "instr.how.collect": "اجمع {n} 💎 إجمالاً",
+    "instr.how.play": "العب على الأقل {h} ساعة في اليوم لمدة {d} أيام مختلفة",
+    "instr.how.day4": "في اليوم الرابع: أدخل رقمك في Bridge Eats للمطالبة بالوجبة",
+    "instr.how.ads": "فاصل إعلاني كل 40 ثانية",
+    "instr.launch": "▶ بدء اللعبة",
+
+    "claim.unlocked.title": "وجبة مجانية\nمفتوحة!",
+    "claim.unlocked.body": "لقد لعبت {days} أيام وجمعت {diamonds} 💎",
+    "claim.unlocked.daySingular": "لقد لعبت {days} يوم وجمعت {diamonds} 💎",
+    "claim.notReady.title": "لم يحن الوقت بعد",
+    "claim.phone.label": "📱 رقم هاتفك في Bridge Eats",
+    "claim.phone.help": "هذا الرقم يحدّد حسابك في Bridge — هو الذي سيستلم وجبتك المجانية. وجبة واحدة لكل رقم.",
+    "claim.phone.placeholder": "+212 6XX XXXXXX  أو  06XX XXXXXX",
+    "claim.phone.empty": "أدخل رقمك في Bridge Eats.",
+    "claim.phone.invalid": "رقم غير صحيح. الصيغة: +212XXXXXXXXX أو 0XXXXXXXXX",
+    "claim.phone.taken": "هذا الرقم مستخدم بالفعل في حساب Bridge آخر.",
+    "claim.error.generic": "خطأ — أعد المحاولة.",
+    "claim.error.notMet": "شروط المطالبة غير مستوفاة (تم التحقق على الخادم).",
+    "claim.button.claim": "🛵🚕 اطلب وجبتي",
+    "claim.button.checking": "جارٍ التحقق…",
+    "claim.button.continue": "تابع اللعب",
+    "claim.button.continuePlay": "▶ تابع اللعب",
+    "claim.done.title": "✅ تم تسجيل الرقم!",
+    "claim.done.body": "ستُربط وجبتك بحسابك في Bridge Eats. اضغط أدناه للطلب.",
+    "claim.done.cta": "🛵🚕 الذهاب إلى Bridge Eats",
+
+    "over.title": "انتهت اللعبة",
+    "over.subtitle": "لقد توقّف القرش المحارب!",
+    "over.stat.session": "الجلسة",
+    "over.stat.score": "النتيجة",
+    "over.stat.stops": "المحطات",
+    "over.stat.sardines": "السردين",
+    "over.restart": "🔄 إعادة",
+
+    "db.connected": "● متصل",
+    "db.connecting": "● جارٍ الاتصال…",
+    "db.offline": "● غير متصل",
+    "db.error": "● خطأ",
+    "db.loading": "جارٍ تحميل الملف…",
+    "db.unavailable": "الملف غير متاح.",
+    "db.user": "👤",
+    "db.totalDiamonds": "💎 المجموع :",
+    "db.sardines": "🐟 السردين :",
+
+    "cp.resume": "متابعة السباق 🏃",
+    "cp.next": "السؤال التالي →",
+    "cp.seeResult": "عرض النتيجة",
+    "cp.header.stop": "محطة #{n} — {venue}",
+    "cp.currentScore": "النتيجة الحالية : {n} 💎",
+    "cp.completePrompt": "أكمل النشاط لمتابعة سباقك في مدينة آسفي القديمة!",
+    "cp.startActivity": "ابدأ النشاط →",
+    "cp.completed": "اكتمل النشاط!",
+    "cp.completedBody": "القرش يستأنف سباقه في المدينة…",
+    "act.title.quiz": "🕌 اختبار الثقافة المغربية",
+    "act.title.form": "📝 استبيان الرضا",
+    "act.title.video": "📺 فاصل إعلاني",
+    "act.title.sponsorQuiz": "🤝 اختبار الراعي",
+    "act.title.social": "💖 تابعنا على الشبكات!",
+    "act.title.reel": "🎬 ريل مطعم آسفي",
+    "act.sub.quiz": "اختبر معرفتك بآسفي والمغرب!",
+    "act.sub.form": "شاركنا رأيك في سافي رنر",
+    "act.sub.video": "اكتشف شركاءنا المحليين",
+    "act.sub.sponsorQuiz": "أجب واكتشف معلومة عن آسفي!",
+    "act.sub.social": "٣ نقرات سريعة: إنستا، فيسبوك، تيك توك",
+    "act.sub.reel": "اكتشف جوهرة من المدينة القديمة في ٨ ثوانٍ",
+    "soc.followCta": "تابع {handle}",
+    "soc.tapAll": "اضغط على الأزرار الثلاثة للمتابعة ({n}/٣)",
+    "soc.followBtn": "متابعة",
+    "soc.followedBtn": "✓ تمت المتابعة",
+    "soc.closeHint": "يمكنك إغلاق كل صفحة بعد المتابعة",
+    "reel.wait": "انتظر… {s}ث",
+    "reel.share": "مشاركة",
+
+    "quiz.questionOf": "السؤال {n} / {total}",
+    "quiz.score": "{n}/{total} إجابات صحيحة!",
+    "quiz.feedback.perfect": "ممتاز! تعرف مدينة آسفي القديمة جيدًا!",
+    "quiz.feedback.good": "أحسنت! واصل اكتشاف الثقافة المغربية.",
+    "quiz.feedback.try": "واصل التعلم! آسفي مدينة رائعة.",
+
+    "form.intro": "خلال استراحتك في المطعم، شاركنا تجربتك!",
+    "form.field.name": "اسمك الأول",
+    "form.field.namePh": "مثال: أحمد",
+    "form.field.city": "مدينتك",
+    "form.field.cityPh": "مثال: آسفي",
+    "form.field.email": "البريد الإلكتروني (اختياري)",
+    "form.field.emailPh": "your@email.com",
+    "form.field.opinion": "ما رأيك في لعبة سافي رنر؟",
+    "form.field.opinionPh": "رأيك...",
+    "form.rating": "التقييم العام للعبة",
+    "form.submit": "إرسال رأيي ✓",
+    "form.error.name": "يرجى إدخال اسمك الأول.",
+    "form.error.city": "يرجى إدخال مدينتك.",
+    "form.error.rating": "يرجى تقييم اللعبة.",
+    "form.thanks.title": "شكرًا على رأيك!",
+    "form.thanks.body": "ملاحظاتك تساعد على تحسين سافي رنر.",
+
+    "ad.sponsored": "📢 رسالة برعاية",
+    "ad.playing": "إعلان قيد التشغيل…",
+    "ad.timeLeft": "{s}ث متبقية",
+    "ad.done": "انتهى!",
+    "ad.continue": "متابعة →",
+    "ad.wait": "انتظر {s}ث…",
+    "ad.thanks": "شكرًا على المشاهدة!",
+
+    "spq.sponsoredBy": "🤝 اختبار برعاية {brand}",
+    "spq.didYouKnow": "💡 هل تعلم؟ {fact}",
+
+    "soc.thanks.title": "شكرًا على متابعتنا!",
+    "soc.thanks.body": "دعمك يساعد مدينة آسفي القديمة على التألق على الإنترنت 🌟",
+  },
+};
+
+/* ─── Locale-aware number formatting ─────────────────────────── */
+const NUM_LOCALE: Record<Lang, string> = { fr: "fr-FR", en: "en-US", ar: "ar-MA" };
+export function formatNum(n: number, lang: Lang = currentLang): string {
+  try { return n.toLocaleString(NUM_LOCALE[lang]); } catch { return String(n); }
+}
+
+/* ─── State + reactivity ─────────────────────────────────────── */
+function detectInitial(): Lang {
+  // Default to French (project requirement). Only honour an explicit user
+  // choice persisted in localStorage; never auto-detect from navigator.language.
+  if (typeof localStorage !== "undefined") {
+    const saved = localStorage.getItem(STORAGE_KEY) as Lang | null;
+    if (saved === "fr" || saved === "en" || saved === "ar") return saved;
+  }
+  return "fr";
+}
+
+let currentLang: Lang = detectInitial();
+const listeners = new Set<() => void>();
+
+function applyHtmlAttrs(l: Lang) {
+  if (typeof document === "undefined") return;
+  const meta = LANGS.find((x) => x.code === l) ?? LANGS[0];
+  document.documentElement.lang = l;
+  document.documentElement.dir = meta.dir;
+}
+
+if (typeof document !== "undefined") applyHtmlAttrs(currentLang);
+
+export function getLang(): Lang {
+  return currentLang;
+}
+
+export function setLang(l: Lang): void {
+  if (l === currentLang) return;
+  currentLang = l;
+  if (typeof localStorage !== "undefined") localStorage.setItem(STORAGE_KEY, l);
+  applyHtmlAttrs(l);
+  listeners.forEach((fn) => fn());
+}
+
+/* ─── Translation function ───────────────────────────────────── */
+export function t(key: string, params?: Record<string, string | number>): string {
+  const dict = DICT[currentLang] ?? DICT.fr;
+  let s = dict[key] ?? DICT.fr[key] ?? key;
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      s = s.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
+    }
+  }
+  return s;
+}
+
+/* ─── React hook (re-renders on language change) ─────────────── */
+export function useT() {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const fn = () => force((x) => x + 1);
+    listeners.add(fn);
+    return () => { listeners.delete(fn); };
+  }, []);
+  return { t, lang: currentLang, setLang };
+}

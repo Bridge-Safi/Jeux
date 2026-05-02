@@ -1,4 +1,5 @@
 import type { Profile } from "../lib/supabase";
+import { useT } from "../lib/i18n";
 
 interface SupabasePanelProps {
   profile: Profile | null;
@@ -7,14 +8,16 @@ interface SupabasePanelProps {
 }
 
 export function SupabasePanel({ profile, status, phase }: SupabasePanelProps) {
+  const { t } = useT();
+
   const statusColor =
     status === "ok" ? "#4caf50" :
     status === "connecting" ? "#ff9800" : "#f44336";
 
   const statusLabel =
-    status === "ok" ? "● Connecté" :
-    status === "connecting" ? "● Connexion…" :
-    status === "offline" ? "● Hors-ligne" : "● Erreur";
+    status === "ok" ? t("db.connected") :
+    status === "connecting" ? t("db.connecting") :
+    status === "offline" ? t("db.offline") : t("db.error");
 
   const isExpanded = phase === "start" || phase === "gameover" || phase === "checkpoint";
 
@@ -55,13 +58,13 @@ export function SupabasePanel({ profile, status, phase }: SupabasePanelProps) {
 
       {profile ? (
         <div style={{ lineHeight: 1.8, color: "#ccc" }}>
-          <div>👤 <span style={{ color: "#90caf9" }}>{profile.username}</span></div>
-          <div>💎 Total : <strong style={{ color: "#fff176" }}>{profile.diamonds_collected}</strong></div>
-          <div>🐟 Sardines : <strong style={{ color: "#80cbc4" }}>{profile.sardines_points}</strong></div>
+          <div>{t("db.user")} <span style={{ color: "#90caf9" }}>{profile.username}</span></div>
+          <div>{t("db.totalDiamonds")} <strong style={{ color: "#fff176" }}>{profile.diamonds_collected}</strong></div>
+          <div>{t("db.sardines")} <strong style={{ color: "#80cbc4" }}>{profile.sardines_points}</strong></div>
         </div>
       ) : (
         <div style={{ color: "#888" }}>
-          {status === "connecting" ? "Chargement du profil…" : "Profil non disponible."}
+          {status === "connecting" ? t("db.loading") : t("db.unavailable")}
         </div>
       )}
     </div>

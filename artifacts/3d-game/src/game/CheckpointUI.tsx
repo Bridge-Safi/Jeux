@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useT } from "../lib/i18n";
 
 interface CheckpointUIProps {
   checkpointNumber: number;
@@ -50,7 +51,7 @@ const BTN_PRIMARY: React.CSSProperties = {
 const BTN_OPTION: React.CSSProperties = {
   display: "block",
   width: "100%",
-  textAlign: "left",
+  textAlign: "start",
   background: "#fff",
   border: "2px solid #e0e0e0",
   borderRadius: 12,
@@ -123,6 +124,7 @@ const quizBank = [
 ];
 
 function QuizActivity({ onComplete }: { onComplete: () => void }) {
+  const { t } = useT();
   const questions = useMemo(() => {
     const shuffled = [...quizBank].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 3);
@@ -156,17 +158,17 @@ function QuizActivity({ onComplete }: { onComplete: () => void }) {
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 52 }}>{correct === 3 ? "🏆" : correct >= 2 ? "⭐" : "📚"}</div>
         <div style={{ fontSize: 22, fontWeight: 800, marginTop: 8, color: "#e65100" }}>
-          {correct}/3 bonnes réponses !
+          {t("quiz.score", { n: correct, total: 3 })}
         </div>
         <div style={{ color: "#555", marginTop: 6, fontSize: 14 }}>
           {correct === 3
-            ? "Parfait ! Tu connais bien la médina de Safi !"
+            ? t("quiz.feedback.perfect")
             : correct >= 2
-              ? "Très bien ! Continue à explorer la culture marocaine."
-              : "Continue à apprendre ! Safi est une ville fascinante."}
+              ? t("quiz.feedback.good")
+              : t("quiz.feedback.try")}
         </div>
         <button style={BTN_PRIMARY} onClick={onComplete}>
-          Reprendre la course 🏃
+          {t("cp.resume")}
         </button>
       </div>
     );
@@ -176,7 +178,7 @@ function QuizActivity({ onComplete }: { onComplete: () => void }) {
   return (
     <div>
       <div style={{ fontSize: 12, color: "#999", marginBottom: 8 }}>
-        Question {current + 1} / {questions.length}
+        {t("quiz.questionOf", { n: current + 1, total: questions.length })}
       </div>
       <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 18, color: "#1a1a1a", lineHeight: 1.5 }}>
         {q.q}
@@ -196,7 +198,7 @@ function QuizActivity({ onComplete }: { onComplete: () => void }) {
             style={{ ...BTN_OPTION, background: bg, border, color }}
             onClick={() => handleOption(i)}
           >
-            <span style={{ fontWeight: 600, marginRight: 8 }}>{["A", "B", "C", "D"][i]}.</span>
+            <span style={{ fontWeight: 600, marginInlineEnd: 8 }}>{["A", "B", "C", "D"][i]}.</span>
             {opt}
             {answered && i === q.answer && " ✓"}
             {answered && i === selected && i !== q.answer && " ✗"}
@@ -205,7 +207,7 @@ function QuizActivity({ onComplete }: { onComplete: () => void }) {
       })}
       {answered && (
         <button style={{ ...BTN_PRIMARY, marginTop: 10 }} onClick={handleNext}>
-          {current + 1 >= questions.length ? "Voir le résultat" : "Question suivante →"}
+          {current + 1 >= questions.length ? t("cp.seeResult") : t("cp.next")}
         </button>
       )}
     </div>
@@ -215,14 +217,15 @@ function QuizActivity({ onComplete }: { onComplete: () => void }) {
 // ——————————————————————————————————————————————
 // FORMULAIRE DE SONDAGE
 // ——————————————————————————————————————————————
-const surveyQuestions = [
-  { id: "name", label: "Votre prénom", type: "text", placeholder: "Ex : Ahmed" },
-  { id: "city", label: "Votre ville", type: "text", placeholder: "Ex : Safi" },
-  { id: "email", label: "Email (optionnel)", type: "email", placeholder: "votre@email.com" },
-  { id: "opinion", label: "Que pensez-vous du jeu Safi Runner ?", type: "textarea", placeholder: "Votre avis..." },
-];
-
 function FormActivity({ onComplete }: { onComplete: () => void }) {
+  const { t } = useT();
+  const surveyQuestions: { id: string; labelKey: string; phKey: string; type: "text" | "email" | "textarea" }[] = [
+    { id: "name",    labelKey: "form.field.name",    phKey: "form.field.namePh",    type: "text" },
+    { id: "city",    labelKey: "form.field.city",    phKey: "form.field.cityPh",    type: "text" },
+    { id: "email",   labelKey: "form.field.email",   phKey: "form.field.emailPh",   type: "email" },
+    { id: "opinion", labelKey: "form.field.opinion", phKey: "form.field.opinionPh", type: "textarea" },
+  ];
+
   const [values, setValues] = useState<Record<string, string>>({});
   const [rating, setRating] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -230,9 +233,9 @@ function FormActivity({ onComplete }: { onComplete: () => void }) {
 
   const handleSubmit = () => {
     const errs: string[] = [];
-    if (!values.name?.trim()) errs.push("Veuillez entrer votre prénom.");
-    if (!values.city?.trim()) errs.push("Veuillez entrer votre ville.");
-    if (rating === 0) errs.push("Veuillez donner une note au jeu.");
+    if (!values.name?.trim()) errs.push(t("form.error.name"));
+    if (!values.city?.trim()) errs.push(t("form.error.city"));
+    if (rating === 0) errs.push(t("form.error.rating"));
     setErrors(errs);
     if (errs.length === 0) setSubmitted(true);
   };
@@ -242,13 +245,13 @@ function FormActivity({ onComplete }: { onComplete: () => void }) {
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 52 }}>🙏</div>
         <div style={{ fontSize: 20, fontWeight: 800, marginTop: 8, color: "#e65100" }}>
-          Merci pour votre avis !
+          {t("form.thanks.title")}
         </div>
         <div style={{ color: "#555", marginTop: 6, fontSize: 14 }}>
-          Votre retour aide à améliorer Safi Runner.
+          {t("form.thanks.body")}
         </div>
         <button style={BTN_PRIMARY} onClick={onComplete}>
-          Reprendre la course 🏃
+          {t("cp.resume")}
         </button>
       </div>
     );
@@ -257,17 +260,17 @@ function FormActivity({ onComplete }: { onComplete: () => void }) {
   return (
     <div>
       <div style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
-        Pendant votre pause au restaurant, partagez votre expérience avec nous !
+        {t("form.intro")}
       </div>
       {surveyQuestions.map((q) => (
         <div key={q.id} style={{ marginBottom: 4 }}>
           <label style={{ display: "block", fontWeight: 600, fontSize: 13, color: "#444", marginBottom: 4 }}>
-            {q.label}
+            {t(q.labelKey)}
           </label>
           {q.type === "textarea" ? (
             <textarea
               style={{ ...INPUT_STYLE, height: 72, resize: "vertical" }}
-              placeholder={q.placeholder}
+              placeholder={t(q.phKey)}
               value={values[q.id] || ""}
               onChange={(e) => setValues((v) => ({ ...v, [q.id]: e.target.value }))}
             />
@@ -275,7 +278,7 @@ function FormActivity({ onComplete }: { onComplete: () => void }) {
             <input
               type={q.type}
               style={INPUT_STYLE}
-              placeholder={q.placeholder}
+              placeholder={t(q.phKey)}
               value={values[q.id] || ""}
               onChange={(e) => setValues((v) => ({ ...v, [q.id]: e.target.value }))}
             />
@@ -285,7 +288,7 @@ function FormActivity({ onComplete }: { onComplete: () => void }) {
 
       <div style={{ marginBottom: 8 }}>
         <label style={{ display: "block", fontWeight: 600, fontSize: 13, color: "#444", marginBottom: 8 }}>
-          Note globale du jeu
+          {t("form.rating")}
         </label>
         <div style={{ display: "flex", gap: 8 }}>
           {[1, 2, 3, 4, 5].map((star) => (
@@ -307,7 +310,7 @@ function FormActivity({ onComplete }: { onComplete: () => void }) {
       )}
 
       <button style={BTN_PRIMARY} onClick={handleSubmit}>
-        Envoyer mon avis ✓
+        {t("form.submit")}
       </button>
     </div>
   );
@@ -347,6 +350,7 @@ const sponsors = [
 ];
 
 function VideoActivity({ onComplete }: { onComplete: () => void }) {
+  const { t } = useT();
   const [timeLeft, setTimeLeft] = useState(15);
   const [canSkip, setCanSkip] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -372,13 +376,13 @@ function VideoActivity({ onComplete }: { onComplete: () => void }) {
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 48 }}>✅</div>
         <div style={{ fontSize: 19, fontWeight: 800, color: "#e65100", marginTop: 8 }}>
-          Merci d'avoir regardé !
+          {t("ad.thanks")}
         </div>
         <div style={{ color: "#555", fontSize: 14, marginTop: 6, marginBottom: 4 }}>
           {sponsor.offer}
         </div>
         <button style={BTN_PRIMARY} onClick={onComplete}>
-          Reprendre la course 🏃
+          {t("cp.resume")}
         </button>
       </div>
     );
@@ -405,7 +409,7 @@ function VideoActivity({ onComplete }: { onComplete: () => void }) {
           backgroundSize: "12px 12px",
         }} />
         <div style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>
-          📢 MESSAGE SPONSORISÉ
+          {t("ad.sponsored")}
         </div>
         <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 4 }}>
           {sponsor.emoji} {sponsor.name}
@@ -435,8 +439,8 @@ function VideoActivity({ onComplete }: { onComplete: () => void }) {
       {/* Progress bar */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#777", marginBottom: 4 }}>
-          <span>Publicité en cours…</span>
-          <span>{timeLeft > 0 ? `Encore ${timeLeft}s` : "Terminée !"}</span>
+          <span>{t("ad.playing")}</span>
+          <span>{timeLeft > 0 ? t("ad.timeLeft", { s: timeLeft }) : t("ad.done")}</span>
         </div>
         <div style={{ height: 8, background: "#e0e0e0", borderRadius: 8, overflow: "hidden" }}>
           <div style={{
@@ -451,11 +455,11 @@ function VideoActivity({ onComplete }: { onComplete: () => void }) {
 
       {canSkip ? (
         <button style={BTN_PRIMARY} onClick={() => setFinished(true)}>
-          Continuer →
+          {t("ad.continue")}
         </button>
       ) : (
         <button style={{ ...BTN_PRIMARY, opacity: 0.4, cursor: "not-allowed" }} disabled>
-          Patienter {timeLeft}s…
+          {t("ad.wait", { s: timeLeft })}
         </button>
       )}
     </div>
@@ -501,6 +505,7 @@ const sponsorQuiz = [
 ];
 
 function SponsorQuizActivity({ onComplete }: { onComplete: () => void }) {
+  const { t } = useT();
   const quiz = useMemo(() => sponsorQuiz[Math.floor(Math.random() * sponsorQuiz.length)], []);
   const [selected, setSelected] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
@@ -524,7 +529,7 @@ function SponsorQuizActivity({ onComplete }: { onComplete: () => void }) {
         marginBottom: 18,
         textAlign: "center",
       }}>
-        🤝 Quiz Sponsorisé par {quiz.brand}
+        {t("spq.sponsoredBy", { brand: quiz.brand })}
       </div>
 
       <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "#1a1a1a", lineHeight: 1.5 }}>
@@ -545,7 +550,7 @@ function SponsorQuizActivity({ onComplete }: { onComplete: () => void }) {
             style={{ ...BTN_OPTION, background: bg, border, color }}
             onClick={() => handleOption(i)}
           >
-            <span style={{ fontWeight: 600, marginRight: 8 }}>{["A", "B", "C", "D"][i]}.</span>
+            <span style={{ fontWeight: 600, marginInlineEnd: 8 }}>{["A", "B", "C", "D"][i]}.</span>
             {opt}
             {answered && i === quiz.answer && " ✓"}
             {answered && i === selected && i !== quiz.answer && " ✗"}
@@ -565,10 +570,10 @@ function SponsorQuizActivity({ onComplete }: { onComplete: () => void }) {
             marginTop: 6,
             marginBottom: 4,
           }}>
-            💡 Le saviez-vous ? {quiz.funFact}
+            {t("spq.didYouKnow", { fact: quiz.funFact })}
           </div>
           <button style={BTN_PRIMARY} onClick={onComplete}>
-            Reprendre la course 🏃
+            {t("cp.resume")}
           </button>
         </>
       )}
@@ -604,6 +609,7 @@ const socialAccounts = [
 ];
 
 function SocialFollowActivity({ onComplete }: { onComplete: () => void }) {
+  const { t } = useT();
   const account = useMemo(
     () => socialAccounts[Math.floor(Math.random() * socialAccounts.length)],
     []
@@ -629,13 +635,13 @@ function SocialFollowActivity({ onComplete }: { onComplete: () => void }) {
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 52 }}>💖</div>
         <div style={{ fontSize: 22, fontWeight: 900, color: "#e65100", marginTop: 8, fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>
-          Merci de nous suivre !
+          {t("soc.thanks.title")}
         </div>
         <div style={{ color: "#555", marginTop: 6, fontSize: 14 }}>
-          Ton soutien aide la médina de Safi à briller en ligne 🌟
+          {t("soc.thanks.body")}
         </div>
         <button style={BTN_PRIMARY} onClick={onComplete}>
-          Reprendre la course 🏃
+          {t("cp.resume")}
         </button>
       </div>
     );
@@ -645,10 +651,10 @@ function SocialFollowActivity({ onComplete }: { onComplete: () => void }) {
     <div>
       <div style={{ textAlign: "center", marginBottom: 14 }}>
         <div style={{ fontSize: 18, fontWeight: 800, color: "#1a1a1a" }}>
-          Suis <span style={{ color: "#e65100" }}>{account.handle}</span>
+          {t("soc.followCta", { handle: account.handle })}
         </div>
         <div style={{ fontSize: 13, color: "#777", marginTop: 4 }}>
-          Tape les 3 boutons pour continuer ({count}/3)
+          {t("soc.tapAll", { n: count })}
         </div>
       </div>
 
@@ -679,7 +685,7 @@ function SocialFollowActivity({ onComplete }: { onComplete: () => void }) {
               <span>{p.label}</span>
             </span>
             <span style={{ fontSize: 14, fontWeight: 700 }}>
-              {followed[p.key] ? "✓ Suivi" : "Suivre"}
+              {followed[p.key] ? t("soc.followedBtn") : t("soc.followBtn")}
             </span>
           </button>
         ))}
@@ -695,7 +701,7 @@ function SocialFollowActivity({ onComplete }: { onComplete: () => void }) {
         }} />
       </div>
       <div style={{ fontSize: 11, color: "#999", textAlign: "center" }}>
-        Tu peux fermer chaque page après l'avoir suivi
+        {t("soc.closeHint")}
       </div>
     </div>
   );
@@ -744,6 +750,7 @@ const reelRestos = [
 ];
 
 function ReelActivity({ onComplete }: { onComplete: () => void }) {
+  const { t } = useT();
   const reel = useMemo(() => reelRestos[Math.floor(Math.random() * reelRestos.length)], []);
   const [progress, setProgress] = useState(0);
   const [liked, setLiked] = useState(false);
@@ -825,7 +832,7 @@ function ReelActivity({ onComplete }: { onComplete: () => void }) {
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 28, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }}>📤</div>
-              <div style={{ fontSize: 10, fontWeight: 700 }}>Share</div>
+              <div style={{ fontSize: 10, fontWeight: 700 }}>{t("reel.share")}</div>
             </div>
           </div>
         </div>
@@ -848,11 +855,11 @@ function ReelActivity({ onComplete }: { onComplete: () => void }) {
 
       {canContinue ? (
         <button style={BTN_PRIMARY} onClick={onComplete}>
-          Reprendre la course 🏃
+          {t("cp.resume")}
         </button>
       ) : (
         <button style={{ ...BTN_PRIMARY, opacity: 0.4, cursor: "not-allowed" }} disabled>
-          Patienter… {Math.ceil((100 - progress) / 12.5)}s
+          {t("reel.wait", { s: Math.ceil((100 - progress) / 12.5) })}
         </button>
       )}
     </div>
@@ -866,22 +873,22 @@ type ActivityType = "quiz" | "form" | "video" | "sponsorQuiz" | "social" | "reel
 
 const activityTypes: ActivityType[] = ["reel", "social", "quiz", "video", "sponsorQuiz", "form"];
 
-const activityTitles: Record<ActivityType, string> = {
-  quiz: "🕌 Quiz Culture Marocaine",
-  form: "📝 Sondage Satisfaction",
-  video: "📺 Pause Publicitaire",
-  sponsorQuiz: "🤝 Quiz Sponsor",
-  social: "💖 Suis-nous sur les réseaux !",
-  reel: "🎬 Reel Resto Safi",
+const activityTitleKey: Record<ActivityType, string> = {
+  quiz: "act.title.quiz",
+  form: "act.title.form",
+  video: "act.title.video",
+  sponsorQuiz: "act.title.sponsorQuiz",
+  social: "act.title.social",
+  reel: "act.title.reel",
 };
 
-const activitySubtitles: Record<ActivityType, string> = {
-  quiz: "Testez votre connaissance de Safi et du Maroc !",
-  form: "Partagez votre avis sur Safi Runner",
-  video: "Découvrez nos partenaires locaux",
-  sponsorQuiz: "Répondez et découvrez une info sur Safi !",
-  social: "3 taps rapides : Insta, Facebook, TikTok",
-  reel: "Découvre une pépite de la médina en 8s",
+const activitySubKey: Record<ActivityType, string> = {
+  quiz: "act.sub.quiz",
+  form: "act.sub.form",
+  video: "act.sub.video",
+  sponsorQuiz: "act.sub.sponsorQuiz",
+  social: "act.sub.social",
+  reel: "act.sub.reel",
 };
 
 const venueNames = [
@@ -894,6 +901,7 @@ const venueNames = [
 ];
 
 export function CheckpointUI({ checkpointNumber, score, onResume }: CheckpointUIProps) {
+  const { t } = useT();
   const [started, setStarted] = useState(false);
   const [completed, setCompleted] = useState(false);
 
@@ -917,10 +925,10 @@ export function CheckpointUI({ checkpointNumber, score, onResume }: CheckpointUI
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 36 }}>🛑</div>
           <div style={{ fontSize: 20, fontWeight: 900, color: "#e65100", marginTop: 4 }}>
-            Arrêt #{checkpointNumber} — {venue}
+            {t("cp.header.stop", { n: checkpointNumber, venue })}
           </div>
           <div style={{ fontSize: 13, color: "#777", marginTop: 2 }}>
-            Score actuel : <strong>{score} 💎</strong>
+            {t("cp.currentScore", { n: score })}
           </div>
         </div>
 
@@ -936,20 +944,20 @@ export function CheckpointUI({ checkpointNumber, score, onResume }: CheckpointUI
               border: "2px solid #ffe082",
             }}>
               <div style={{ fontSize: 22, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>
-                {activityTitles[activity]}
+                {t(activityTitleKey[activity])}
               </div>
               <div style={{ fontSize: 14, color: "#555" }}>
-                {activitySubtitles[activity]}
+                {t(activitySubKey[activity])}
               </div>
             </div>
 
             <div style={{ fontSize: 13, color: "#888", textAlign: "center", marginBottom: 16 }}>
-              Complète l'activité pour reprendre ta course dans la médina de Safi !
+              {t("cp.completePrompt")}
             </div>
 
             <div style={{ textAlign: "center" }}>
               <button style={BTN_PRIMARY} onClick={() => setStarted(true)}>
-                Commencer l'activité →
+                {t("cp.startActivity")}
               </button>
             </div>
           </>
@@ -958,7 +966,7 @@ export function CheckpointUI({ checkpointNumber, score, onResume }: CheckpointUI
         {started && !completed && (
           <>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#e65100", marginBottom: 14, textAlign: "center" }}>
-              {activityTitles[activity]}
+              {t(activityTitleKey[activity])}
             </div>
             {activity === "quiz" && <QuizActivity onComplete={handleComplete} />}
             {activity === "form" && <FormActivity onComplete={handleComplete} />}
@@ -973,13 +981,13 @@ export function CheckpointUI({ checkpointNumber, score, onResume }: CheckpointUI
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 52 }}>🎉</div>
             <div style={{ fontSize: 22, fontWeight: 900, color: "#2e7d32", marginTop: 8 }}>
-              Activité complétée !
+              {t("cp.completed")}
             </div>
             <div style={{ color: "#555", fontSize: 14, marginTop: 6, marginBottom: 4 }}>
-              Le requin reprend sa course dans la médina…
+              {t("cp.completedBody")}
             </div>
             <button style={BTN_PRIMARY} onClick={onResume}>
-              Reprendre la course 🏃
+              {t("cp.resume")}
             </button>
           </div>
         )}

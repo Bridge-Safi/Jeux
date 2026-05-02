@@ -10,6 +10,7 @@ import {
   type MenuEligibility,
 } from "../lib/playerProfile";
 import type { Profile } from "../lib/supabase";
+import { useT, formatNum, t as tStatic } from "../lib/i18n";
 
 /* ─── Configuration Bridge Eats ─────────────────────────────── */
 export const BRIDGE_EATS_URL = "https://44474adc-9074-4015-a3b9-4e111cb8be39-00-11nld147gir6y.kirk.replit.dev/";
@@ -118,20 +119,24 @@ function BridgeEatsButton({ variant = "light" }: { variant?: "light" | "dark" })
 
 /* ─── Helpers d'affichage ────────────────────────────────────── */
 function formatTimeRemaining(seconds: number): string {
-  if (seconds <= 0) return "✓ jour validé";
+  if (seconds <= 0) return tStatic("bridge.timeRemaining.done");
   const m = Math.ceil(seconds / 60);
   if (m >= 60) {
     const h = Math.floor(m / 60);
     const rest = m % 60;
-    return `${h}h${rest > 0 ? String(rest).padStart(2, "0") : ""} restantes`;
+    return tStatic("bridge.timeRemaining.hours", {
+      h,
+      rest: rest > 0 ? String(rest).padStart(2, "0") : "",
+    });
   }
-  return `${m} min restantes`;
+  return tStatic("bridge.timeRemaining.minutes", { m });
 }
 
 /* ─── Carte progression Bridge complète (3 critères visibles) ─ */
 function EngagementCard({ eligibility, compact = false }: {
   eligibility: MenuEligibility; compact?: boolean;
 }) {
+  const { t } = useT();
   const {
     qualifyingDays, daysSinceFirstPlay, todaySecondsRemaining,
     diamondsCollected, menusAvailable,
@@ -151,10 +156,10 @@ function EngagementCard({ eligibility, compact = false }: {
         boxShadow: "0 0 24px #4caf5066",
       }}>
         <div style={{ color: "#fff", fontSize: compact ? 12 : 14, fontWeight: 800, marginBottom: 4 }}>
-          🎉 {menusAvailable} menu{menusAvailable > 1 ? "s" : ""} gratuit{menusAvailable > 1 ? "s" : ""} prêt{menusAvailable > 1 ? "s" : ""} !
+          {t(menusAvailable > 1 ? "bridge.menusReadyPlural" : "bridge.menusReady", { n: menusAvailable })}
         </div>
         <div style={{ color: "#c8e6c9", fontSize: compact ? 10 : 12 }}>
-          Réclame ton menu sur Bridge Eats avec ton n° de téléphone
+          {t("bridge.claimHint")}
         </div>
       </div>
     );
@@ -171,15 +176,15 @@ function EngagementCard({ eligibility, compact = false }: {
       boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
     }}>
       <div style={{ color: "#ffa726", fontSize: compact ? 10 : 12, fontWeight: 800, marginBottom: 8, letterSpacing: 0.5 }}>
-        🛵🚕 Programme Bridge — Menu gratuit
+        {t("bridge.programTitle")}
       </div>
 
       {/* Critère 1 : Diamants */}
       <div style={{ marginBottom: 7 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: compact ? 9 : 11, marginBottom: 3 }}>
-          <span style={{ color: "#fff" }}>💎 Diamants</span>
-          <span style={{ color: "#ffd54f", fontWeight: 700 }}>
-            {diamondsCollected.toLocaleString("fr-FR")} / {DIAMONDS_PER_MENU.toLocaleString("fr-FR")}
+          <span style={{ color: "#fff" }}>{t("bridge.diamonds")}</span>
+          <span style={{ color: "#ffd54f", fontWeight: 700 }} dir="ltr">
+            {formatNum(diamondsCollected)} / {formatNum(DIAMONDS_PER_MENU)}
           </span>
         </div>
         <div style={{ height: compact ? 5 : 6, background: "rgba(255,255,255,0.1)", borderRadius: 4, overflow: "hidden" }}>
@@ -194,8 +199,8 @@ function EngagementCard({ eligibility, compact = false }: {
       {/* Critère 2 : Jours qualifiés (≥ 1h) */}
       <div style={{ marginBottom: 7 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: compact ? 9 : 11, marginBottom: 3 }}>
-          <span style={{ color: "#fff" }}>📅 Jours actifs (≥ 1h)</span>
-          <span style={{ color: "#90caf9", fontWeight: 700 }}>{qualifyingDays} / {REQUIRED_PLAY_DAYS}</span>
+          <span style={{ color: "#fff" }}>{t("bridge.activeDays")}</span>
+          <span style={{ color: "#90caf9", fontWeight: 700 }} dir="ltr">{qualifyingDays} / {REQUIRED_PLAY_DAYS}</span>
         </div>
         <div style={{ height: compact ? 5 : 6, background: "rgba(255,255,255,0.1)", borderRadius: 4, overflow: "hidden" }}>
           <div style={{
@@ -212,9 +217,9 @@ function EngagementCard({ eligibility, compact = false }: {
         background: "rgba(0,0,0,0.3)", borderRadius: 6,
         padding: "4px 8px", textAlign: "center", marginTop: 6,
       }}>
-        ⏱️ Aujourd'hui : {formatTimeRemaining(todaySecondsRemaining)}
+        {t("bridge.todayLabel", { time: formatTimeRemaining(todaySecondsRemaining) })}
         {daysSinceFirstPlay > 0 && (
-          <span style={{ color: "#888", marginLeft: 6 }}>· J{daysSinceFirstPlay}</span>
+          <span style={{ color: "#888", marginInlineStart: 6 }}>· {t("bridge.dayBadge", { n: daysSinceFirstPlay })}</span>
         )}
       </div>
     </div>
@@ -226,6 +231,7 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility 
   score: number; checkpointNumber: number; playTime: number;
   nextCheckpointAt: number; eligibility: MenuEligibility;
 }) {
+  const { t } = useT();
   const timeToNext = Math.max(0, Math.ceil(nextCheckpointAt - playTime));
   const progress = Math.min(1, (40 - timeToNext) / 40);
   const sessionDiamonds = Math.floor(score / 10);
@@ -248,7 +254,7 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility 
       }}>
         <span style={{ fontSize: 26 }}>🪙</span>
         <div>
-          <div style={{ color: "#90caf9", fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Fredoka', sans-serif" }}>Pièces</div>
+          <div style={{ color: "#90caf9", fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Fredoka', sans-serif" }}>{t("hud.coins")}</div>
           <div style={{ color: "#ffd54f", fontSize: 28, fontWeight: 900, lineHeight: 1, textShadow: "0 2px 0 #1a1a1a, 0 0 18px #ffa726", fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>{sessionDiamonds}</div>
         </div>
       </div>
@@ -263,7 +269,7 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility 
         boxShadow: "0 4px 20px rgba(0,0,0,0.6)",
       }}>
         <div style={{ color: "#ffa726", fontSize: 10, fontWeight: 700, letterSpacing: 0.8, marginBottom: 5 }}>
-          🍽️ Prochain arrêt · {timeToNext}s
+          {t("hud.nextStop", { s: timeToNext })}
         </div>
         <div style={{ height: 8, background: "rgba(255,255,255,0.1)", borderRadius: 6, overflow: "hidden", border: "1px solid rgba(255,140,0,0.2)" }}>
           <div style={{
@@ -282,7 +288,7 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility 
         borderRadius: 16, padding: "8px 14px", textAlign: "center",
         boxShadow: "0 4px 20px rgba(0,0,0,0.6)",
       }}>
-        <div style={{ color: "#a5d6a7", fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Fredoka', sans-serif" }}>Score</div>
+        <div style={{ color: "#a5d6a7", fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Fredoka', sans-serif" }}>{t("hud.score")}</div>
         <div style={{ color: "#fff", fontSize: 26, fontWeight: 900, lineHeight: 1.1, textShadow: "0 2px 0 #1a1a1a, 0 0 12px #66bb6a", fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>{score}</div>
         {checkpointNumber > 0 && (
           <div style={{ color: "#ffd54f", fontSize: 10, marginTop: 2 }}>🏁 ×{checkpointNumber}</div>
@@ -379,7 +385,7 @@ function TouchControls({ onChangeLane, onJump }: {
         textShadow: "0 0 10px rgba(0,0,0,0.8)",
         animation: "fadeOutSwipe 8s forwards",
       }}>
-        ← SWIPE pour changer de voie · SWIPE ↑ pour sauter →
+        {tStatic("controls.swipeHint")}
       </div>
       <style>{`@keyframes fadeOutSwipe{0%,70%{opacity:1}100%{opacity:0}}`}</style>
     </>
@@ -394,6 +400,7 @@ function TouchControls({ onChangeLane, onJump }: {
 function MenuUnlockOverlay({ eligibility, onClose }: {
   eligibility: MenuEligibility; onClose: () => void;
 }) {
+  const { t } = useT();
   const [phone, setPhone] = useState("");
   const [step, setStep] = useState<"phone" | "done">("phone");
   const [loading, setLoading] = useState(false);
@@ -401,24 +408,33 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
 
   const canClaim = eligibility.eligible;
 
+  /* Les codes d'erreur retournés par playerProfile sont des clés i18n
+     ("claim.phone.invalid", "claim.error.generic", ...). On essaie de
+     les traduire ; si ce n'est pas une clé connue, on garde le texte tel quel. */
+  const localizeErr = (raw?: string): string => {
+    if (!raw) return t("claim.error.generic");
+    const translated = t(raw);
+    return translated === raw && !raw.includes(".") ? raw : translated;
+  };
+
   const handleClaim = async () => {
     const trimmed = phone.trim();
     if (!trimmed) {
-      setErrMsg("Entre ton numéro Bridge Eats.");
+      setErrMsg(t("claim.phone.empty"));
       return;
     }
     setLoading(true); setErrMsg("");
     const reg = await registerBridgePhone(trimmed);
     if (!reg.success) {
       setLoading(false);
-      setErrMsg(reg.error ?? "Erreur — réessaie.");
+      setErrMsg(localizeErr(reg.error));
       return;
     }
     /* Téléphone OK → on consomme un menu */
     const claim = await markMenuClaimed();
     setLoading(false);
     if (!claim.success) {
-      setErrMsg(claim.error ?? "Erreur — réessaie.");
+      setErrMsg(localizeErr(claim.error));
       return;
     }
     setStep("done");
@@ -450,12 +466,15 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
               fontSize: 32, fontWeight: 900, color: "#fff",
               textShadow: "0 0 30px #4caf50",
               letterSpacing: 2, marginBottom: 6, lineHeight: 1.1,
+              whiteSpace: "pre-line",
             }}>
-              MENU GRATUIT<br />DÉBLOQUÉ !
+              {t("claim.unlocked.title")}
             </div>
             <div style={{ color: "#a5d6a7", fontSize: 13, marginBottom: 18 }}>
-              Tu as joué <strong style={{ color: "#fff" }}>{eligibility.qualifyingDays} jours</strong> et collecté{" "}
-              <strong style={{ color: "#ffd740" }}>{eligibility.diamondsCollected.toLocaleString("fr-FR")} 💎</strong>
+              {t(eligibility.qualifyingDays > 1 ? "claim.unlocked.body" : "claim.unlocked.daySingular", {
+                days: eligibility.qualifyingDays,
+                diamonds: formatNum(eligibility.diamondsCollected),
+              })}
             </div>
           </>
         ) : (
@@ -466,10 +485,10 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
               textShadow: "0 0 28px #ff6f00",
               letterSpacing: 1.5, marginBottom: 6, lineHeight: 1.15,
             }}>
-              Pas encore prêt
+              {t("claim.notReady.title")}
             </div>
             <div style={{ color: "#ffcc80", fontSize: 13, marginBottom: 18 }}>
-              {eligibility.blockerReason}
+              {eligibility.blocker ? t(eligibility.blocker.key, { n: eligibility.blocker.n }) : ""}
             </div>
             <div style={{ marginBottom: 18 }}>
               <EngagementCard eligibility={eligibility} />
@@ -484,10 +503,10 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
               borderRadius: 14, padding: "14px 16px", marginBottom: 18, textAlign: "left",
             }}>
               <div style={{ color: "#fff", fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
-                📱 Ton n° de téléphone Bridge Eats
+                {t("claim.phone.label")}
               </div>
               <div style={{ color: "#aaa", fontSize: 11, lineHeight: 1.6 }}>
-                Ce numéro identifie ton compte Bridge — c'est lui qui recevra ton menu gratuit. Un seul menu par numéro.
+                {t("claim.phone.help")}
               </div>
             </div>
 
@@ -496,9 +515,10 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
               type="tel"
               inputMode="tel"
               autoComplete="tel"
+              dir="ltr"
               value={phone}
               onChange={e => { setPhone(e.target.value); setErrMsg(""); }}
-              placeholder="+212 6XX XXXXXX  ou  06XX XXXXXX"
+              placeholder={t("claim.phone.placeholder")}
               style={{
                 width: "100%", padding: "14px 16px", borderRadius: 12,
                 border: errMsg ? "2px solid #f44336" : "2px solid rgba(76,175,80,0.5)",
@@ -526,14 +546,14 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
                 boxShadow: loading ? "none" : "0 0 30px #4caf5077",
               }}
             >
-              {loading ? "Vérification…" : "🛵🚕 RÉCLAMER MON MENU"}
+              {loading ? t("claim.button.checking") : t("claim.button.claim")}
             </button>
 
             <button onClick={onClose} style={{
               background: "transparent", color: "#888",
               border: "none", fontSize: 12, cursor: "pointer",
             }}>
-              Continuer à jouer
+              {t("claim.button.continue")}
             </button>
           </>
         )}
@@ -545,10 +565,10 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
               borderRadius: 14, padding: "16px", marginBottom: 22,
             }}>
               <div style={{ color: "#4caf50", fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
-                ✅ Numéro enregistré !
+                {t("claim.done.title")}
               </div>
               <div style={{ color: "#ccc", fontSize: 12 }}>
-                Ton menu sera lié à ton compte Bridge Eats. Clique ci-dessous pour le commander.
+                {t("claim.done.body")}
               </div>
             </div>
 
@@ -564,14 +584,14 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
                 marginBottom: 14,
               }}
             >
-              🛵🚕 ALLER SUR BRIDGE EATS
+              {t("claim.done.cta")}
             </a>
             <br />
             <button onClick={onClose} style={{
               background: "transparent", color: "#888",
               border: "none", fontSize: 12, cursor: "pointer",
             }}>
-              Continuer à jouer
+              {t("claim.button.continue")}
             </button>
           </>
         )}
@@ -585,7 +605,7 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
             cursor: "pointer", letterSpacing: 1,
             boxShadow: "0 0 24px #1565c088",
           }}>
-            ▶ Continuer à jouer
+            {t("claim.button.continuePlay")}
           </button>
         )}
       </div>
@@ -595,11 +615,24 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
 
 /* ─── Écran d'instructions (1ère fois) ──────────────────────── */
 function InstructionsScreen({ onStart }: { onStart: () => void }) {
+  const { t } = useT();
   const handlePlay = () => {
     localStorage.setItem("safi_runner_saw_instructions", "1");
     onStart();
   };
   const hours = Math.round((REQUIRED_SECONDS_PER_DAY / 3600) * 10) / 10;
+  const rows: { icon: string; labelKey: string; descKey: string }[] = [
+    { icon: "◀ ▶", labelKey: "instr.row.lanes.label",     descKey: "instr.row.lanes.desc" },
+    { icon: "▲",   labelKey: "instr.row.jump.label",      descKey: "instr.row.jump.desc" },
+    { icon: "💎",  labelKey: "instr.row.diamonds.label",  descKey: "instr.row.diamonds.desc" },
+    { icon: "🚧",  labelKey: "instr.row.obstacles.label", descKey: "instr.row.obstacles.desc" },
+  ];
+  const bullets: string[] = [
+    t("instr.how.collect", { n: formatNum(DIAMONDS_PER_MENU) }),
+    t("instr.how.play",    { h: hours, d: REQUIRED_PLAY_DAYS }),
+    t("instr.how.day4"),
+    t("instr.how.ads"),
+  ];
   return (
     <div style={{
       position: "absolute", inset: 0, zIndex: 50, pointerEvents: "auto",
@@ -614,17 +647,12 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
         padding: "24px 20px 32px",
       }}>
         <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", marginBottom: 4, textAlign: "center" }}>
-          🦈 COMMENT JOUER
+          {t("instr.title")}
         </div>
-        <div style={{ fontSize: 12, color: "#90caf9", marginBottom: 20, letterSpacing: 2 }}>SAFI RUNNER</div>
+        <div style={{ fontSize: 12, color: "#90caf9", marginBottom: 20, letterSpacing: 2 }}>{t("instr.subtitle")}</div>
 
         <div style={{ width: "100%", maxWidth: 420, marginBottom: 16 }}>
-          {[
-            { icon: "◀ ▶", label: "Changer de voie", desc: "Boutons GAUCHE / DROITE ou flèches clavier" },
-            { icon: "▲", label: "Sauter", desc: "Bouton SAUTER, flèche ↑ ou Espace" },
-            { icon: "💎", label: "Collecte les diamants", desc: "Cours sur les diamants bleus pour les ramasser" },
-            { icon: "🚧", label: "Évite les obstacles", desc: "Change de voie ou saute par-dessus" },
-          ].map((c, i) => (
+          {rows.map((c, i) => (
             <div key={i} style={{
               display: "flex", gap: 14, alignItems: "center",
               background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
@@ -632,8 +660,8 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
             }}>
               <div style={{ fontSize: 24, minWidth: 40, textAlign: "center" }}>{c.icon}</div>
               <div>
-                <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{c.label}</div>
-                <div style={{ color: "#aaa", fontSize: 12, marginTop: 2 }}>{c.desc}</div>
+                <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{t(c.labelKey)}</div>
+                <div style={{ color: "#aaa", fontSize: 12, marginTop: 2 }}>{t(c.descKey)}</div>
               </div>
             </div>
           ))}
@@ -646,15 +674,10 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
           borderRadius: 16, padding: "14px 18px", marginBottom: 16,
         }}>
           <div style={{ color: "#ffa726", fontWeight: 800, fontSize: 14, marginBottom: 8 }}>
-            🛵🚕 Comment gagner un menu Bridge Eats
+            {t("instr.howTitle")}
           </div>
-          {[
-            `Collecte ${DIAMONDS_PER_MENU.toLocaleString("fr-FR")} 💎 au total`,
-            `Joue au moins ${hours}h par jour pendant ${REQUIRED_PLAY_DAYS} jours différents`,
-            `Le 4ᵉ jour : entre ton n° Bridge Eats pour réclamer le menu`,
-            "Pause publicitaire toutes les 40 secondes",
-          ].map((t, i) => (
-            <div key={i} style={{ color: "#e0e0e0", fontSize: 13, marginBottom: 4 }}>✓ {t}</div>
+          {bullets.map((line, i) => (
+            <div key={i} style={{ color: "#e0e0e0", fontSize: 13, marginBottom: 4 }}>✓ {line}</div>
           ))}
         </div>
 
@@ -668,7 +691,7 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
             boxShadow: "0 0 30px #1565c088",
           }}
         >
-          ▶ LANCER LE JEU
+          {t("instr.launch")}
         </button>
       </div>
     </div>
@@ -679,6 +702,7 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
 function StartScreen({ onStart, eligibility, onClaim }: {
   onStart: () => void; eligibility: MenuEligibility; onClaim: () => void;
 }) {
+  const { t } = useT();
   const hasMenu = eligibility.menusAvailable > 0;
 
   return (
@@ -712,10 +736,10 @@ function StartScreen({ onStart, eligibility, onClaim }: {
             textShadow: "3px 3px 0 #1a1a1a, 6px 6px 0 #c62828, 0 0 40px #ff8f00",
             lineHeight: 1, marginBottom: 4, transform: "rotate(-2deg)",
           }}>
-            🦈 SAFI RUNNER
+            {t("start.title")}
           </div>
           <div style={{ fontSize: 12, color: "#90caf9", marginBottom: 14, letterSpacing: 2, fontWeight: 600, textTransform: "uppercase" }}>
-            Médina de Safi · Course Infinie 3D
+            {t("start.subtitle")}
           </div>
 
           {/* Carte engagement Bridge */}
@@ -733,16 +757,16 @@ function StartScreen({ onStart, eligibility, onClaim }: {
               boxShadow: "0 0 30px #4caf5088",
               width: "100%", maxWidth: 340,
             }}>
-              🛵🚕 RÉCLAMER MON MENU
+              {t("claim.button.claim")}
             </button>
           )}
 
           {/* Badges */}
           <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
             {[
-              { icon: "💎", text: "Collecte des diamants" },
-              { icon: "📅", text: `${REQUIRED_PLAY_DAYS} jours de jeu` },
-              { icon: "🛵🚕", text: "Menu offert au 4ᵉ jour" },
+              { icon: "💎",   text: t("start.badge.diamonds") },
+              { icon: "📅",   text: t("start.badge.days", { n: REQUIRED_PLAY_DAYS }) },
+              { icon: "🛵🚕", text: t("start.badge.menu") },
             ].map((b, i) => (
               <div key={i} style={{
                 background: "rgba(255,255,255,0.1)", backdropFilter: "blur(6px)",
@@ -756,11 +780,11 @@ function StartScreen({ onStart, eligibility, onClaim }: {
           </div>
 
           <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, marginBottom: 18, color: "#aaa", fontSize: 10 }}>
-            <span>◀ ▶ Voies</span>
+            <span>{t("start.controls.lanes")}</span>
             <span style={{ opacity: 0.4 }}>|</span>
-            <span>↑ / Espace Sauter</span>
+            <span>{t("start.controls.jump")}</span>
             <span style={{ opacity: 0.4 }}>|</span>
-            <span>Boutons tactiles ✓</span>
+            <span>{t("start.controls.touch")}</span>
           </div>
 
           <button
@@ -777,7 +801,7 @@ function StartScreen({ onStart, eligibility, onClaim }: {
             onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.04)")}
             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
           >
-            ▶ JOUER
+            {t("start.play")}
           </button>
         </div>
       </div>
@@ -790,6 +814,7 @@ function GameOverScreen({ score, checkpointNumber, eligibility, onRestart, onCla
   score: number; checkpointNumber: number; eligibility: MenuEligibility;
   onRestart: () => void; onClaim: () => void;
 }) {
+  const { t } = useT();
   const sessionDiamonds = Math.floor(score / 10);
   const sardines = Math.floor(score / 50);
   const hasMenu = eligibility.menusAvailable > 0;
@@ -826,19 +851,19 @@ function GameOverScreen({ score, checkpointNumber, eligibility, onRestart, onCla
             textShadow: "0 0 40px #b71c1c, 0 4px 16px rgba(0,0,0,0.9)",
             letterSpacing: 3, lineHeight: 1, marginBottom: 4,
           }}>
-            GAME OVER
+            {t("over.title")}
           </div>
           <div style={{ color: "#ff8a80", fontSize: 13, marginBottom: 20, opacity: 0.8 }}>
-            Le Requin Guerrier s'est arrêté !
+            {t("over.subtitle")}
           </div>
 
           {/* Cartes stats */}
           <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 18, flexWrap: "wrap" }}>
             {[
-              { icon: "💎", label: "Session", value: sessionDiamonds, color: "#42a5f5" },
-              { icon: "🏆", label: "Score", value: score, color: "#ffd740" },
-              { icon: "🍽️", label: "Pauses", value: checkpointNumber, color: "#66bb6a" },
-              { icon: "🐟", label: "Sardines", value: sardines, color: "#80cbc4" },
+              { icon: "💎", label: t("over.stat.session"),  value: sessionDiamonds,    color: "#42a5f5" },
+              { icon: "🏆", label: t("over.stat.score"),    value: score,              color: "#ffd740" },
+              { icon: "🍽️", label: t("over.stat.stops"),    value: checkpointNumber,   color: "#66bb6a" },
+              { icon: "🐟", label: t("over.stat.sardines"), value: sardines,           color: "#80cbc4" },
             ].map((stat, i) => (
               <div key={i} style={{
                 background: "rgba(255,255,255,0.06)", backdropFilter: "blur(8px)",
@@ -865,7 +890,7 @@ function GameOverScreen({ score, checkpointNumber, eligibility, onRestart, onCla
               cursor: "pointer", letterSpacing: 1.5, marginBottom: 14,
               boxShadow: "0 0 30px #4caf5088",
             }}>
-              🛵🚕 RÉCLAMER MON MENU
+              {t("claim.button.claim")}
             </button>
           )}
           <br />
@@ -882,7 +907,7 @@ function GameOverScreen({ score, checkpointNumber, eligibility, onRestart, onCla
             onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
           >
-            🔄 RECOMMENCER
+            {t("over.restart")}
           </button>
         </div>
       </div>

@@ -10,6 +10,7 @@ import { Diamonds } from "./components/Diamonds";
 import { Scene } from "./components/Scene";
 import { GameUI } from "./GameUI";
 import { CheckpointUI } from "./CheckpointUI";
+import { LanguageSelector } from "../components/LanguageSelector";
 import { useSupabaseSync } from "../hooks/useSupabaseSync";
 
 enum Controls {
@@ -160,6 +161,9 @@ export function Game() {
           onResume={resumeGame}
         />
       )}
+
+      {/* Sélecteur de langue (toujours visible, en haut à droite) */}
+      <LanguageSelector position="topRight" />
 
     </div>
   );

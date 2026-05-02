@@ -65,6 +65,14 @@ Two SQL migrations to apply manually in Supabase SQL Editor (in order):
 - Game Over screen with animated stats cards
 - Keyboard: ← → (lane change), Space / ↑ (jump)
 
+### Multi-language (FR / EN / AR with RTL)
+- `src/lib/i18n.ts` — trilingual dictionaries, `t(key, params)`, `useT()` React hook (re-renders on lang change), `setLang()`, `getLang()`, `formatNum()` locale-aware (`fr-FR` / `en-US` / `ar-MA`).
+- Default language: **FR** (no auto-detection from `navigator.language`). User choice persists in `localStorage["safi_runner_lang"]`.
+- RTL: `setLang("ar")` flips `<html dir="rtl">`. Noto Sans Arabic font loaded in `index.html`. Layout uses logical properties (`textAlign: "start"`, `marginInlineEnd`) for RTL safety.
+- `src/components/LanguageSelector.tsx` — floating top-right dropdown with FR/EN/AR flags, mounted from `Game.tsx`.
+- Translated UI: `GameUI.tsx` (HUD, start, game-over, instructions, MenuUnlockOverlay, EngagementCard), `SupabasePanel.tsx`, `CheckpointUI.tsx` (all chrome — quiz/form/video/sponsorQuiz/social/reel activities). Cultural content arrays (quiz questions, sponsor blurbs, restaurant reels, venue names) intentionally kept in French as Moroccan cultural content.
+- `playerProfile.ts` returns i18n keys for errors (`claim.phone.invalid`, `claim.phone.taken`, `claim.error.notMet`, `claim.error.generic`); `MenuEligibility.blocker` is `{ key, n? } | null`.
+
 ### Supabase integration
 - URL: `https://ngfmuysddnixtbbguakr.supabase.co`
 - Key stored in `artifacts/3d-game/.env` as `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`
