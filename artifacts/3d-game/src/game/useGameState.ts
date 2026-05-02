@@ -67,7 +67,28 @@ export function useGameState() {
     idRef.current = 0;
     lastDiamondLane.current = null;
     clusterCount.current = 0;
-    setState({ ...initialState(), phase: "playing" });
+
+    /* Pré-charger diamants et obstacles so the game feels full immediately */
+    const preObstacles: Obstacle[] = [];
+    const preDiamonds: Diamond[] = [];
+
+    // Obstacles à 3 distances différentes (pas trop proches au départ)
+    [-55, -85, -120, -155].forEach((z) => {
+      const lane = Math.floor(Math.random() * 3) - 1;
+      preObstacles.push({ id: idRef.current++, lane, z });
+    });
+
+    // Diamants répartis sur toute la profondeur visible
+    [-12, -22, -35, -48, -62, -78, -95, -115, -138, -160].forEach((z) => {
+      const lane = Math.floor(Math.random() * 3) - 1;
+      preDiamonds.push({ id: idRef.current++, lane, z });
+      // quelques clusters
+      if (Math.random() < 0.35) {
+        preDiamonds.push({ id: idRef.current++, lane, z: z - 6 });
+      }
+    });
+
+    setState({ ...initialState(), phase: "playing", obstacles: preObstacles, diamonds: preDiamonds });
   }, []);
 
   const resumeGame = useCallback(() => {

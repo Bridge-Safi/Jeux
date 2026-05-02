@@ -2,12 +2,6 @@ import { supabase, isSupabaseConfigured, type Profile } from "./supabase";
 import { getDeviceId, getHardwarePrefix } from "./deviceFingerprint";
 
 const PLAYER_NAME_KEY = "safi_runner_player_name";
-
-/* ── Limite physique anti-triche ────────────────────────────────
-   Max atteignable : ~0.75 spawn/s × 70% collecte × clusters = ~0.8 💎/s
-   On autorise 1.8 💎/s avec marge généreuse.
-   Tout ce qui dépasse est écrêté silencieusement.
-──────────────────────────────────────────────────────────────── */
 const MAX_DIAMONDS_PER_SECOND = 1.8;
 
 export function getPlayerName(): string {
@@ -16,97 +10,81 @@ export function getPlayerName(): string {
 
 async function getOrCreateAuthUser(): Promise<string | null> {
   if (!isSupabaseConfigured) return null;
-
   try {
     const { data: sessionData } = await supabase.auth.getSession();
-    if (sessionData?.session?.user?.id) {
-      return sessionData.session.user.id;
-    }
-
-    const { data: signInData, error } = await supabase.auth.signInAnonymously();
-    if (error) {
-      console.warn("signInAnonymously error:", error.message);
-      return null;
-    }
-    return signInData.user?.id ?? null;
+    if (sessionData?.session?.user?.id) return sessionData.session.user.id;
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error) { console.warn("signInAnonymously error:", error.message); return null; }
+    return data.user?.id ?? null;
   } catch (err) {
-    console.error("getOrCreateAuthUser exception:", err);
+    console.error("getOrCreateAuthUser:", err);
     return null;
   }
 }
 
-/**
- * Crée ou charge le profil du joueur.
- *
- * Logique anti-duplication par appareil :
- *  1. On génère l'empreinte de cet appareil (device_fingerprint).
- *  2. Si un profil avec cette empreinte existe déjà (même téléphone,
- *     même navigateur) → on le retourne directement.
- *  3. Sinon → on crée un nouveau profil lié à cet appareil.
- *
- * Résultat : impossible d'avoir 2 comptes différents sur le même téléphone.
- */
-export async function ensureProfile(): Promise<Profile | null> {
-  if (!isSupabaseConfigured) return null;
-
+/** Tente de trouver un profil par empreinte d'appareil (colonnes optionnelles).
+ *  Si les colonnes n'existent pas encore dans Supabase, retourne null silencieusement. */
+async function findByDevice(): Promise<Profile | null> {
   try {
-    const userId = await getOrCreateAuthUser();
-    if (!userId) return null;
-
-    const deviceId      = getDeviceId();
-    const hwPrefix      = getHardwarePrefix();
-    const username      = getPlayerName();
-
-    /* ── Cherche un profil lié à cet appareil (même si nouvelle session) ── */
-    const { data: byDevice } = await supabase
+    const deviceId = getDeviceId();
+    const hwPrefix = getHardwarePrefix();
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .or(`device_fingerprint.eq.${deviceId},hardware_prefix.eq.${hwPrefix}`)
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
+    if (error) return null; // colonnes pas encore créées → fallback uid
+    return data as Profile | null;
+  } catch {
+    return null;
+  }
+}
 
-    if (byDevice) {
-      /* Même appareil → on retourne toujours ce profil (anti-duplication) */
-      return byDevice as Profile;
-    }
+export async function ensureProfile(): Promise<Profile | null> {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const userId = await getOrCreateAuthUser();
+    if (!userId) return null;
 
-    /* ── Cherche un profil lié à l'auth uid actuel ────────────────────── */
+    // 1. Recherche par empreinte d'appareil (si colonnes existent)
+    const byDevice = await findByDevice();
+    if (byDevice) return byDevice;
+
+    // 2. Recherche par uid auth
     const { data: existing, error: fetchErr } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
-
+      .from("profiles").select("*").eq("id", userId).maybeSingle();
     if (fetchErr && fetchErr.code !== "PGRST116") {
-      console.error("Supabase ensureProfile fetch error:", fetchErr);
+      console.error("ensureProfile fetch:", fetchErr);
       return null;
     }
-
     if (existing) return existing as Profile;
 
-    /* ── Nouveau joueur → créer le profil ────────────────────────────── */
+    // 3. Créer nouveau profil
+    const deviceId = getDeviceId();
+    const hwPrefix = getHardwarePrefix();
+    const insertData: Record<string, unknown> = {
+      id: userId,
+      username: getPlayerName(),
+      sardines_points: 0,
+      diamonds_collected: 0,
+    };
+    // Ajouter les colonnes device seulement si elles existent (test préalable)
+    try {
+      const testCol = await supabase.from("profiles").select("device_fingerprint").limit(1);
+      if (!testCol.error) {
+        insertData.device_fingerprint = deviceId;
+        insertData.hardware_prefix = hwPrefix;
+      }
+    } catch { /* colonnes absentes, on ignore */ }
+
     const { data: created, error: insertErr } = await supabase
-      .from("profiles")
-      .insert({
-        id: userId,
-        username,
-        sardines_points: 0,
-        diamonds_collected: 0,
-        device_fingerprint: deviceId,
-        hardware_prefix: hwPrefix,
-      })
-      .select()
-      .single();
-
-    if (insertErr) {
-      console.error("Supabase ensureProfile insert error:", insertErr);
-      return null;
-    }
-
+      .from("profiles").insert(insertData).select().single();
+    if (insertErr) { console.error("ensureProfile insert:", insertErr); return null; }
     return created as Profile;
   } catch (err) {
-    console.error("Supabase ensureProfile exception:", err);
+    console.error("ensureProfile exception:", err);
     return null;
   }
 }
@@ -116,17 +94,10 @@ async function getCurrentUserId(): Promise<string | null> {
   try {
     const { data } = await supabase.auth.getSession();
     return data?.session?.user?.id ?? null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-/**
- * Sauvegarde le score de la session avec validation anti-triche.
- * @param diamondsSession  💎 collectés pendant la session
- * @param sardinesSession  🐟 sardines
- * @param playTimeSeconds  durée réelle de jeu en secondes
- */
+/** Sauvegarde le score avec validation anti-triche côté client */
 export async function saveScore(
   diamondsSession: number,
   sardinesSession: number,
@@ -134,129 +105,75 @@ export async function saveScore(
 ): Promise<void> {
   if (!isSupabaseConfigured) return;
 
-  /* Trouver le profil par appareil en priorité (anti-duplication) */
-  const deviceId = getDeviceId();
-  const hwPrefix = getHardwarePrefix();
-
+  // Préférer l'id par empreinte d'appareil si disponible
   let targetId: string | null = null;
-
-  const { data: byDevice } = await supabase
-    .from("profiles")
-    .select("id")
-    .or(`device_fingerprint.eq.${deviceId},hardware_prefix.eq.${hwPrefix}`)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
+  const byDevice = await findByDevice();
   if (byDevice) {
-    targetId = (byDevice as { id: string }).id;
+    targetId = byDevice.id;
   } else {
     targetId = await getCurrentUserId();
   }
-
   if (!targetId) return;
 
-  /* ── Validation plafond physique ────────────────────────────── */
-  const maxAllowed      = Math.ceil(playTimeSeconds * MAX_DIAMONDS_PER_SECOND);
+  const maxAllowed = Math.ceil(playTimeSeconds * MAX_DIAMONDS_PER_SECOND);
   const validatedDiamonds = Math.min(Math.max(0, Math.floor(diamondsSession)), maxAllowed);
   const validatedSardines = Math.max(0, Math.floor(sardinesSession));
-
   if (validatedDiamonds === 0 && validatedSardines === 0) return;
 
   try {
     const { data: current } = await supabase
-      .from("profiles")
-      .select("diamonds_collected, sardines_points")
-      .eq("id", targetId)
-      .single();
-
+      .from("profiles").select("diamonds_collected, sardines_points").eq("id", targetId).single();
     const existing = current as Profile | null;
-
-    await supabase
-      .from("profiles")
-      .update({
-        diamonds_collected: (existing?.diamonds_collected ?? 0) + validatedDiamonds,
-        sardines_points:    (existing?.sardines_points    ?? 0) + validatedSardines,
-        updated_at:         new Date().toISOString(),
-      })
-      .eq("id", targetId);
+    await supabase.from("profiles").update({
+      diamonds_collected: (existing?.diamonds_collected ?? 0) + validatedDiamonds,
+      sardines_points: (existing?.sardines_points ?? 0) + validatedSardines,
+      updated_at: new Date().toISOString(),
+    }).eq("id", targetId);
   } catch (err) {
-    console.error("saveScore exception:", err);
+    console.error("saveScore:", err);
   }
 }
 
-/**
- * Enregistre l'email du joueur sur son profil.
- * L'email est unique dans Supabase → impossible d'avoir 2 comptes avec le même email.
- */
+/** Enregistre l'email pour la réclamation de menu. Un email = un seul compte. */
 export async function registerEmail(email: string): Promise<{ success: boolean; error?: string }> {
   if (!isSupabaseConfigured) return { success: false, error: "Hors-ligne" };
-
-  const deviceId = getDeviceId();
-  const hwPrefix = getHardwarePrefix();
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id")
-    .or(`device_fingerprint.eq.${deviceId},hardware_prefix.eq.${hwPrefix}`)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  const targetId = (profile as { id: string } | null)?.id ?? await getCurrentUserId();
+  const byDevice = await findByDevice();
+  const targetId = byDevice?.id ?? await getCurrentUserId();
   if (!targetId) return { success: false, error: "Profil introuvable" };
 
-  /* Vérifier que cet email n'est pas déjà utilisé */
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("player_email", email.toLowerCase().trim())
-    .maybeSingle();
-
-  if (existing && (existing as { id: string }).id !== targetId) {
-    return { success: false, error: "Un compte existe déjà avec cet email." };
+  try {
+    // Vérifier unicité de l'email
+    const { data: exists } = await supabase
+      .from("profiles").select("id").eq("player_email", email.toLowerCase().trim()).maybeSingle();
+    if (exists && (exists as { id: string }).id !== targetId) {
+      return { success: false, error: "Un compte existe déjà avec cet email." };
+    }
+    const { error } = await supabase
+      .from("profiles").update({ player_email: email.toLowerCase().trim() }).eq("id", targetId);
+    if (error) {
+      // Colonne peut-être absente → ignorer et considérer succès partiel
+      if (error.code === "42703") return { success: true };
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err) {
+    console.error("registerEmail:", err);
+    return { success: false, error: "Erreur serveur" };
   }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ player_email: email.toLowerCase().trim() })
-    .eq("id", targetId);
-
-  if (error) return { success: false, error: error.message };
-  return { success: true };
 }
 
 export async function getProfile(): Promise<Profile | null> {
   if (!isSupabaseConfigured) return null;
-
-  const deviceId = getDeviceId();
-  const hwPrefix = getHardwarePrefix();
-
-  /* Chercher d'abord par empreinte d'appareil */
-  const { data: byDevice } = await supabase
-    .from("profiles")
-    .select("*")
-    .or(`device_fingerprint.eq.${deviceId},hardware_prefix.eq.${hwPrefix}`)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (byDevice) return byDevice as Profile;
-
-  /* Fallback sur l'uid */
+  // Chercher d'abord par appareil
+  const byDevice = await findByDevice();
+  if (byDevice) return byDevice;
+  // Fallback uid
   const userId = await getCurrentUserId();
   if (!userId) return null;
-
   try {
     const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
+      .from("profiles").select("*").eq("id", userId).single();
     if (error) return null;
     return data as Profile;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }

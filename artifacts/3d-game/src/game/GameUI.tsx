@@ -408,121 +408,131 @@ function StartScreen({ onStart, totalDiamonds }: { onStart: () => void; totalDia
 
   return (
     <div style={{
-      position: "absolute", inset: 0,
+      position: "absolute", inset: 0, pointerEvents: "auto",
       backgroundImage: "url(/assets/shark-warrior-night.jpeg)",
       backgroundSize: "cover", backgroundPosition: "center top",
-      display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "flex-end",
-      paddingBottom: 28, pointerEvents: "auto",
     }}>
-      {/* Overlay */}
+      {/* Overlay gradient */}
       <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(to bottom,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.05) 35%,rgba(0,10,40,0.90) 70%,rgba(0,5,20,0.98) 100%)",
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: "linear-gradient(to bottom,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.05) 30%,rgba(0,10,40,0.88) 60%,rgba(0,5,20,0.98) 100%)",
       }} />
 
-      {/* Bouton Bridge Eats en haut à gauche */}
-      <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, pointerEvents: "auto" }}>
+      {/* Bouton Bridge Eats fixe en haut */}
+      <div style={{ position: "absolute", top: 16, left: 16, zIndex: 20, pointerEvents: "auto" }}>
         <BridgeEatsButton />
       </div>
 
-      {/* Contenu bas */}
-      <div style={{ position: "relative", textAlign: "center", width: "100%", padding: "0 20px" }}>
+      {/* Zone scrollable — couvre tout l'écran */}
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 10,
+        overflowY: "auto", overflowX: "hidden",
+        WebkitOverflowScrolling: "touch" as never,
+        display: "flex", flexDirection: "column",
+        alignItems: "center",
+      }}>
+        {/* Spacer hero — pousse le contenu vers le bas */}
+        <div style={{ flex: 1, minHeight: 160 }} />
 
-        {/* Titre */}
-        <div style={{
-          fontSize: 46, fontWeight: 900, letterSpacing: 3, color: "#fff",
-          textShadow: "0 0 40px #1565c0, 0 4px 24px rgba(0,0,0,0.9)",
-          lineHeight: 1, marginBottom: 4,
-        }}>
-          🦈 SAFI RUNNER
-        </div>
-        <div style={{ fontSize: 13, color: "#90caf9", marginBottom: 14, letterSpacing: 2, fontWeight: 600, textTransform: "uppercase" }}>
-          Médina de Safi · Course Infinie 3D
-        </div>
+        {/* Contenu principal */}
+        <div style={{ width: "100%", maxWidth: 500, padding: "0 20px 32px", textAlign: "center" }}>
 
-        {/* Carte menu gratuit */}
-        <div style={{
-          display: "inline-flex", flexDirection: "column", alignItems: "center",
-          background: "rgba(0,0,0,0.6)", backdropFilter: "blur(10px)",
-          border: `1px solid ${menusEarned > 0 ? "#4caf50" : "rgba(255,140,0,0.4)"}`,
-          borderRadius: 18, padding: "12px 22px", marginBottom: 16, minWidth: 260,
-          boxShadow: menusEarned > 0 ? "0 0 20px #4caf5044" : "none",
-        }}>
-          {menusEarned > 0 ? (
-            <>
-              <div style={{ color: "#4caf50", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
-                🎉 {menusEarned} Menu{menusEarned > 1 ? "s" : ""} Gratuit{menusEarned > 1 ? "s" : ""} disponible{menusEarned > 1 ? "s" : ""} !
-              </div>
-              <a href={BRIDGE_EATS_URL} style={{
-                color: "#a5d6a7", fontSize: 11, textDecoration: "underline", cursor: "pointer",
+          {/* Titre */}
+          <div style={{
+            fontSize: "clamp(32px,10vw,46px)", fontWeight: 900, letterSpacing: 3, color: "#fff",
+            textShadow: "0 0 40px #1565c0, 0 4px 24px rgba(0,0,0,0.9)",
+            lineHeight: 1, marginBottom: 4,
+          }}>
+            🦈 SAFI RUNNER
+          </div>
+          <div style={{ fontSize: 12, color: "#90caf9", marginBottom: 14, letterSpacing: 2, fontWeight: 600, textTransform: "uppercase" }}>
+            Médina de Safi · Course Infinie 3D
+          </div>
+
+          {/* Carte menu gratuit */}
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center",
+            background: "rgba(0,0,0,0.65)", backdropFilter: "blur(10px)",
+            border: `1px solid ${menusEarned > 0 ? "#4caf50" : "rgba(255,140,0,0.4)"}`,
+            borderRadius: 18, padding: "12px 20px", marginBottom: 14,
+            boxShadow: menusEarned > 0 ? "0 0 20px #4caf5044" : "none",
+          }}>
+            {menusEarned > 0 ? (
+              <>
+                <div style={{ color: "#4caf50", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+                  🎉 {menusEarned} Menu{menusEarned > 1 ? "s" : ""} Gratuit{menusEarned > 1 ? "s" : ""} disponible{menusEarned > 1 ? "s" : ""} !
+                </div>
+                <a href={BRIDGE_EATS_URL} target="_blank" rel="noreferrer" style={{
+                  color: "#a5d6a7", fontSize: 12, textDecoration: "underline", cursor: "pointer",
+                }}>
+                  → Réclamer sur Bridge Eats
+                </a>
+              </>
+            ) : (
+              <>
+                <div style={{ color: "#ffa726", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
+                  🍔 Collecte 💎 pour un menu gratuit Bridge Eats
+                </div>
+                <div style={{ width: "100%", height: 7, background: "rgba(255,255,255,0.15)", borderRadius: 6, overflow: "hidden", marginBottom: 5 }}>
+                  <div style={{
+                    height: "100%",
+                    width: `${(progressInCycle / DIAMONDS_PER_MENU) * 100}%`,
+                    background: "linear-gradient(90deg,#ff6f00,#ffd54f)",
+                    borderRadius: 6, transition: "width 0.5s",
+                  }} />
+                </div>
+                <div style={{ color: "#aaa", fontSize: 10 }}>
+                  💎 {progressInCycle} / {DIAMONDS_PER_MENU} pour 1 menu gratuit
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Badges */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+            {[
+              { icon: "💎", text: "Collecte des diamants" },
+              { icon: "🍽️", text: "Pauses toutes les 40s" },
+              { icon: "🏆", text: "Score en ligne" },
+            ].map((b, i) => (
+              <div key={i} style={{
+                background: "rgba(255,255,255,0.1)", backdropFilter: "blur(6px)",
+                border: "1px solid rgba(255,255,255,0.2)", borderRadius: 20,
+                padding: "4px 10px", fontSize: 10, color: "#e0e0e0",
+                display: "flex", alignItems: "center", gap: 4,
               }}>
-                → Réclamer sur Bridge Eats
-              </a>
-            </>
-          ) : (
-            <>
-              <div style={{ color: "#ffa726", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
-                🍔 Collecte 💎 pour un menu gratuit Bridge Eats
+                {b.icon} {b.text}
               </div>
-              <div style={{ width: "100%", height: 7, background: "rgba(255,255,255,0.15)", borderRadius: 6, overflow: "hidden" }}>
-                <div style={{
-                  height: "100%",
-                  width: `${(progressInCycle / DIAMONDS_PER_MENU) * 100}%`,
-                  background: "linear-gradient(90deg,#ff6f00,#ffd54f)",
-                  borderRadius: 6, transition: "width 0.5s",
-                }} />
-              </div>
-              <div style={{ color: "#aaa", fontSize: 10, marginTop: 5 }}>
-                💎 {progressInCycle} / {DIAMONDS_PER_MENU} pour 1 menu gratuit
-              </div>
-            </>
-          )}
-        </div>
+            ))}
+          </div>
 
-        {/* Badges features */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
-          {[
-            { icon: "💎", text: "Collecte des diamants" },
-            { icon: "🍽️", text: "Pauses toutes les 40s" },
-            { icon: "🏆", text: "Score en ligne" },
-          ].map((b, i) => (
-            <div key={i} style={{
-              background: "rgba(255,255,255,0.1)", backdropFilter: "blur(6px)",
-              border: "1px solid rgba(255,255,255,0.2)", borderRadius: 20,
-              padding: "5px 12px", fontSize: 11, color: "#e0e0e0",
-              display: "flex", alignItems: "center", gap: 5,
-            }}>
-              <span>{b.icon}</span> {b.text}
-            </div>
-          ))}
-        </div>
+          {/* Contrôles */}
+          <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, marginBottom: 18, color: "#aaa", fontSize: 10 }}>
+            <span>◀ ▶ Voies</span>
+            <span style={{ opacity: 0.4 }}>|</span>
+            <span>↑ / Espace Sauter</span>
+            <span style={{ opacity: 0.4 }}>|</span>
+            <span>Boutons tactiles ✓</span>
+          </div>
 
-        {/* Info contrôles */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 18, color: "#aaa", fontSize: 11 }}>
-          <span>◀ ▶ Voies</span>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <span>↑ / Espace Sauter</span>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <span>Boutons tactiles ✓</span>
+          {/* Bouton JOUER */}
+          <button
+            onClick={onStart}
+            style={{
+              background: "linear-gradient(135deg,#1565c0 0%,#42a5f5 50%,#1565c0 100%)",
+              color: "#fff", border: "none", borderRadius: 50,
+              padding: "16px 52px", fontSize: "clamp(18px,5vw,22px)", fontWeight: 900,
+              cursor: "pointer", letterSpacing: 3, textTransform: "uppercase",
+              boxShadow: "0 0 30px #1565c088, 0 6px 24px rgba(0,0,0,0.6)",
+              animation: "pulse 2s infinite", transition: "transform 0.1s",
+              width: "100%", maxWidth: 340,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.04)")}
+            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            ▶ JOUER
+          </button>
         </div>
-
-        {/* Bouton JOUER */}
-        <button
-          onClick={onStart}
-          style={{
-            background: "linear-gradient(135deg,#1565c0 0%,#42a5f5 50%,#1565c0 100%)",
-            color: "#fff", border: "none", borderRadius: 50,
-            padding: "18px 60px", fontSize: 22, fontWeight: 900,
-            cursor: "pointer", letterSpacing: 3, textTransform: "uppercase",
-            boxShadow: "0 0 30px #1565c088, 0 6px 24px rgba(0,0,0,0.6)",
-            animation: "pulse 2s infinite", transition: "transform 0.1s",
-          }}
-          onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
-          onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-        >
-          ▶ JOUER
-        </button>
       </div>
     </div>
   );
@@ -543,15 +553,23 @@ function GameOverScreen({ score, checkpointNumber, totalDiamonds, onRestart }: {
       position: "absolute", inset: 0,
       backgroundImage: "url(/assets/shark-warrior-night.jpeg)",
       backgroundSize: "cover", backgroundPosition: "center top",
-      display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "center",
       pointerEvents: "auto",
     }}>
       <div style={{
         position: "absolute", inset: 0,
         background: "linear-gradient(to bottom,rgba(60,0,0,0.7) 0%,rgba(10,0,0,0.97) 100%)",
+        pointerEvents: "none",
       }} />
 
+      {/* Zone scrollable */}
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 10,
+        overflowY: "auto", overflowX: "hidden",
+        WebkitOverflowScrolling: "touch" as never,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: "20px 0",
+      }}>
       <div style={{ position: "relative", textAlign: "center", padding: "0 24px", width: "100%", maxWidth: 440 }}>
 
         {/* Bouton Bridge Eats en haut */}
@@ -647,6 +665,7 @@ function GameOverScreen({ score, checkpointNumber, totalDiamonds, onRestart }: {
           🔄 RECOMMENCER
         </button>
       </div>
+      </div>  {/* fin zone scrollable */}
     </div>
   );
 }

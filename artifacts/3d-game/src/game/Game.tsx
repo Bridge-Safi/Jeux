@@ -76,14 +76,14 @@ function GameLoop({
 function NightLighting() {
   return (
     <>
-      {/* Lumière ambiante nuit — très faible, bleutée */}
-      <ambientLight intensity={0.15} color="#1a2a5e" />
+      {/* Ambiance nuit — assez forte pour voir les détails */}
+      <ambientLight intensity={0.35} color="#2a3a6e" />
 
-      {/* Lune — lumière froide directionnelle */}
+      {/* Lune — lumière principale froide */}
       <directionalLight
         position={[30, 50, -30]}
-        intensity={0.55}
-        color="#cce0ff"
+        intensity={0.9}
+        color="#d0e8ff"
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-camera-far={80}
@@ -93,14 +93,22 @@ function NightLighting() {
         shadow-camera-bottom={-15}
       />
 
-      {/* Lumière de remplissage douce (reflet ciel nuit) */}
-      <directionalLight position={[-10, 8, 10]} intensity={0.1} color="#2a3a7a" />
+      {/* Lumière de remplissage — reflet sol humide */}
+      <directionalLight position={[-10, 8, 10]} intensity={0.25} color="#3a4a8a" />
 
-      {/* Lumières lanternes globales sur la route */}
-      <pointLight position={[-3.85, 3.6, -5]} color="#ff8f00" intensity={1.8} distance={14} />
-      <pointLight position={[3.85, 3.6, -5]} color="#ff8f00" intensity={1.8} distance={14} />
-      <pointLight position={[-3.85, 3.6, -20]} color="#ff8f00" intensity={1.8} distance={14} />
-      <pointLight position={[3.85, 3.6, -20]} color="#ff8f00" intensity={1.8} distance={14} />
+      {/* Lumière derrière le joueur — donne de la profondeur */}
+      <directionalLight position={[0, 5, 12]} intensity={0.3} color="#ff9040" />
+
+      {/* Lanternes chaudes sur la route — 6 points pour couvrir tout le tunnel visible */}
+      <pointLight position={[-3.85, 3.6,  0]} color="#ff8f00" intensity={3.0} distance={18} />
+      <pointLight position={[ 3.85, 3.6,  0]} color="#ff8f00" intensity={3.0} distance={18} />
+      <pointLight position={[-3.85, 3.6, -18]} color="#ff8f00" intensity={2.5} distance={18} />
+      <pointLight position={[ 3.85, 3.6, -18]} color="#ff8f00" intensity={2.5} distance={18} />
+      <pointLight position={[-3.85, 3.6, -36]} color="#ff8f00" intensity={2.5} distance={18} />
+      <pointLight position={[ 3.85, 3.6, -36]} color="#ff8f00" intensity={2.5} distance={18} />
+
+      {/* Halo bleu-blanc au sol devant le joueur */}
+      <pointLight position={[0, 1.5, -4]} color="#90c8ff" intensity={1.2} distance={12} />
     </>
   );
 }
@@ -115,8 +123,8 @@ function GameScene({ state, tick, changeLane, jump }: ReturnType<typeof useGameS
 
       <NightLighting />
 
-      {/* Brouillard nocturne bleu-nuit */}
-      <fog attach="fog" args={["#060d1f", 25, 80]} />
+      {/* Brouillard nocturne — commence plus loin pour mieux voir la route */}
+      <fog attach="fog" args={["#060d1f", 35, 110]} />
 
       {/* Sol nuit */}
       <mesh position={[0, -0.12, -40]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
