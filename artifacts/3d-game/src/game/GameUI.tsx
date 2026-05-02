@@ -946,7 +946,6 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
     localStorage.setItem("safi_runner_saw_instructions", "1");
     onStart();
   };
-  const hours = Math.round((REQUIRED_SECONDS_PER_DAY / 3600) * 10) / 10;
   const rows: { icon: string; labelKey: string; descKey: string }[] = [
     { icon: "◀ ▶", labelKey: "instr.row.lanes.label",     descKey: "instr.row.lanes.desc" },
     { icon: "▲",   labelKey: "instr.row.jump.label",      descKey: "instr.row.jump.desc" },
@@ -954,12 +953,12 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
     { icon: "💎",  labelKey: "instr.row.diamonds.label",  descKey: "instr.row.diamonds.desc" },
     { icon: "🚧",  labelKey: "instr.row.obstacles.label", descKey: "instr.row.obstacles.desc" },
   ];
-  const bullets: string[] = [
-    t("instr.how.collect", { n: formatNum(DIAMONDS_PER_MENU) }),
-    t("instr.how.play",    { h: hours, d: REQUIRED_PLAY_DAYS }),
-    t("instr.how.day4"),
-    t("instr.how.shortfall"),
-    t("instr.how.ads"),
+  /* Règles officielles — 4 catégories (mêmes clés que l'écran d'accueil) */
+  const ruleCats: { icon: string; titleKey: string; lines: string[] }[] = [
+    { icon: "⏱️", titleKey: "rules.duration.title",  lines: ["rules.duration.l1",  "rules.duration.l2",  "rules.duration.l3"] },
+    { icon: "💎", titleKey: "rules.collect.title",   lines: ["rules.collect.l1",   "rules.collect.l2",   "rules.collect.l3"] },
+    { icon: "🐝", titleKey: "rules.shortfall.title", lines: ["rules.shortfall.l1", "rules.shortfall.l2", "rules.shortfall.l3", "rules.shortfall.l4"] },
+    { icon: "🏃", titleKey: "rules.bonus.title",     lines: ["rules.bonus.l1",     "rules.bonus.l2",     "rules.bonus.l3"] },
   ];
   return (
     <div style={{
@@ -995,17 +994,40 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
           ))}
         </div>
 
-        {/* Système de récompenses détaillé */}
-        <div style={{
-          width: "100%", maxWidth: 420,
-          background: "rgba(255,140,0,0.12)", border: "1px solid rgba(255,140,0,0.35)",
-          borderRadius: 16, padding: "14px 18px", marginBottom: 16,
-        }}>
-          <div style={{ color: "#ffa726", fontWeight: 800, fontSize: 14, marginBottom: 8 }}>
+        {/* Règles officielles — 4 catégories (DURÉE / DIAMANTS / MANQUANTS / BONUS) */}
+        <div style={{ width: "100%", maxWidth: 420, marginBottom: 16 }}>
+          <div style={{
+            color: "#ffa726", fontWeight: 800, fontSize: 14, marginBottom: 10,
+            textAlign: "center", letterSpacing: 1,
+          }}>
             {t("instr.howTitle")}
           </div>
-          {bullets.map((line, i) => (
-            <div key={i} style={{ color: "#e0e0e0", fontSize: 13, marginBottom: 4 }}>✓ {line}</div>
+          {ruleCats.map((cat) => (
+            <div key={cat.titleKey} style={{
+              background: "rgba(255,140,0,0.10)", border: "1px solid rgba(255,140,0,0.30)",
+              borderRadius: 14, padding: "10px 14px", marginBottom: 8,
+            }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8,
+                color: "#ffa726", fontWeight: 800, fontSize: 12, letterSpacing: 1.2,
+                textTransform: "uppercase", marginBottom: 7,
+              }}>
+                <span style={{ fontSize: 16 }}>{cat.icon}</span>
+                <span>{t(cat.titleKey)}</span>
+              </div>
+              {cat.lines.map((lk) => (
+                <div key={lk} style={{
+                  display: "flex", alignItems: "flex-start", gap: 8,
+                  color: "#e0e0e0", fontSize: 12, marginBottom: 4, lineHeight: 1.45,
+                }}>
+                  <div style={{
+                    flexShrink: 0, width: 5, height: 5, borderRadius: "50%",
+                    background: "#ffd54f", marginTop: 6,
+                  }} />
+                  <div style={{ flex: 1 }}>{t(lk)}</div>
+                </div>
+              ))}
+            </div>
           ))}
         </div>
 
