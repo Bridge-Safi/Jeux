@@ -481,13 +481,52 @@ function SponsorQuizActivity({ onComplete }: { onComplete: () => void }) {
 // ──────────────────────────────────────────────────────────────────
 // RÉSEAUX SOCIAUX — 4 PLATEFORMES (Insta + Facebook + TikTok + YouTube)
 // ──────────────────────────────────────────────────────────────────
+/* ── Comptes RÉELS pour test — remplacer par les vrais handles Bridge Eats ──
+   Ces comptes sont des pages publiques vérifiées sur les 4 plateformes.
+   Pour mettre à jour : modifier uniquement les 4 URLs de chaque entrée. */
 const socialAccounts = [
-  { name: "Bridge Eats",       handle: "@bridge.eats",       insta: "https://www.instagram.com/bridge.eats",       facebook: "https://www.facebook.com/bridge.eats",       tiktok: "https://www.tiktok.com/@bridge.eats",       youtube: "https://www.youtube.com/@bridge.eats" },
-  { name: "Safi Runner",       handle: "@safirunner",        insta: "https://www.instagram.com/safirunner",        facebook: "https://www.facebook.com/safirunner",        tiktok: "https://www.tiktok.com/@safirunner",        youtube: "https://www.youtube.com/@safirunner" },
-  { name: "Médina Safi",       handle: "@medina.safi",       insta: "https://www.instagram.com/medina.safi",       facebook: "https://www.facebook.com/medina.safi",       tiktok: "https://www.tiktok.com/@medina.safi",       youtube: "https://www.youtube.com/@medina.safi" },
-  { name: "Safi City Guide",   handle: "@saficityguide",     insta: "https://www.instagram.com/saficityguide",     facebook: "https://www.facebook.com/saficityguide",     tiktok: "https://www.tiktok.com/@saficityguide",     youtube: "https://www.youtube.com/@saficityguide" },
-  { name: "Morocco Food Tours", handle: "@moroccofoodtours", insta: "https://www.instagram.com/moroccofoodtours",  facebook: "https://www.facebook.com/moroccofoodtours",  tiktok: "https://www.tiktok.com/@moroccofoodtours",  youtube: "https://www.youtube.com/@moroccofoodtours" },
-  { name: "Visit Safi Officiel", handle: "@visitsafi",       insta: "https://www.instagram.com/visitsafi",        facebook: "https://www.facebook.com/visitsafi",        tiktok: "https://www.tiktok.com/@visitsafi",        youtube: "https://www.youtube.com/@visitsafi" },
+  {
+    name: "Visit Morocco 🇲🇦", handle: "@visitmorocco",
+    insta:    "https://www.instagram.com/visitmorocco/",
+    facebook: "https://www.facebook.com/VisitMorocco/",
+    tiktok:   "https://www.tiktok.com/@visitmorocco",
+    youtube:  "https://www.youtube.com/@visitmorocco",
+  },
+  {
+    name: "National Geographic", handle: "@natgeo",
+    insta:    "https://www.instagram.com/natgeo/",
+    facebook: "https://www.facebook.com/NatGeo/",
+    tiktok:   "https://www.tiktok.com/@natgeo",
+    youtube:  "https://www.youtube.com/@NatGeo",
+  },
+  {
+    name: "NASA 🚀", handle: "@nasa",
+    insta:    "https://www.instagram.com/nasa/",
+    facebook: "https://www.facebook.com/NASA/",
+    tiktok:   "https://www.tiktok.com/@nasa",
+    youtube:  "https://www.youtube.com/@NASA",
+  },
+  {
+    name: "TED Talks 💡", handle: "@ted",
+    insta:    "https://www.instagram.com/ted/",
+    facebook: "https://www.facebook.com/TED/",
+    tiktok:   "https://www.tiktok.com/@ted",
+    youtube:  "https://www.youtube.com/@TED",
+  },
+  {
+    name: "BBC News 📰", handle: "@bbcnews",
+    insta:    "https://www.instagram.com/bbcnews/",
+    facebook: "https://www.facebook.com/bbcnews/",
+    tiktok:   "https://www.tiktok.com/@bbcnews",
+    youtube:  "https://www.youtube.com/@BBCNews",
+  },
+  {
+    name: "Tasty 🍽️", handle: "@buzzfeedtasty",
+    insta:    "https://www.instagram.com/buzzfeedtasty/",
+    facebook: "https://www.facebook.com/buzzfeedtasty/",
+    tiktok:   "https://www.tiktok.com/@tasty",
+    youtube:  "https://www.youtube.com/@tasty",
+  },
 ];
 
 type SocialAccount = typeof socialAccounts[0];
