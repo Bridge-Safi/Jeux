@@ -205,3 +205,111 @@ export function setOrientalMusicVolume(v: number) {
     masterGain.gain.setTargetAtTime(v, ctx.currentTime, 0.1);
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────
+   EFFETS SONORES "tonal" — chaque action déclenche une note ou un
+   petit motif dans la GAMME HIJAZ pour rester en harmonie avec la
+   musique de fond. SFX silencieux si l'AudioContext n'est pas encore
+   démarré (= musique OFF) → cohérence totale avec le toggle musique.
+   ────────────────────────────────────────────────────────────── */
+
+/* Joue une note brève (sinus + triangle) à une fréquence donnée. */
+function tone(
+  freq: number,
+  when: number,
+  dur: number,
+  vol = 0.18,
+  type: OscillatorType = "triangle",
+) {
+  if (!ctx || !masterGain) return;
+  const o = ctx.createOscillator();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, when);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.exponentialRampToValueAtTime(vol, when + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+  o.connect(g).connect(masterGain);
+  o.start(when);
+  o.stop(when + dur + 0.04);
+}
+
+/* Glissando (sweep) entre deux fréquences */
+function sweep(
+  fromFreq: number,
+  toFreq: number,
+  when: number,
+  dur: number,
+  vol = 0.2,
+  type: OscillatorType = "triangle",
+) {
+  if (!ctx || !masterGain) return;
+  const o = ctx.createOscillator();
+  o.type = type;
+  o.frequency.setValueAtTime(fromFreq, when);
+  o.frequency.exponentialRampToValueAtTime(Math.max(20, toFreq), when + dur);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.exponentialRampToValueAtTime(vol, when + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+  o.connect(g).connect(masterGain);
+  o.start(when);
+  o.stop(when + dur + 0.04);
+}
+
+/* SAUT — arpège ascendant rapide D5 → A5 → D6 (motif mawwâl montant) */
+export function sfxJump() {
+  if (!ctx || !masterGain) return;
+  const t0 = ctx.currentTime;
+  tone(587.33, t0,        0.08, 0.18); // D5
+  tone(880.00, t0 + 0.05, 0.10, 0.18); // A5
+  tone(1174.66, t0 + 0.10, 0.14, 0.16); // D6
+}
+
+/* DIAMANT — tintement cristallin (D6 + F#6 superposés, court) */
+export function sfxDiamond() {
+  if (!ctx || !masterGain) return;
+  const t0 = ctx.currentTime;
+  tone(1174.66, t0,        0.18, 0.14, "sine");     // D6
+  tone(1479.98, t0 + 0.015, 0.22, 0.10, "triangle"); // F#6
+}
+
+/* CHANGEMENT DE VOIE — petit "tek" tonal sur la quinte (A4) */
+export function sfxLane() {
+  if (!ctx || !masterGain) return;
+  const t0 = ctx.currentTime;
+  tone(440, t0, 0.06, 0.12, "sine");
+  tone(880, t0 + 0.01, 0.05, 0.08, "triangle");
+}
+
+/* CHECKPOINT — petite fanfare montante D F# A D (Hijaz arpégé) */
+export function sfxCheckpoint() {
+  if (!ctx || !masterGain) return;
+  const t0 = ctx.currentTime;
+  tone(587.33, t0,        0.18, 0.20); // D5
+  tone(739.99, t0 + 0.10, 0.18, 0.20); // F#5
+  tone(880.00, t0 + 0.20, 0.18, 0.20); // A5
+  tone(1174.66, t0 + 0.30, 0.32, 0.22); // D6
+}
+
+/* CRASH / GAME OVER — descente dissonante Bb → Eb → low D (sweep grave) */
+export function sfxCrash() {
+  if (!ctx || !masterGain) return;
+  const t0 = ctx.currentTime;
+  /* Note dissonante haute (Bb5) qui chute */
+  sweep(932.33, 73.42, t0, 0.55, 0.28, "sawtooth"); // Bb5 → D2
+  /* Boum grave en superposition */
+  if (ctx && masterGain) {
+    const o = ctx.createOscillator();
+    o.type = "sine";
+    o.frequency.setValueAtTime(120, t0);
+    o.frequency.exponentialRampToValueAtTime(40, t0 + 0.4);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.5, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.5);
+    o.connect(g).connect(masterGain);
+    o.start(t0);
+    o.stop(t0 + 0.55);
+  }
+}

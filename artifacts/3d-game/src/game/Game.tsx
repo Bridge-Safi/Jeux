@@ -16,6 +16,7 @@ import { useGamepad } from "../hooks/useGamepad";
 import { useT } from "../lib/i18n";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { useMusic } from "../hooks/useMusic";
+import { sfxJump, sfxLane, sfxDiamond, sfxCheckpoint, sfxCrash } from "../lib/orientalMusic";
 
 enum Controls {
   left = "left",
@@ -138,8 +139,41 @@ export function Game() {
     startGame();
   }, [startMusic, startGame]);
 
+  /* ── SFX tonals (gamme Hijaz) — chaque action son distinct ── */
+  const jumpWithSfx = useCallback(() => {
+    sfxJump();
+    jump();
+  }, [jump]);
+
+  const changeLaneWithSfx = useCallback((dir: 1 | -1) => {
+    sfxLane();
+    changeLane(dir);
+  }, [changeLane]);
+
+  /* Diamant ramassé → tintement cristallin (détecté via score++) */
+  const prevScore = useRef(0);
   useEffect(() => {
-    if (state.phase === "gameover") stopMusic();
+    if (state.score > prevScore.current && state.phase === "playing") {
+      sfxDiamond();
+    }
+    prevScore.current = state.score;
+  }, [state.score, state.phase]);
+
+  /* Transitions de phase → fanfare checkpoint / crash gameover */
+  const prevPhase = useRef(state.phase);
+  useEffect(() => {
+    if (prevPhase.current !== state.phase) {
+      if (state.phase === "checkpoint") sfxCheckpoint();
+      else if (state.phase === "gameover") sfxCrash();
+    }
+    prevPhase.current = state.phase;
+  }, [state.phase]);
+
+  useEffect(() => {
+    if (state.phase !== "gameover") return;
+    /* Laisse le crash sfx jouer (~0.6s) avant de couper la musique */
+    const timer = setTimeout(() => stopMusic(), 700);
+    return () => clearTimeout(timer);
   }, [state.phase, stopMusic]);
 
   useEffect(() => {
@@ -152,9 +186,9 @@ export function Game() {
      uniquement, et seulement quand la partie est en cours. */
   const { connected: gamepadConnected } = useGamepad({
     enabled: state.phase === "playing",
-    onLeft: () => changeLane(-1),
-    onRight: () => changeLane(1),
-    onJump: jump,
+    onLeft: () => changeLaneWithSfx(-1),
+    onRight: () => changeLaneWithSfx(1),
+    onJump: jumpWithSfx,
   });
 
   return (
@@ -185,7 +219,7 @@ export function Game() {
           dpr={[1, 2]}
           gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}
         >
-          <GameScene state={state} tick={tick} changeLane={changeLane} jump={jump} startGame={startGame} resumeGame={resumeGame} />
+          <GameScene state={state} tick={tick} changeLane={changeLaneWithSfx} jump={jumpWithSfx} startGame={startGame} resumeGame={resumeGame} />
         </Canvas>
       </KeyboardControls>
 
@@ -199,8 +233,8 @@ export function Game() {
         profile={profile}
         onStart={handleStart}
         onRestart={handleStart}
-        onChangeLane={changeLane}
-        onJump={jump}
+        onChangeLane={changeLaneWithSfx}
+        onJump={jumpWithSfx}
       />
 
       {/* Overlay checkpoint */}
