@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { getBridgeAuth, listenForParentAuth, EVENT_NAME, type BridgeAuth } from "../lib/bridgeAuth";
+import { getBridgeAuth, listenForParentAuth, setBridgeAuthManual, EVENT_NAME, type BridgeAuth } from "../lib/bridgeAuth";
 import { navigateInApp } from "../lib/inAppNav";
 import { BRIDGE_EATS_URL } from "./GameUI";
 import { useT } from "../lib/i18n";
@@ -11,6 +11,10 @@ import { useT } from "../lib/i18n";
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { t } = useT();
   const [auth, setAuth] = useState<BridgeAuth | null>(() => getBridgeAuth());
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualEmail, setManualEmail] = useState("");
+  const [manualPhone, setManualPhone] = useState("");
+  const [manualErr, setManualErr] = useState(false);
 
   /* Re-sync si Bridge Eats parent envoie un postMessage avec l'auth. */
   useEffect(() => {
@@ -32,6 +36,14 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     url.searchParams.set("return_to", "safi-runner");
     navigateInApp(url.toString(), "bridge-eats");
   }, []);
+
+  const handleManualSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    const a = setBridgeAuthManual(manualEmail, manualPhone);
+    if (!a) { setManualErr(true); return; }
+    setManualErr(false);
+    setAuth(a);
+  }, [manualEmail, manualPhone]);
 
   if (auth) return <>{children}</>;
 
@@ -87,6 +99,88 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         <div style={{
           color: "#7aa28a", fontSize: 11, marginTop: 20, lineHeight: 1.5,
         }}>{t("auth.locked.why")}</div>
+
+        {/* ─── Plan B : saisie manuelle (déjà connecté à Bridge Eats) ─── */}
+        <button
+          type="button"
+          onClick={() => setManualOpen((v) => !v)}
+          style={{
+            display: "block", margin: "16px auto 0",
+            background: "transparent", border: "none",
+            color: "#80cbc4", fontSize: 12, fontWeight: 700,
+            textDecoration: "underline", cursor: "pointer",
+            fontFamily: "inherit",
+          }}
+        >
+          {t("auth.manual.toggle")}
+        </button>
+
+        {manualOpen && (
+          <form onSubmit={handleManualSubmit} style={{
+            marginTop: 14,
+            background: "rgba(0,30,15,0.6)",
+            border: "1px solid rgba(0,230,118,0.25)",
+            borderRadius: 14, padding: 14,
+            textAlign: "start",
+          }}>
+            <div style={{
+              color: "#00e676", fontSize: 11, fontWeight: 800, letterSpacing: 1.5,
+              textTransform: "uppercase", marginBottom: 10, textAlign: "center",
+            }}>
+              {t("auth.manual.title")}
+            </div>
+            <input
+              type="email"
+              value={manualEmail}
+              onChange={(e) => { setManualEmail(e.target.value); setManualErr(false); }}
+              placeholder={t("auth.manual.email")}
+              autoComplete="email"
+              required
+              style={{
+                width: "100%", boxSizing: "border-box", marginBottom: 8,
+                background: "rgba(0,0,0,0.5)", color: "#fff",
+                border: `1px solid ${manualErr ? "#ef5350" : "rgba(0,230,118,0.4)"}`,
+                borderRadius: 10, padding: "10px 12px", fontSize: 14,
+                fontFamily: "inherit", outline: "none",
+              }}
+            />
+            <input
+              type="tel"
+              value={manualPhone}
+              onChange={(e) => { setManualPhone(e.target.value); setManualErr(false); }}
+              placeholder={t("auth.manual.phone")}
+              autoComplete="tel"
+              inputMode="tel"
+              required
+              style={{
+                width: "100%", boxSizing: "border-box", marginBottom: 10,
+                background: "rgba(0,0,0,0.5)", color: "#fff",
+                border: `1px solid ${manualErr ? "#ef5350" : "rgba(0,230,118,0.4)"}`,
+                borderRadius: 10, padding: "10px 12px", fontSize: 14,
+                fontFamily: "inherit", outline: "none",
+              }}
+            />
+            {manualErr && (
+              <div style={{ color: "#ef5350", fontSize: 11, marginBottom: 8, textAlign: "center" }}>
+                {t("auth.manual.error")}
+              </div>
+            )}
+            <button
+              type="submit"
+              style={{
+                width: "100%",
+                background: "linear-gradient(135deg,#00c853 0%,#00e676 50%,#00c853 100%)",
+                color: "#003311", border: "none", borderRadius: 50,
+                padding: "12px 20px", fontSize: 14, fontWeight: 900,
+                cursor: "pointer", letterSpacing: 1.2, textTransform: "uppercase",
+                fontFamily: "inherit",
+                boxShadow: "0 0 24px rgba(0,230,118,0.4)",
+              }}
+            >
+              ▶ {t("auth.manual.submit")}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

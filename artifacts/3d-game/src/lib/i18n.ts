@@ -103,6 +103,12 @@ const DICT: Record<Lang, Record<string, string>> = {
     "auth.locked.body": "Pour jouer, connecte-toi d'abord sur Bridge Eats avec ton email et ton numéro. Tu seras automatiquement reconnu sur le jeu et tes diamants seront synchronisés.",
     "auth.locked.cta": "Me connecter sur Bridge Eats",
     "auth.locked.why": "🔐 Bridge Eats gère la connexion. Tes 💎 sont liés à ton compte — joue depuis n'importe quel appareil avec le même email.",
+    "auth.manual.toggle": "Déjà connecté ? Saisis tes infos manuellement",
+    "auth.manual.title": "Identifiants Bridge Eats",
+    "auth.manual.email": "Email Bridge Eats",
+    "auth.manual.phone": "N° de téléphone (ex : 0612345678)",
+    "auth.manual.submit": "Entrer dans le jeu",
+    "auth.manual.error": "Email ou numéro invalide.",
 
     /* Touch controls */
     "controls.swipeHint": "← SWIPE pour changer de voie · SWIPE ↑ pour sauter →",
@@ -347,6 +353,12 @@ const DICT: Record<Lang, Record<string, string>> = {
     "auth.locked.body": "To play, sign in to Bridge Eats first with your email and phone. You'll be recognized automatically and your diamonds will sync across devices.",
     "auth.locked.cta": "Sign in on Bridge Eats",
     "auth.locked.why": "🔐 Bridge Eats handles the login. Your 💎 are tied to your account — play from any device with the same email.",
+    "auth.manual.toggle": "Already signed in? Enter your info manually",
+    "auth.manual.title": "Bridge Eats credentials",
+    "auth.manual.email": "Bridge Eats email",
+    "auth.manual.phone": "Phone (e.g. 0612345678)",
+    "auth.manual.submit": "Enter the game",
+    "auth.manual.error": "Invalid email or phone.",
 
     "controls.swipeHint": "← SWIPE to switch lane · SWIPE ↑ to jump →",
     "nitro.ready": "READY! 🔥",
@@ -578,6 +590,12 @@ const DICT: Record<Lang, Record<string, string>> = {
     "auth.locked.body": "للعب، سجّل دخولك أولاً على Bridge Eats ببريدك ورقم هاتفك. سيتم التعرف عليك تلقائياً وستتم مزامنة ألماساتك بين كل أجهزتك.",
     "auth.locked.cta": "تسجيل الدخول على Bridge Eats",
     "auth.locked.why": "🔐 Bridge Eats يتولى تسجيل الدخول. ألماساتك مرتبطة بحسابك — العب من أي جهاز بنفس البريد الإلكتروني.",
+    "auth.manual.toggle": "مسجّل دخول مسبقاً؟ أدخل معلوماتك يدوياً",
+    "auth.manual.title": "بيانات الدخول إلى Bridge Eats",
+    "auth.manual.email": "بريد Bridge Eats الإلكتروني",
+    "auth.manual.phone": "رقم الهاتف (مثال: 0612345678)",
+    "auth.manual.submit": "ادخل إلى اللعبة",
+    "auth.manual.error": "البريد الإلكتروني أو الرقم غير صالح.",
 
     "controls.swipeHint": "← اسحب لتغيير المسار · اسحب لأعلى للقفز →",
     "nitro.ready": "جاهز! 🔥",

@@ -75,6 +75,18 @@ export function getBridgeAuth(): BridgeAuth | null {
   }
 }
 
+/* Saisie manuelle (plan B) — quand Bridge Eats parent ne pousse
+   pas l'auth. Le joueur tape son email + n° lui-même. */
+export function setBridgeAuthManual(email: string, phoneRaw: string): BridgeAuth | null {
+  const e = email.trim().toLowerCase();
+  const phone = normalizePhone(phoneRaw.trim());
+  if (!isValidEmail(e) || !phone) return null;
+  const auth: BridgeAuth = { email: e, phone };
+  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(auth)); } catch { /* ignore */ }
+  window.dispatchEvent(new Event(EVENT_NAME));
+  return auth;
+}
+
 export function clearBridgeAuth(): void {
   try {
     window.localStorage.removeItem(STORAGE_KEY);
