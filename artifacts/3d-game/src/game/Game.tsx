@@ -12,6 +12,8 @@ import { GameUI } from "./GameUI";
 import { CheckpointUI } from "./CheckpointUI";
 import { LanguageSelector } from "../components/LanguageSelector";
 import { useSupabaseSync } from "../hooks/useSupabaseSync";
+import { useGamepad } from "../hooks/useGamepad";
+import { useT } from "../lib/i18n";
 
 enum Controls {
   left = "left",
@@ -122,11 +124,26 @@ function GameScene({ state, tick, changeLane, jump }: ReturnType<typeof useGameS
 export function Game() {
   const gameState = useGameState();
   const { state, startGame, resumeGame, changeLane, jump, tick } = gameState;
+  const { t } = useT();
 
   const { profile, status } = useSupabaseSync(state.score, state.phase, state.playTime);
 
+  /* Manette PS4/PS5 (Web Gamepad API). Inputs déclenchés en bord montant
+     uniquement, et seulement quand la partie est en cours. */
+  const { connected: gamepadConnected } = useGamepad({
+    enabled: state.phase === "playing",
+    onLeft: () => changeLane(-1),
+    onRight: () => changeLane(1),
+    onJump: jump,
+  });
+
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#0a0822", overflow: "hidden" }}>
+    <div style={{
+      width: "100vw",
+      height: "100vh",
+      minHeight: "100dvh" as never,
+      position: "relative", background: "#0a0822", overflow: "hidden",
+    }}>
       <KeyboardControls map={keyMap}>
         <Canvas
           flat
@@ -164,6 +181,23 @@ export function Game() {
 
       {/* Sélecteur de langue (toujours visible, en haut à droite) */}
       <LanguageSelector position="topRight" />
+
+      {/* Indicateur manette connectée (discret, en bas à droite) */}
+      {gamepadConnected && (
+        <div style={{
+          position: "absolute", bottom: 12, right: 12, zIndex: 60,
+          background: "rgba(0,0,0,0.6)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(76,175,80,0.5)",
+          color: "#a5d6a7",
+          borderRadius: 20, padding: "6px 12px",
+          fontSize: 12, fontWeight: 700, letterSpacing: 0.5,
+          boxShadow: "0 0 16px rgba(76,175,80,0.35)",
+          pointerEvents: "none",
+        }}>
+          {t("gamepad.connected")}
+        </div>
+      )}
 
     </div>
   );

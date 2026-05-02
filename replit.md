@@ -65,6 +65,23 @@ Two SQL migrations to apply manually in Supabase SQL Editor (in order):
 - Game Over screen with animated stats cards
 - Keyboard: ← → (lane change), Space / ↑ (jump)
 
+### Pay-to-complete diamond shortfall (1 DH = 1 000 💎)
+- `playerProfile.ts` exports `DIAMONDS_PER_DIRHAM = 1000` and `shortfallDh(missing): number` (ceil).
+- `MenuUnlockOverlay` (GameUI.tsx) shows a green "Compléter pour Y DH" CTA when `blocker.key === "blocker.diamonds"` (i.e. the only thing missing is 💎). The button opens Bridge Eats with query params `?action=topup_diamonds&missing=X&dh=Y&rate=1dh_per_1000` so Bridge can route directly to the payment page and credit the 💎 balance back.
+- `InstructionsScreen` lists the rule as a bullet (`instr.how.shortfall`) so players see it on first launch.
+- New i18n keys in 3 langs: `shortfall.title / body / cta / help`, `instr.how.shortfall`.
+
+### Gamepad support (PS4 / PS5 via Web Gamepad API)
+- `src/hooks/useGamepad.ts` — `useGamepad({ enabled, onLeft, onRight, onJump })` polls `navigator.getGamepads()` in rAF, edge-triggered. Maps left stick X (deadzone 0.5) + D-pad L/R + L1/R1 → lane change ; ✕ / □ / △ / D-pad up → jump. Returns `connected: boolean`.
+- Wired into `Game.tsx` alongside keyboard/touch (no conflict — additive). Small green badge `🎮 Manette connectée` shown bottom-right when a controller is detected.
+- New i18n keys: `gamepad.connected`, `instr.row.gamepad.label/desc`.
+
+### Responsive (smartphone / tablet / PC / TV)
+- Root container: `width:100vw; height:100vh; minHeight:100dvh` (handles mobile browser chrome).
+- Touch controls (`<TouchControls>`) wrapped in `.touch-only` and hidden via `@media (hover:hover) and (pointer:fine)` — keep buttons on phones/tablets, hide them on PC/TV/mouse where keyboard or gamepad is used instead.
+- Existing `clamp()` typography on title and `max-width:420/500` on overlays already scale gracefully up to 4K/TV widths.
+- New i18n key: `instr.responsive` (badge in instructions screen listing supported devices).
+
 ### Multi-language (FR / EN / AR with RTL)
 - `src/lib/i18n.ts` — trilingual dictionaries, `t(key, params)`, `useT()` React hook (re-renders on lang change), `setLang()`, `getLang()`, `formatNum()` locale-aware (`fr-FR` / `en-US` / `ar-MA`).
 - Default language: **FR** (no auto-detection from `navigator.language`). User choice persists in `localStorage["safi_runner_lang"]`.

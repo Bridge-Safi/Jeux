@@ -4,7 +4,9 @@ import {
   registerBridgePhone,
   markMenuClaimed,
   getMenuEligibility,
+  shortfallDh,
   DIAMONDS_PER_MENU,
+  DIAMONDS_PER_DIRHAM,
   REQUIRED_PLAY_DAYS,
   REQUIRED_SECONDS_PER_DAY,
   type MenuEligibility,
@@ -15,6 +17,22 @@ import { useT, formatNum, t as tStatic } from "../lib/i18n";
 /* ─── Configuration Bridge Eats ─────────────────────────────── */
 export const BRIDGE_EATS_URL = "https://44474adc-9074-4015-a3b9-4e111cb8be39-00-11nld147gir6y.kirk.replit.dev/";
 export { DIAMONDS_PER_MENU };
+
+/* Construit l'URL Bridge Eats avec les paramètres de complément 💎.
+   Bridge Eats peut lire ces query params côté serveur pour afficher
+   directement la page de paiement (action=topup_diamonds, missing, dh). */
+function buildShortfallUrl(missing: number, dh: number): string {
+  try {
+    const u = new URL(BRIDGE_EATS_URL);
+    u.searchParams.set("action", "topup_diamonds");
+    u.searchParams.set("missing", String(missing));
+    u.searchParams.set("dh", String(dh));
+    u.searchParams.set("rate", `1dh_per_${DIAMONDS_PER_DIRHAM}`);
+    return u.toString();
+  } catch {
+    return BRIDGE_EATS_URL;
+  }
+}
 
 /* ─── Types ──────────────────────────────────────────────────── */
 interface GameUIProps {
@@ -488,11 +506,54 @@ function MenuUnlockOverlay({ eligibility, onClose }: {
               {t("claim.notReady.title")}
             </div>
             <div style={{ color: "#ffcc80", fontSize: 13, marginBottom: 18 }}>
-              {eligibility.blocker ? t(eligibility.blocker.key, { n: eligibility.blocker.n }) : ""}
+              {eligibility.blocker ? t(eligibility.blocker.key, { n: formatNum(eligibility.blocker.n) }) : ""}
             </div>
             <div style={{ marginBottom: 18 }}>
               <EngagementCard eligibility={eligibility} />
             </div>
+
+            {/* Complément payant : 1 DH = 1 000 💎 manquants.
+                Visible uniquement quand le blocage vient des 💎. */}
+            {eligibility.blocker?.key === "blocker.diamonds" && (() => {
+              const miss = eligibility.blocker.n;
+              const dh = shortfallDh(miss);
+              if (dh <= 0) return null;
+              return (
+                <div style={{
+                  background: "linear-gradient(135deg,rgba(76,175,80,0.18),rgba(56,142,60,0.28))",
+                  border: "1.5px solid rgba(102,187,106,0.6)",
+                  borderRadius: 16, padding: "14px 16px",
+                  marginBottom: 18, textAlign: "start",
+                  boxShadow: "0 0 24px rgba(76,175,80,0.25)",
+                }}>
+                  <div style={{ color: "#a5d6a7", fontWeight: 800, fontSize: 14, marginBottom: 6 }}>
+                    {t("shortfall.title")}
+                  </div>
+                  <div style={{ color: "#e0f2e0", fontSize: 12, lineHeight: 1.5, marginBottom: 12 }}>
+                    {t("shortfall.body", { miss: formatNum(miss), dh: formatNum(dh) })}
+                  </div>
+                  <a
+                    href={buildShortfallUrl(miss, dh)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "block", textAlign: "center",
+                      background: "linear-gradient(135deg,#2e7d32,#66bb6a)",
+                      color: "#fff", borderRadius: 50,
+                      padding: "13px 18px", fontSize: 15, fontWeight: 900,
+                      textDecoration: "none", letterSpacing: 1,
+                      boxShadow: "0 0 24px rgba(76,175,80,0.55)",
+                      marginBottom: 8,
+                    }}
+                  >
+                    {t("shortfall.cta", { dh: formatNum(dh) })}
+                  </a>
+                  <div style={{ color: "#aaa", fontSize: 10, lineHeight: 1.5 }}>
+                    {t("shortfall.help")}
+                  </div>
+                </div>
+              );
+            })()}
           </>
         )}
 
@@ -624,6 +685,7 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
   const rows: { icon: string; labelKey: string; descKey: string }[] = [
     { icon: "◀ ▶", labelKey: "instr.row.lanes.label",     descKey: "instr.row.lanes.desc" },
     { icon: "▲",   labelKey: "instr.row.jump.label",      descKey: "instr.row.jump.desc" },
+    { icon: "🎮",  labelKey: "instr.row.gamepad.label",   descKey: "instr.row.gamepad.desc" },
     { icon: "💎",  labelKey: "instr.row.diamonds.label",  descKey: "instr.row.diamonds.desc" },
     { icon: "🚧",  labelKey: "instr.row.obstacles.label", descKey: "instr.row.obstacles.desc" },
   ];
@@ -631,6 +693,7 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
     t("instr.how.collect", { n: formatNum(DIAMONDS_PER_MENU) }),
     t("instr.how.play",    { h: hours, d: REQUIRED_PLAY_DAYS }),
     t("instr.how.day4"),
+    t("instr.how.shortfall"),
     t("instr.how.ads"),
   ];
   return (
@@ -679,6 +742,15 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
           {bullets.map((line, i) => (
             <div key={i} style={{ color: "#e0e0e0", fontSize: 13, marginBottom: 4 }}>✓ {line}</div>
           ))}
+        </div>
+
+        <div style={{
+          width: "100%", maxWidth: 420,
+          background: "rgba(100,180,255,0.08)", border: "1px solid rgba(100,180,255,0.25)",
+          borderRadius: 12, padding: "8px 14px", marginBottom: 14,
+          color: "#90caf9", fontSize: 11, textAlign: "center", letterSpacing: 0.4,
+        }}>
+          {t("instr.responsive")}
         </div>
 
         <button
@@ -1002,7 +1074,17 @@ export function GameUI({
             nextCheckpointAt={nextCheckpointAt}
             eligibility={eligibility}
           />
-          <TouchControls onChangeLane={onChangeLane} onJump={onJump} />
+          {/* Touch controls visibles sur tactile (mobile/tablette).
+              Sur PC/TV avec souris ou manette : masqués via media query
+              pour ne pas encombrer l'écran. */}
+          <div className="touch-only">
+            <TouchControls onChangeLane={onChangeLane} onJump={onJump} />
+          </div>
+          <style>{`
+            @media (hover: hover) and (pointer: fine) {
+              .touch-only { display: none !important; }
+            }
+          `}</style>
         </>
       )}
     </div>

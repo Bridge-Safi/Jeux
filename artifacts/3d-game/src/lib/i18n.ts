@@ -70,7 +70,20 @@ const DICT: Record<Lang, Record<string, string>> = {
     "instr.how.play": "Joue au moins {h}h par jour pendant {d} jours différents",
     "instr.how.day4": "Le 4ᵉ jour : entre ton n° Bridge Eats pour réclamer le menu",
     "instr.how.ads": "Pause publicitaire toutes les 40 secondes",
+    "instr.how.shortfall": "💸 Pas assez de 💎 ? Complète : 1 DH = 1 000 💎 manquants",
+    "instr.row.gamepad.label": "🎮 Manette PS4 / PS5",
+    "instr.row.gamepad.desc": "Stick gauche ou D-pad pour les voies, ✕ pour sauter",
+    "instr.responsive": "📱💻📺 Smartphone · Tablette · PC · TV — toutes tailles d'écran",
     "instr.launch": "▶ LANCER LE JEU",
+
+    /* Complément payant 1 DH = 1 000 💎 */
+    "shortfall.title": "💸 Compléter avec un petit paiement",
+    "shortfall.body": "Il vous manque {miss} 💎 — payez {dh} DH pour débloquer maintenant (1 DH = 1 000 💎).",
+    "shortfall.cta": "💳 PAYER {dh} DH POUR COMPLÉTER",
+    "shortfall.help": "Le paiement se fait depuis la page Bridge Eats. Le complément est ajouté à votre solde 💎.",
+
+    /* Manette */
+    "gamepad.connected": "🎮 Manette connectée",
 
     /* Claim overlay */
     "claim.unlocked.title": "MENU GRATUIT\nDÉBLOQUÉ !",
@@ -239,7 +252,18 @@ const DICT: Record<Lang, Record<string, string>> = {
     "instr.how.play": "Play at least {h}h per day for {d} different days",
     "instr.how.day4": "On day 4: enter your Bridge Eats phone to claim the meal",
     "instr.how.ads": "Ad break every 40 seconds",
+    "instr.how.shortfall": "💸 Not enough 💎? Top up: 1 DH = 1,000 missing 💎",
+    "instr.row.gamepad.label": "🎮 PS4 / PS5 Controller",
+    "instr.row.gamepad.desc": "Left stick or D-pad to switch lanes, ✕ to jump",
+    "instr.responsive": "📱💻📺 Phone · Tablet · PC · TV — all screen sizes",
     "instr.launch": "▶ START THE GAME",
+
+    "shortfall.title": "💸 Top up with a small payment",
+    "shortfall.body": "You're {miss} 💎 short — pay {dh} DH to unlock now (1 DH = 1,000 💎).",
+    "shortfall.cta": "💳 PAY {dh} DH TO COMPLETE",
+    "shortfall.help": "Payment happens on the Bridge Eats page. The top-up is added to your 💎 balance.",
+
+    "gamepad.connected": "🎮 Controller connected",
 
     "claim.unlocked.title": "FREE MEAL\nUNLOCKED!",
     "claim.unlocked.body": "You played {days} days and collected {diamonds} 💎",
@@ -399,7 +423,18 @@ const DICT: Record<Lang, Record<string, string>> = {
     "instr.how.play": "العب على الأقل {h} ساعة في اليوم لمدة {d} أيام مختلفة",
     "instr.how.day4": "في اليوم الرابع: أدخل رقمك في Bridge Eats للمطالبة بالوجبة",
     "instr.how.ads": "فاصل إعلاني كل 40 ثانية",
+    "instr.how.shortfall": "💸 لا تكفي 💎؟ أكمل: 1 درهم = 1000 💎 ناقصة",
+    "instr.row.gamepad.label": "🎮 يد تحكم PS4 / PS5",
+    "instr.row.gamepad.desc": "العصا اليسرى أو D-pad لتغيير المسار، ✕ للقفز",
+    "instr.responsive": "📱💻📺 هاتف · لوحي · حاسوب · تلفاز — جميع المقاسات",
     "instr.launch": "▶ بدء اللعبة",
+
+    "shortfall.title": "💸 أكمل بدفع صغير",
+    "shortfall.body": "ينقصك {miss} 💎 — ادفع {dh} درهم لفتح القفل الآن (1 درهم = 1000 💎).",
+    "shortfall.cta": "💳 ادفع {dh} درهم لإكمال",
+    "shortfall.help": "يتم الدفع من صفحة Bridge Eats. تُضاف 💎 المكمّلة إلى رصيدك.",
+
+    "gamepad.connected": "🎮 وحدة التحكم متصلة",
 
     "claim.unlocked.title": "وجبة مجانية\nمفتوحة!",
     "claim.unlocked.body": "لقد لعبت {days} أيام وجمعت {diamonds} 💎",

@@ -14,6 +14,15 @@ export const REQUIRED_PLAY_DAYS     = 3;
 export const REQUIRED_SECONDS_PER_DAY = 3_600;        // 1h
 export const DAYS_BEFORE_CLAIM      = 4;              // J+0 = 1ᵉʳ jour ; réclame au J+3 calendaire
 
+/* Complément payant : 1 DH = 1 000 💎 manquants (arrondi au DH supérieur). */
+export const DIAMONDS_PER_DIRHAM    = 1_000;
+
+/* Convertit un nombre de 💎 manquants en DH à payer (entier, arrondi sup.). */
+export function shortfallDh(missingDiamonds: number): number {
+  if (missingDiamonds <= 0) return 0;
+  return Math.ceil(missingDiamonds / DIAMONDS_PER_DIRHAM);
+}
+
 /* ─── Types ──────────────────────────────────────────────────── */
 export type PlayDay = { date: string; playSeconds: number };
 
