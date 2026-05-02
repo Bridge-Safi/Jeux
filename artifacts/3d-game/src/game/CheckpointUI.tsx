@@ -783,14 +783,48 @@ function ReelActivity({ onComplete }: { onComplete: () => void }) {
 type ActivityType = "quiz" | "form" | "video" | "sponsorQuiz" | "social" | "reel";
 const ALL_ACTIVITIES: ActivityType[] = ["reel", "social", "quiz", "video", "sponsorQuiz", "form"];
 
-let _shuffled: ActivityType[] = [];
-let _shuffleIdx = 0;
+/* Pondération des pubs — priorité aux annonceurs qui rapportent
+   (banques, restos, voitures, telecom, immobilier…) plutôt qu'aux
+   réseaux sociaux. Les valeurs sont des poids relatifs : reel & video
+   contiennent les sponsors monétisables (Attijariwafa, CIH, Dacia,
+   Renault, Maroc Telecom, Café Atlas, Snack So Safi, etc.).
+
+   Distribution effective sur 100 checkpoints :
+   - reel        : 35%  (vidéos verticales sponsors → format TikTok-like)
+   - video       : 30%  (présentations vidéo bannière sponsor)
+   - sponsorQuiz : 12%  (quiz "Le saviez-vous ?" branded)
+   - quiz        :  8%  (quiz culture Safi non-monétisé)
+   - form        :  7%  (formulaire avis — fidélisation)
+   - social      :  8%  (FB/IG/YT/TT — exposition réseaux Bridge Eats)
+*/
+const ACTIVITY_WEIGHTS: { type: ActivityType; weight: number }[] = [
+  { type: "reel",        weight: 35 },
+  { type: "video",       weight: 30 },
+  { type: "sponsorQuiz", weight: 12 },
+  { type: "social",      weight:  8 },
+  { type: "quiz",        weight:  8 },
+  { type: "form",        weight:  7 },
+];
+
+let _lastActivity: ActivityType | null = null;
 
 function pickNextActivity(_cpNum: number): ActivityType {
-  /* Demande utilisateur : UNE SEULE pub à chaque checkpoint, l'ad
-     sociale à 4 bulles (Facebook, YouTube, Instagram, TikTok) à suivre
-     obligatoirement. Pas de rotation aléatoire. */
-  return "social";
+  /* Tirage pondéré aléatoire — évite de répéter la même activité
+     deux fois de suite pour garder le joueur surpris. Les annonceurs
+     payants (reel + video + sponsorQuiz = 77%) dominent largement
+     les réseaux sociaux non-monétisés. */
+  const candidates = ACTIVITY_WEIGHTS.filter((a) => a.type !== _lastActivity);
+  const total = candidates.reduce((sum, a) => sum + a.weight, 0);
+  let r = Math.random() * total;
+  for (const c of candidates) {
+    r -= c.weight;
+    if (r <= 0) {
+      _lastActivity = c.type;
+      return c.type;
+    }
+  }
+  _lastActivity = candidates[0].type;
+  return candidates[0].type;
 }
 
 const activityTitleKey: Record<ActivityType, string> = {

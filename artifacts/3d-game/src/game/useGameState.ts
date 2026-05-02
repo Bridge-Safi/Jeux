@@ -28,6 +28,9 @@ export interface GameState {
   playTime: number;
   checkpointNumber: number;
   nextCheckpointAt: number;
+  boostMeter: number;        // 0-100 : se remplit avec les diamants
+  boostActive: boolean;      // true pendant les ~3s de turbo
+  boostTimeLeft: number;     // secondes restantes de boost
 }
 
 /* ── Paramètres de difficulté progressive ──────────────────────
@@ -58,6 +61,12 @@ const DIAMOND_RATE_MIN = 1.4;     // au début beaucoup de pièces
 const DIAMOND_RATE_MAX = 0.7;     // à la fin moins de pièces (plus risquées)
 const CLUSTER_CHANCE   = 0.35;    // 35% de chance de cluster
 
+/* Nitro / Boost — addictif : rempli aux diamants, déchaîné 3s */
+const BOOST_PER_DIAMOND = 6;     // 100 / 6 ≈ 17 diamants pour remplir
+const BOOST_DURATION    = 3.0;   // 3s de pure folie
+const BOOST_SPEED_MULT  = 1.85;  // ×1.85 vitesse pendant le turbo
+const BOOST_SCORE_MULT  = 2;     // ×2 score sur diamants ramassés en boost
+
 /* Helper : interpolation linéaire bornée */
 const lerp = (a: number, b: number, t: number) => a + (b - a) * Math.max(0, Math.min(1, t));
 
@@ -80,6 +89,9 @@ export function useGameState() {
     playTime: 0,
     checkpointNumber: 0,
     nextCheckpointAt: CHECKPOINT_INTERVAL,
+    boostMeter: 0,
+    boostActive: false,
+    boostTimeLeft: 0,
   });
 
   const [state, setState] = useState<GameState>(initialState);
@@ -137,6 +149,20 @@ export function useGameState() {
     });
   }, []);
 
+  /* NITRO : ne se déclenche que si la jauge est pleine et qu'on
+     n'est pas déjà en boost. Vide la jauge et active 3s de folie. */
+  const activateBoost = useCallback((): boolean => {
+    let triggered = false;
+    setState((s) => {
+      if (s.phase !== "playing") return s;
+      if (s.boostActive) return s;
+      if (s.boostMeter < 100) return s;
+      triggered = true;
+      return { ...s, boostActive: true, boostTimeLeft: BOOST_DURATION, boostMeter: 0 };
+    });
+    return triggered;
+  }, []);
+
   const tick = useCallback((dt: number) => {
     setState((s) => {
       if (s.phase !== "playing") return s;
@@ -151,14 +177,25 @@ export function useGameState() {
         score, isJumping, jumpVelocity, playerY,
         obstacles, diamonds, speed, distance, phase,
         playTime, checkpointNumber, nextCheckpointAt,
+        boostMeter, boostActive, boostTimeLeft,
       } = s;
 
       playTime += dt;
-      distance += dt * speed;
+
+      /* ── Décompte du boost ─────────────────────────────────── */
+      if (boostActive) {
+        boostTimeLeft -= dt;
+        if (boostTimeLeft <= 0) {
+          boostActive = false;
+          boostTimeLeft = 0;
+        }
+      }
 
       /* ── Progression de difficulté basée sur le temps de jeu ─ */
       const t = playTime / SPEED_RAMP_TIME;             // 0 → 1 sur 90s
       speed = lerp(SPEED_START, SPEED_MAX, t);
+      if (boostActive) speed *= BOOST_SPEED_MULT;
+      distance += dt * speed;
 
       // Easing : facile au début, plus intense après 30s (courbe quadratique)
       const dt15 = Math.max(0, (playTime - 15) / 75);   // démarre à 15s
@@ -175,7 +212,7 @@ export function useGameState() {
         ? 0
         : lerp(0, TRIPLE_OBS_MAX_CHANCE, (playTime - TRIPLE_OBS_START_TIME) / 60);
 
-      // Checkpoint → pub
+      // Checkpoint → pub (interrompt aussi le boost en cours)
       if (playTime >= nextCheckpointAt) {
         return {
           ...s,
@@ -186,6 +223,8 @@ export function useGameState() {
           isJumping: false,
           jumpVelocity: 0,
           playerY: 0,
+          boostActive: false,
+          boostTimeLeft: 0,
         };
       }
 
@@ -246,22 +285,47 @@ export function useGameState() {
       const COLL_XR = 0.7;
       const COLL_ZR = 1.4;
 
-      for (const o of obstacles) {
-        const ox = LANE_X[o.lane + 1];
-        const dx = Math.abs(playerX - ox);
-        const dz = Math.abs(PLAYER_Z - o.z);
-        if (dx < COLL_XR && dz < COLL_ZR && playerY < 1.5) {
-          phase = "gameover";
+      /* En NITRO : on traverse les obstacles sans crasher (mode rage).
+         Sinon : collision normale = game over. */
+      if (!boostActive) {
+        for (const o of obstacles) {
+          const ox = LANE_X[o.lane + 1];
+          const dx = Math.abs(playerX - ox);
+          const dz = Math.abs(PLAYER_Z - o.z);
+          if (dx < COLL_XR && dz < COLL_ZR && playerY < 1.5) {
+            phase = "gameover";
+          }
         }
+      } else {
+        /* Pendant le boost : on PULVÉRISE les obstacles (visuel : ils
+           disparaissent comme s'ils étaient enfoncés). */
+        const survivors: Obstacle[] = [];
+        for (const o of obstacles) {
+          const ox = LANE_X[o.lane + 1];
+          const dx = Math.abs(playerX - ox);
+          const dz = Math.abs(PLAYER_Z - o.z);
+          if (!(dx < COLL_XR + 0.3 && dz < COLL_ZR && playerY < 1.5)) {
+            survivors.push(o);
+          } else {
+            score += 5; // bonus pour chaque obstacle pulvérisé
+          }
+        }
+        obstacles = survivors;
       }
 
       /* ── Collecte diamants ──────────────────────────────────── */
       const newDiamonds: Diamond[] = [];
+      const diamondPoints = boostActive ? 10 * BOOST_SCORE_MULT : 10;
       for (const d of diamonds) {
         const dx2 = Math.abs(playerX - LANE_X[d.lane + 1]);
         const dz2 = Math.abs(PLAYER_Z - d.z);
         if (dx2 < 1.0 && dz2 < 1.2) {
-          score += 10;
+          score += diamondPoints;
+          /* Ramasser un diamant remplit la jauge nitro (sauf si on est
+             déjà en plein boost — pour éviter d'enchaîner sans pause). */
+          if (!boostActive) {
+            boostMeter = Math.min(100, boostMeter + BOOST_PER_DIAMOND);
+          }
         } else {
           newDiamonds.push(d);
         }
@@ -281,9 +345,12 @@ export function useGameState() {
         playTime,
         checkpointNumber,
         nextCheckpointAt,
+        boostMeter,
+        boostActive,
+        boostTimeLeft,
       };
     });
   }, []);
 
-  return { state, startGame, resumeGame, changeLane, jump, tick };
+  return { state, startGame, resumeGame, changeLane, jump, tick, activateBoost };
 }

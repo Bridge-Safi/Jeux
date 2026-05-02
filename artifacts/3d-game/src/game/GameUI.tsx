@@ -45,10 +45,14 @@ interface GameUIProps {
   nextCheckpointAt: number;
   playTime: number;
   profile: Profile | null;        // profil Supabase complet (peut être null en hors-ligne)
+  boostMeter: number;             // 0-100 — jauge nitro
+  boostActive: boolean;           // turbo en cours ?
+  boostTimeLeft: number;          // secondes restantes du turbo
   onStart: () => void;
   onRestart: () => void;
   onChangeLane: (dir: 1 | -1) => void;
   onJump: () => void;
+  onBoost: () => void;
 }
 
 /* ─── Bouton NFS Mobile — glass, glow néon, anti-double-tap ─── */
@@ -349,10 +353,64 @@ function EngagementCard({ eligibility, compact = false }: {
   );
 }
 
+/* ─── Jauge NITRO (orange→rouge, pulse au max, flash en cours) ─── */
+function NitroMeter({ meter, active, timeLeft }: { meter: number; active: boolean; timeLeft: number }) {
+  const { t } = useT();
+  const ready = meter >= 100 && !active;
+  return (
+    <div style={{
+      position: "absolute", left: "50%", bottom: 12, transform: "translateX(-50%)",
+      width: 220, maxWidth: "55%",
+      pointerEvents: "none", zIndex: 18,
+      fontFamily: "'Fredoka', sans-serif",
+    }}>
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        fontSize: 10, fontWeight: 800, letterSpacing: 1.5, marginBottom: 4,
+        color: active ? "#fff" : ready ? "#ffeb3b" : "#ffb74d",
+        textShadow: active
+          ? "0 0 12px #ff1744, 0 0 24px #ff5252"
+          : ready ? "0 0 10px #ffeb3b" : "0 0 6px rgba(0,0,0,0.8)",
+      }}>
+        <span>🔥 NITRO</span>
+        <span>{active ? `${timeLeft.toFixed(1)}s` : ready ? t("nitro.ready") : `${Math.floor(meter)}%`}</span>
+      </div>
+      <div style={{
+        height: 10, borderRadius: 8, overflow: "hidden",
+        background: "rgba(0,0,0,0.65)",
+        border: `2px solid ${active ? "#ff1744" : ready ? "#ffeb3b" : "rgba(255,140,0,0.5)"}`,
+        boxShadow: active
+          ? "0 0 28px #ff1744, 0 0 50px #ff5252, inset 0 0 12px #ff8a80"
+          : ready ? "0 0 22px #ffeb3b, inset 0 0 8px #fff176"
+                  : "0 0 8px rgba(0,0,0,0.6)",
+        animation: active ? "nitroFlash 0.18s linear infinite" : ready ? "nitroPulse 0.7s ease-in-out infinite" : "none",
+      }}>
+        <div style={{
+          height: "100%",
+          width: active ? "100%" : `${meter}%`,
+          background: active
+            ? "linear-gradient(90deg,#fff176,#ff1744,#fff176)"
+            : "linear-gradient(90deg,#ff9800,#ff1744)",
+          borderRadius: 6,
+          transition: active ? "none" : "width 0.18s linear",
+          backgroundSize: active ? "200% 100%" : "100% 100%",
+          animation: active ? "nitroSlide 0.5s linear infinite" : "none",
+        }} />
+      </div>
+      <style>{`
+        @keyframes nitroPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+        @keyframes nitroFlash { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.5)} }
+        @keyframes nitroSlide { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+      `}</style>
+    </div>
+  );
+}
+
 /* ─── HUD en jeu ─────────────────────────────────────────────── */
-function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility }: {
+function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility, boostMeter, boostActive, boostTimeLeft }: {
   score: number; checkpointNumber: number; playTime: number;
   nextCheckpointAt: number; eligibility: MenuEligibility;
+  boostMeter: number; boostActive: boolean; boostTimeLeft: number;
 }) {
   const { t } = useT();
   const timeToNext = Math.max(0, Math.ceil(nextCheckpointAt - playTime));
@@ -456,6 +514,21 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility 
           <EngagementCard eligibility={eligibility} compact />
         </div>
       )}
+
+      {/* Jauge NITRO — au centre en bas, au-dessus des contrôles tactiles */}
+      <NitroMeter meter={boostMeter} active={boostActive} timeLeft={boostTimeLeft} />
+
+      {/* Voile rouge clignotant pendant le boost — sensation de vitesse */}
+      {boostActive && (
+        <div style={{
+          position: "fixed", inset: 0, pointerEvents: "none", zIndex: 5,
+          background: "radial-gradient(ellipse at center, transparent 40%, rgba(255,23,68,0.18) 100%)",
+          animation: "boostVignette 0.18s linear infinite",
+          mixBlendMode: "screen",
+        }}>
+          <style>{`@keyframes boostVignette{0%,100%{opacity:0.9}50%{opacity:1}}`}</style>
+        </div>
+      )}
     </div>
   );
 }
@@ -505,9 +578,68 @@ function SwipeArea({ onChangeLane, onJump }: {
   );
 }
 
+/* ─── Bouton NITRO — flamme orange/rouge, pulsation quand prêt, désactivé sinon ─── */
+function NitroButton({ ready, active, onBoost }: { ready: boolean; active: boolean; onBoost: () => void }) {
+  const [pressed, setPressed] = useState(false);
+  const lastFireRef = useRef(0);
+  const handleDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    if (!ready || active) return;
+    const now = Date.now();
+    if (now - lastFireRef.current < 60) return;
+    lastFireRef.current = now;
+    setPressed(true);
+    onBoost();
+  }, [ready, active, onBoost]);
+  const handleUp = useCallback(() => setPressed(false), []);
+
+  const accent = active ? "#fff176" : ready ? "#ff1744" : "#666";
+  const glow   = active ? "#ff5252" : ready ? "#ff8a80" : "#333";
+
+  return (
+    <button
+      onPointerDown={handleDown}
+      onPointerUp={handleUp}
+      onPointerCancel={handleUp}
+      onPointerLeave={handleUp}
+      onContextMenu={(e) => e.preventDefault()}
+      disabled={!ready || active}
+      style={{
+        width: 64, height: 64, borderRadius: "50%",
+        border: `2px solid ${accent}`,
+        background: pressed
+          ? `radial-gradient(circle at 50% 50%, ${glow}cc, rgba(40,0,0,0.85) 70%)`
+          : `radial-gradient(circle at 50% 50%, rgba(40,0,0,0.7), rgba(20,0,0,0.9) 70%)`,
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        color: accent,
+        fontSize: 30, fontWeight: 900,
+        cursor: ready && !active ? "pointer" : "not-allowed",
+        opacity: ready || active ? 1 : 0.45,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: active
+          ? `0 0 32px ${glow}, 0 0 60px ${accent}, inset 0 0 16px ${accent}aa`
+          : ready
+          ? `0 0 24px ${glow}, 0 0 12px ${accent}88, inset 0 0 10px ${accent}55`
+          : `inset 0 0 8px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.6)`,
+        transform: pressed ? "scale(0.92)" : "scale(1)",
+        transition: "transform 0.08s ease, opacity 0.2s",
+        userSelect: "none", WebkitUserSelect: "none",
+        touchAction: "manipulation",
+        textShadow: ready ? `0 0 10px ${accent}, 0 0 20px ${glow}` : "none",
+        animation: ready && !active ? "nitroBtnPulse 0.7s ease-in-out infinite" : "none",
+      }}
+    >
+      <span style={{ lineHeight: 1, marginTop: -2 }}>🔥</span>
+      <style>{`@keyframes nitroBtnPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}`}</style>
+    </button>
+  );
+}
+
 /* ─── Contrôles NFS Mobile : boutons glass + swipe ─────────── */
-function TouchControls({ onChangeLane, onJump }: {
-  onChangeLane: (dir: 1 | -1) => void; onJump: () => void;
+function TouchControls({ onChangeLane, onJump, onBoost, boostReady, boostActive }: {
+  onChangeLane: (dir: 1 | -1) => void; onJump: () => void; onBoost: () => void;
+  boostReady: boolean; boostActive: boolean;
 }) {
   return (
     <>
@@ -517,13 +649,14 @@ function TouchControls({ onChangeLane, onJump }: {
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "0 24px", pointerEvents: "none", zIndex: 20,
       }}>
-        <div style={{ pointerEvents: "auto" }}>
+        <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10 }}>
           <NFSButton icon="‹" glow="#00f0ff" accent="#00f0ff" onClick={() => onChangeLane(-1)} />
         </div>
         <div style={{ pointerEvents: "auto" }}>
           <NFSButton icon="▲" glow="#ffd700" accent="#ffd700" size={88} onClick={onJump} />
         </div>
-        <div style={{ pointerEvents: "auto" }}>
+        <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+          <NitroButton ready={boostReady} active={boostActive} onBoost={onBoost} />
           <NFSButton icon="›" glow="#ff1493" accent="#ff1493" onClick={() => onChangeLane(1)} />
         </div>
       </div>
@@ -1254,7 +1387,8 @@ function GameOverScreen({ score, checkpointNumber, eligibility, onRestart, onCla
 /* ─── Export principal ───────────────────────────────────────── */
 export function GameUI({
   phase, score, checkpointNumber, nextCheckpointAt, playTime,
-  profile, onStart, onRestart, onChangeLane, onJump,
+  profile, boostMeter, boostActive, boostTimeLeft,
+  onStart, onRestart, onChangeLane, onJump, onBoost,
 }: GameUIProps) {
   const [showReward, setShowReward] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -1344,12 +1478,21 @@ export function GameUI({
             playTime={playTime}
             nextCheckpointAt={nextCheckpointAt}
             eligibility={eligibility}
+            boostMeter={boostMeter}
+            boostActive={boostActive}
+            boostTimeLeft={boostTimeLeft}
           />
           {/* Touch controls visibles sur tactile (mobile/tablette).
               Sur PC/TV avec souris ou manette : masqués via media query
               pour ne pas encombrer l'écran. */}
           <div className="touch-only">
-            <TouchControls onChangeLane={onChangeLane} onJump={onJump} />
+            <TouchControls
+              onChangeLane={onChangeLane}
+              onJump={onJump}
+              onBoost={onBoost}
+              boostReady={boostMeter >= 100 && !boostActive}
+              boostActive={boostActive}
+            />
           </div>
           <style>{`
             @media (hover: hover) and (pointer: fine) {

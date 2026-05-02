@@ -79,6 +79,9 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     /* Touch controls */
     "controls.swipeHint": "← SWIPE pour changer de voie · SWIPE ↑ pour sauter →",
+    "nitro.ready": "PRÊT ! 🔥",
+    "nitro.label": "NITRO",
+    "nitro.hint": "Ramasse des diamants pour remplir le NITRO. Appuie sur 🔥 ou MAJ pour exploser !",
 
     /* Instructions */
     "instr.title": "🦈 COMMENT JOUER",
@@ -297,6 +300,9 @@ const DICT: Record<Lang, Record<string, string>> = {
     "auth.locked.why": "🔐 Bridge Eats handles the login. Your 💎 are tied to your account — play from any device with the same email.",
 
     "controls.swipeHint": "← SWIPE to switch lane · SWIPE ↑ to jump →",
+    "nitro.ready": "READY! 🔥",
+    "nitro.label": "NITRO",
+    "nitro.hint": "Collect diamonds to fill the NITRO. Tap 🔥 or SHIFT to blast off!",
 
     "instr.title": "🦈 HOW TO PLAY",
     "instr.subtitle": "SAFI RUNNER",
@@ -503,6 +509,9 @@ const DICT: Record<Lang, Record<string, string>> = {
     "auth.locked.why": "🔐 Bridge Eats يتولى تسجيل الدخول. ألماساتك مرتبطة بحسابك — العب من أي جهاز بنفس البريد الإلكتروني.",
 
     "controls.swipeHint": "← اسحب لتغيير المسار · اسحب لأعلى للقفز →",
+    "nitro.ready": "جاهز! 🔥",
+    "nitro.label": "نيترو",
+    "nitro.hint": "اجمع الألماس لملء النيترو. اضغط 🔥 أو SHIFT للانطلاق!",
 
     "instr.title": "🦈 كيف تلعب",
     "instr.subtitle": "سافي رنر",

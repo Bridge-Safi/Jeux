@@ -16,18 +16,20 @@ import { useGamepad } from "../hooks/useGamepad";
 import { useT } from "../lib/i18n";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { useMusic } from "../hooks/useMusic";
-import { sfxJump, sfxLane, sfxDiamond, sfxCheckpoint, sfxCrash } from "../lib/orientalMusic";
+import { sfxJump, sfxLane, sfxDiamond, sfxCheckpoint, sfxCrash, sfxNitro, sfxNitroReady } from "../lib/orientalMusic";
 
 enum Controls {
   left = "left",
   right = "right",
   jump = "jump",
+  boost = "boost",
 }
 
 const keyMap = [
   { name: Controls.left, keys: ["ArrowLeft", "KeyA"] },
   { name: Controls.right, keys: ["ArrowRight", "KeyD"] },
   { name: Controls.jump, keys: ["Space", "ArrowUp", "KeyW"] },
+  { name: Controls.boost, keys: ["ShiftLeft", "ShiftRight", "KeyB"] },
 ];
 
 function FollowCamera({ playerLane, playerY }: { playerLane: number; playerY: number }) {
@@ -46,17 +48,19 @@ function FollowCamera({ playerLane, playerY }: { playerLane: number; playerY: nu
 }
 
 function GameLoop({
-  tick, changeLane, jump, phase,
+  tick, changeLane, jump, boost, phase,
 }: {
   tick: (dt: number) => void;
   changeLane: (dir: 1 | -1) => void;
   jump: () => void;
+  boost: () => void;
   phase: string;
 }) {
   const [, getState] = useKeyboardControls<Controls>();
   const prevLeft = useRef(false);
   const prevRight = useRef(false);
   const prevJump = useRef(false);
+  const prevBoost = useRef(false);
 
   useFrame((_, delta) => {
     const controls = getState();
@@ -68,11 +72,13 @@ function GameLoop({
       if (controls.left && !prevLeft.current) changeLane(-1);
       if (controls.right && !prevRight.current) changeLane(1);
       if (controls.jump && !prevJump.current) jump();
+      if (controls.boost && !prevBoost.current) boost();
     }
 
     prevLeft.current = controls.left;
     prevRight.current = controls.right;
     prevJump.current = controls.jump;
+    prevBoost.current = controls.boost;
   });
 
   return null;
@@ -96,13 +102,13 @@ function CyberLighting() {
   );
 }
 
-function GameScene({ state, tick, changeLane, jump }: ReturnType<typeof useGameState>) {
+function GameScene({ state, tick, changeLane, jump, boost }: ReturnType<typeof useGameState> & { boost: () => void }) {
   const trackSpeed = state.phase === "playing" ? state.speed : 0;
 
   return (
     <>
       <FollowCamera playerLane={state.lane} playerY={state.playerY} />
-      <GameLoop tick={tick} changeLane={changeLane} jump={jump} phase={state.phase} />
+      <GameLoop tick={tick} changeLane={changeLane} jump={jump} boost={boost} phase={state.phase} />
 
       <CyberLighting />
 
@@ -126,7 +132,7 @@ function GameScene({ state, tick, changeLane, jump }: ReturnType<typeof useGameS
 
 export function Game() {
   const gameState = useGameState();
-  const { state, startGame, resumeGame, changeLane, jump, tick } = gameState;
+  const { state, startGame, resumeGame, changeLane, jump, tick, activateBoost } = gameState;
   const { t } = useT();
   const [dark] = useDarkMode();
   const { startIfEnabled: startMusic, stop: stopMusic } = useMusic();
@@ -149,6 +155,23 @@ export function Game() {
     sfxLane();
     changeLane(dir);
   }, [changeLane]);
+
+  /* Boost : ne joue le whoosh que si la jauge était pleine et que
+     l'activation a vraiment réussi (sinon clic sans effet = silence). */
+  const boostWithSfx = useCallback(() => {
+    if (activateBoost()) sfxNitro();
+  }, [activateBoost]);
+
+  /* Petit "ding" cristallin dès que la jauge atteint 100% pour signaler
+     visuellement+sonorement au joueur que le boost est dispo. */
+  const prevBoostReady = useRef(false);
+  useEffect(() => {
+    const ready = state.boostMeter >= 100 && !state.boostActive;
+    if (ready && !prevBoostReady.current && state.phase === "playing") {
+      sfxNitroReady();
+    }
+    prevBoostReady.current = ready;
+  }, [state.boostMeter, state.boostActive, state.phase]);
 
   /* Diamant ramassé → tintement cristallin (détecté via score++) */
   const prevScore = useRef(0);
@@ -219,7 +242,7 @@ export function Game() {
           dpr={[1, 2]}
           gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}
         >
-          <GameScene state={state} tick={tick} changeLane={changeLaneWithSfx} jump={jumpWithSfx} startGame={startGame} resumeGame={resumeGame} />
+          <GameScene state={state} tick={tick} changeLane={changeLaneWithSfx} jump={jumpWithSfx} boost={boostWithSfx} startGame={startGame} resumeGame={resumeGame} activateBoost={activateBoost} />
         </Canvas>
       </KeyboardControls>
 
@@ -231,10 +254,14 @@ export function Game() {
         nextCheckpointAt={state.nextCheckpointAt}
         playTime={state.playTime}
         profile={profile}
+        boostMeter={state.boostMeter}
+        boostActive={state.boostActive}
+        boostTimeLeft={state.boostTimeLeft}
         onStart={handleStart}
         onRestart={handleStart}
         onChangeLane={changeLaneWithSfx}
         onJump={jumpWithSfx}
+        onBoost={boostWithSfx}
       />
 
       {/* Overlay checkpoint */}

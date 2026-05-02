@@ -292,6 +292,23 @@ export function sfxCheckpoint() {
   tone(1174.66, t0 + 0.30, 0.32, 0.22); // D6
 }
 
+/* NITRO BOOST — whoosh ascendant + harmonique aiguë (sensation de turbo) */
+export function sfxNitro() {
+  if (!ctx || !masterGain) return;
+  const t0 = ctx.currentTime;
+  sweep(180, 1400, t0,        0.55, 0.22, "sawtooth"); // souffle
+  sweep(440, 1760, t0 + 0.05, 0.45, 0.14, "square");   // harmonique aiguë
+  tone(2349.32, t0 + 0.08, 0.35, 0.10, "triangle");    // D7 brillant
+}
+
+/* NITRO READY — petit "ding" cristallin quand la jauge est pleine */
+export function sfxNitroReady() {
+  if (!ctx || !masterGain) return;
+  const t0 = ctx.currentTime;
+  tone(1318.51, t0,        0.10, 0.16, "triangle"); // E6
+  tone(1975.53, t0 + 0.06, 0.18, 0.14, "sine");     // B6
+}
+
 /* CRASH / GAME OVER — descente dissonante Bb → Eb → low D (sweep grave) */
 export function sfxCrash() {
   if (!ctx || !masterGain) return;
