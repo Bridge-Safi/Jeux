@@ -1225,39 +1225,45 @@ function StartScreen({ onStart, eligibility, onClaim }: {
             {t("bridge.playNow")}
           </button>
 
-          {/* Section "COMMENT GAGNER ?" — nouvelles règles */}
-          <div style={{
-            background: "linear-gradient(135deg,rgba(0,30,15,0.92),rgba(0,20,10,0.88))",
-            border: "1px solid rgba(0,230,118,0.25)", borderRadius: 16,
-            padding: "12px 14px", textAlign: "start", marginBottom: 12,
-          }}>
+          {/* Section "COMMENT GAGNER ?" — règles officielles en 4 catégories */}
+          <div style={{ textAlign: "start", marginBottom: 12 }}>
             <div style={{
-              fontSize: 12, color: "#00e676", fontWeight: 800, letterSpacing: 1.5,
-              marginBottom: 10, textTransform: "uppercase",
+              fontSize: 13, color: "#00e676", fontWeight: 800, letterSpacing: 1.5,
+              marginBottom: 10, textTransform: "uppercase", textAlign: "center",
             }}>
               {t("bridge.howTitle")}
             </div>
             {[
-              t("bridge.how.duration"),
-              t("bridge.how.rate"),
-              t("bridge.how.shortfall"),
-              t("bridge.how.bonus"),
-              t("bridge.how.social"),
-              t("bridge.how.obstacles"),
-              t("bridge.how.claim"),
-            ].map((line, i) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "flex-start", gap: 8,
-                fontSize: 11, color: "#e0f2e7", marginBottom: 7, lineHeight: 1.45,
+              { icon: "⏱️", titleKey: "rules.duration.title",  lines: ["rules.duration.l1",  "rules.duration.l2",  "rules.duration.l3"] },
+              { icon: "💎", titleKey: "rules.collect.title",   lines: ["rules.collect.l1",   "rules.collect.l2",   "rules.collect.l3"] },
+              { icon: "🐝", titleKey: "rules.shortfall.title", lines: ["rules.shortfall.l1", "rules.shortfall.l2", "rules.shortfall.l3", "rules.shortfall.l4"] },
+              { icon: "🏃", titleKey: "rules.bonus.title",     lines: ["rules.bonus.l1",     "rules.bonus.l2",     "rules.bonus.l3"] },
+            ].map((cat) => (
+              <div key={cat.titleKey} style={{
+                background: "linear-gradient(135deg,rgba(0,30,15,0.92),rgba(0,20,10,0.88))",
+                border: "1px solid rgba(0,230,118,0.25)", borderRadius: 14,
+                padding: "10px 12px", marginBottom: 8,
               }}>
                 <div style={{
-                  flexShrink: 0, width: 18, height: 18, borderRadius: "50%",
-                  background: "linear-gradient(135deg,#00c853,#00e676)",
-                  color: "#003311", fontSize: 10, fontWeight: 900,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  marginTop: 1,
-                }}>{i + 1}</div>
-                <div style={{ flex: 1 }}>{line}</div>
+                  display: "flex", alignItems: "center", gap: 8,
+                  fontSize: 12, color: "#00e676", fontWeight: 800, letterSpacing: 1.2,
+                  marginBottom: 8, textTransform: "uppercase",
+                }}>
+                  <span style={{ fontSize: 16 }}>{cat.icon}</span>
+                  <span>{t(cat.titleKey)}</span>
+                </div>
+                {cat.lines.map((lk) => (
+                  <div key={lk} style={{
+                    display: "flex", alignItems: "flex-start", gap: 8,
+                    fontSize: 11, color: "#e0f2e7", marginBottom: 5, lineHeight: 1.45,
+                  }}>
+                    <div style={{
+                      flexShrink: 0, width: 5, height: 5, borderRadius: "50%",
+                      background: "#ffd54f", marginTop: 6,
+                    }} />
+                    <div style={{ flex: 1 }}>{t(lk)}</div>
+                  </div>
+                ))}
               </div>
             ))}
           </div>

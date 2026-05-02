@@ -33,6 +33,33 @@ const DICT: Record<Lang, Record<string, string>> = {
     "bridge.progress": "Progression",
     "bridge.playNow": "🎮 JOUER MAINTENANT",
     "bridge.howTitle": "🏆 Comment gagner ?",
+
+    /* Catégorie 1 — DURÉE DE JEU */
+    "rules.duration.title": "DURÉE DE JEU",
+    "rules.duration.l1": "Jouez 3 à 4 heures par jour pendant 5 jours consécutifs",
+    "rules.duration.l2": "Durée totale minimum : 15 heures sur 5 jours",
+    "rules.duration.l3": "🎁 Plus vous jouez, plus vous gagnez de 💎 !",
+
+    /* Catégorie 2 — DIAMANTS À RÉCOLTER */
+    "rules.collect.title": "DIAMANTS À RÉCOLTER",
+    "rules.collect.l1": "Objectif : récolter 15 000 💎 en 5 jours",
+    "rules.collect.l2": "Rythme : 1 000 💎 par heure de jeu",
+    "rules.collect.l3": "Chaque 1 000 💎 vaut 5 DH",
+
+    /* Catégorie 3 — DIAMANTS MANQUANTS */
+    "rules.shortfall.title": "DIAMANTS MANQUANTS",
+    "rules.shortfall.l1": "Si vous atteignez votre objectif → tout est offert ! 🎉",
+    "rules.shortfall.l2": "S'il manque 1 000 💎 → vous payez 5 DH",
+    "rules.shortfall.l3": "S'il manque 3 000 💎 → vous payez 15 DH",
+    "rules.shortfall.l4": "Calcul : diamants manquants ÷ 1 000 × 5 DH",
+
+    /* Catégorie 4 — BONUS — LIVRAISON GRATUITE */
+    "rules.bonus.title": "BONUS — LIVRAISON GRATUITE",
+    "rules.bonus.l1": "Jouez 2h DE PLUS que votre session normale",
+    "rules.bonus.l2": "→ Votre prochaine livraison est 100% GRATUITE 🎁",
+    "rules.bonus.l3": "→ Vous gagnez aussi +2 000 💎 bonus !",
+
+    /* (anciennes lignes courtes — conservées pour autres écrans) */
     "bridge.how.duration": "⏱️ Joue 3 à 4h par jour pendant 5 jours consécutifs (15h min total)",
     "bridge.how.rate": "💎 Récolte 1 000 💎 par heure — objectif 15 000 💎",
     "bridge.how.shortfall": "💰 Diamants manquants ? 1 000 💎 = 5 DH",
@@ -258,6 +285,28 @@ const DICT: Record<Lang, Record<string, string>> = {
     "bridge.progress": "Progress",
     "bridge.playNow": "🎮 PLAY NOW",
     "bridge.howTitle": "🏆 How to win?",
+
+    "rules.duration.title": "PLAY TIME",
+    "rules.duration.l1": "Play 3 to 4 hours per day for 5 consecutive days",
+    "rules.duration.l2": "Minimum total time: 15 hours over 5 days",
+    "rules.duration.l3": "🎁 The more you play, the more 💎 you earn!",
+
+    "rules.collect.title": "DIAMONDS TO COLLECT",
+    "rules.collect.l1": "Goal: collect 15,000 💎 in 5 days",
+    "rules.collect.l2": "Pace: 1,000 💎 per hour of play",
+    "rules.collect.l3": "Every 1,000 💎 = 5 DH",
+
+    "rules.shortfall.title": "MISSING DIAMONDS",
+    "rules.shortfall.l1": "If you reach your goal → everything is free! 🎉",
+    "rules.shortfall.l2": "If you're 1,000 💎 short → you pay 5 DH",
+    "rules.shortfall.l3": "If you're 3,000 💎 short → you pay 15 DH",
+    "rules.shortfall.l4": "Formula: missing diamonds ÷ 1,000 × 5 DH",
+
+    "rules.bonus.title": "BONUS — FREE DELIVERY",
+    "rules.bonus.l1": "Play 2h MORE than your normal session",
+    "rules.bonus.l2": "→ Your next delivery is 100% FREE 🎁",
+    "rules.bonus.l3": "→ You also earn +2,000 💎 bonus!",
+
     "bridge.how.duration": "⏱️ Play 3-4h per day for 5 consecutive days (15h min total)",
     "bridge.how.rate": "💎 Collect 1,000 💎 per hour — goal 15,000 💎",
     "bridge.how.shortfall": "💰 Missing diamonds? 1,000 💎 = 5 DH",
@@ -467,6 +516,28 @@ const DICT: Record<Lang, Record<string, string>> = {
     "bridge.progress": "التقدم",
     "bridge.playNow": "🎮 العب الآن",
     "bridge.howTitle": "🏆 كيف تربح؟",
+
+    "rules.duration.title": "مدة اللعب",
+    "rules.duration.l1": "العب من 3 إلى 4 ساعات يومياً لمدة 5 أيام متتالية",
+    "rules.duration.l2": "الحد الأدنى الإجمالي: 15 ساعة خلال 5 أيام",
+    "rules.duration.l3": "🎁 كلما لعبت أكثر، ربحت المزيد من 💎!",
+
+    "rules.collect.title": "ألماس للجمع",
+    "rules.collect.l1": "الهدف: جمع 15000 💎 في 5 أيام",
+    "rules.collect.l2": "الإيقاع: 1000 💎 في كل ساعة لعب",
+    "rules.collect.l3": "كل 1000 💎 = 5 دراهم",
+
+    "rules.shortfall.title": "الألماس الناقص",
+    "rules.shortfall.l1": "إذا حققت هدفك → كل شيء مجاني! 🎉",
+    "rules.shortfall.l2": "إذا نقص 1000 💎 → تدفع 5 دراهم",
+    "rules.shortfall.l3": "إذا نقص 3000 💎 → تدفع 15 درهم",
+    "rules.shortfall.l4": "الحساب: الألماس الناقص ÷ 1000 × 5 دراهم",
+
+    "rules.bonus.title": "مكافأة — توصيل مجاني",
+    "rules.bonus.l1": "العب ساعتين إضافيتين عن جلستك العادية",
+    "rules.bonus.l2": "← توصيلتك القادمة مجانية 100% 🎁",
+    "rules.bonus.l3": "← تربح أيضاً +2000 💎 مكافأة!",
+
     "bridge.how.duration": "⏱️ العب من 3 إلى 4 ساعات يومياً لمدة 5 أيام متتالية (15 ساعة على الأقل)",
     "bridge.how.rate": "💎 اجمع 1000 💎 في الساعة — الهدف 15000 💎",
     "bridge.how.shortfall": "💰 ينقصك ألماس؟ 1000 💎 = 5 درهم",
