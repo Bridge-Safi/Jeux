@@ -38,6 +38,26 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - Checkpoint every 50s → interactive overlay (quiz, form, video ad, sponsor quiz)
 - Score = diamonds × 10; sardines = score ÷ 50
 
+### Bridge Eats engagement program (free menu unlock)
+Three cumulative criteria — all enforced server-side:
+1. **30,000 💎** total collected (DIAMONDS_PER_MENU)
+2. **3 distinct days** with **≥1h** play each (REQUIRED_PLAY_DAYS, REQUIRED_SECONDS_PER_DAY)
+3. **4th calendar day** from the player's personal first play date (DAYS_BEFORE_CLAIM)
+
+The Bridge customer link is the **phone number** (not email): `bridge_phone` column with UNIQUE constraint. One phone = one Bridge account = one menu per cycle.
+
+### Database (Supabase)
+Two SQL migrations to apply manually in Supabase SQL Editor (in order):
+- `artifacts/3d-game/supabase/anti_cheat.sql` — RLS, device fingerprint, anti-cheat trigger (1.8 💎/s cap)
+- `artifacts/3d-game/supabase/bridge_engagement.sql` — bridge_phone, first_play_date, play_days (jsonb), menus_claimed, plus 2 atomic RPCs:
+  - `add_play_session(p_id, p_seconds)` — appends today's play time using server `CURRENT_DATE` (immune to client clock manipulation)
+  - `claim_menu(p_id)` — server-validates the 3 criteria + atomic increment of menus_claimed (anti double-claim)
+
+### Key files
+- `src/lib/playerProfile.ts` — registerBridgePhone, recordPlaySession (RPC), markMenuClaimed (RPC), getMenuEligibility (pure)
+- `src/game/GameUI.tsx` — EngagementCard (3 progress bars), MenuUnlockOverlay (phone input + eligibility gate), reward overlay only triggers at gameover/checkpoint (never interrupts gameplay)
+- `src/hooks/useSupabaseSync.ts` — calls recordPlaySession on phase=gameover
+
 ### UI / Controls
 - Start screen with Shark Warrior reference photo background
 - In-game HUD: diamond counter, checkpoint progress bar, score

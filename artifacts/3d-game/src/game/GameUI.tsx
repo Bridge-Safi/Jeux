@@ -1,10 +1,19 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { GamePhase } from "./useGameState";
-import { registerEmail } from "../lib/playerProfile";
+import {
+  registerBridgePhone,
+  markMenuClaimed,
+  getMenuEligibility,
+  DIAMONDS_PER_MENU,
+  REQUIRED_PLAY_DAYS,
+  REQUIRED_SECONDS_PER_DAY,
+  type MenuEligibility,
+} from "../lib/playerProfile";
+import type { Profile } from "../lib/supabase";
 
 /* ─── Configuration Bridge Eats ─────────────────────────────── */
 export const BRIDGE_EATS_URL = "https://44474adc-9074-4015-a3b9-4e111cb8be39-00-11nld147gir6y.kirk.replit.dev/";
-export const DIAMONDS_PER_MENU = 500; // 500 💎 totaux = 1 menu gratuit
+export { DIAMONDS_PER_MENU };
 
 /* ─── Types ──────────────────────────────────────────────────── */
 interface GameUIProps {
@@ -13,7 +22,7 @@ interface GameUIProps {
   checkpointNumber: number;
   nextCheckpointAt: number;
   playTime: number;
-  totalDiamonds: number;        // total cumulatif depuis Supabase
+  profile: Profile | null;        // profil Supabase complet (peut être null en hors-ligne)
   onStart: () => void;
   onRestart: () => void;
   onChangeLane: (dir: 1 | -1) => void;
@@ -27,8 +36,6 @@ function NFSButton({ icon, onClick, glow, size = 76, accent = "#00f0ff" }: {
   const [pressed, setPressed] = useState(false);
   const lastFireRef = useRef(0);
 
-  /* onPointerDown unifie touch+mouse → AUCUN double-fire.
-     + debounce 60ms pour éviter le rebond accidentel.       */
   const handleDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
     const now = Date.now();
@@ -109,60 +116,115 @@ function BridgeEatsButton({ variant = "light" }: { variant?: "light" | "dark" })
   );
 }
 
-/* ─── Barre progression menu gratuit ────────────────────────── */
-function MenuProgressBar({ totalDiamonds }: { totalDiamonds: number }) {
-  const menusEarned = Math.floor(totalDiamonds / DIAMONDS_PER_MENU);
-  const progressInCurrentCycle = totalDiamonds % DIAMONDS_PER_MENU;
-  const pct = (progressInCurrentCycle / DIAMONDS_PER_MENU) * 100;
+/* ─── Helpers d'affichage ────────────────────────────────────── */
+function formatTimeRemaining(seconds: number): string {
+  if (seconds <= 0) return "✓ jour validé";
+  const m = Math.ceil(seconds / 60);
+  if (m >= 60) {
+    const h = Math.floor(m / 60);
+    const rest = m % 60;
+    return `${h}h${rest > 0 ? String(rest).padStart(2, "0") : ""} restantes`;
+  }
+  return `${m} min restantes`;
+}
+
+/* ─── Carte progression Bridge complète (3 critères visibles) ─ */
+function EngagementCard({ eligibility, compact = false }: {
+  eligibility: MenuEligibility; compact?: boolean;
+}) {
+  const {
+    qualifyingDays, daysSinceFirstPlay, todaySecondsRemaining,
+    diamondsCollected, menusAvailable,
+  } = eligibility;
+
+  const diamondPct = Math.min(100, ((diamondsCollected % DIAMONDS_PER_MENU) / DIAMONDS_PER_MENU) * 100);
+  const dayPct     = Math.min(100, (qualifyingDays / REQUIRED_PLAY_DAYS) * 100);
+
+  /* Si menu déjà disponible : look vert glorieux */
+  if (menusAvailable > 0) {
+    return (
+      <div style={{
+        background: "linear-gradient(135deg,rgba(0,80,0,0.85),rgba(0,140,0,0.7))",
+        border: "1.5px solid #4caf50",
+        borderRadius: compact ? 14 : 18,
+        padding: compact ? "10px 14px" : "14px 18px",
+        boxShadow: "0 0 24px #4caf5066",
+      }}>
+        <div style={{ color: "#fff", fontSize: compact ? 12 : 14, fontWeight: 800, marginBottom: 4 }}>
+          🎉 {menusAvailable} menu{menusAvailable > 1 ? "s" : ""} gratuit{menusAvailable > 1 ? "s" : ""} prêt{menusAvailable > 1 ? "s" : ""} !
+        </div>
+        <div style={{ color: "#c8e6c9", fontSize: compact ? 10 : 12 }}>
+          Réclame ton menu sur Bridge Eats avec ton n° de téléphone
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
-      background: "linear-gradient(135deg,rgba(0,0,0,0.8),rgba(30,10,0,0.85))",
+      background: "linear-gradient(135deg,rgba(0,0,0,0.78),rgba(30,10,0,0.85))",
       backdropFilter: "blur(10px)",
       border: "1px solid rgba(255,140,0,0.35)",
-      borderRadius: 14,
-      padding: "8px 14px",
-      minWidth: 180,
-      boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+      borderRadius: compact ? 12 : 16,
+      padding: compact ? "8px 12px" : "12px 16px",
+      minWidth: compact ? 200 : 0,
+      boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-        <span style={{ color: "#ffa726", fontSize: 11, fontWeight: 700 }}>
-          🍽️ Menu gratuit
-        </span>
-        {menusEarned > 0 && (
-          <span style={{
-            background: "#4caf50",
-            color: "#fff",
-            fontSize: 9,
-            fontWeight: 800,
-            borderRadius: 10,
-            padding: "2px 7px",
-            letterSpacing: 0.5,
-          }}>
-            ×{menusEarned} DROIT{menusEarned > 1 ? "S" : ""}
+      <div style={{ color: "#ffa726", fontSize: compact ? 10 : 12, fontWeight: 800, marginBottom: 8, letterSpacing: 0.5 }}>
+        🛵🚕 Programme Bridge — Menu gratuit
+      </div>
+
+      {/* Critère 1 : Diamants */}
+      <div style={{ marginBottom: 7 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: compact ? 9 : 11, marginBottom: 3 }}>
+          <span style={{ color: "#fff" }}>💎 Diamants</span>
+          <span style={{ color: "#ffd54f", fontWeight: 700 }}>
+            {diamondsCollected.toLocaleString("fr-FR")} / {DIAMONDS_PER_MENU.toLocaleString("fr-FR")}
           </span>
+        </div>
+        <div style={{ height: compact ? 5 : 6, background: "rgba(255,255,255,0.1)", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{
+            height: "100%", width: `${diamondPct}%`,
+            background: "linear-gradient(90deg,#ff6f00,#ffd54f)",
+            transition: "width 0.5s",
+          }} />
+        </div>
+      </div>
+
+      {/* Critère 2 : Jours qualifiés (≥ 1h) */}
+      <div style={{ marginBottom: 7 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: compact ? 9 : 11, marginBottom: 3 }}>
+          <span style={{ color: "#fff" }}>📅 Jours actifs (≥ 1h)</span>
+          <span style={{ color: "#90caf9", fontWeight: 700 }}>{qualifyingDays} / {REQUIRED_PLAY_DAYS}</span>
+        </div>
+        <div style={{ height: compact ? 5 : 6, background: "rgba(255,255,255,0.1)", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{
+            height: "100%", width: `${dayPct}%`,
+            background: "linear-gradient(90deg,#1565c0,#42a5f5)",
+            transition: "width 0.5s",
+          }} />
+        </div>
+      </div>
+
+      {/* Critère 3 : aujourd'hui */}
+      <div style={{
+        fontSize: compact ? 9 : 11, color: "#a5d6a7",
+        background: "rgba(0,0,0,0.3)", borderRadius: 6,
+        padding: "4px 8px", textAlign: "center", marginTop: 6,
+      }}>
+        ⏱️ Aujourd'hui : {formatTimeRemaining(todaySecondsRemaining)}
+        {daysSinceFirstPlay > 0 && (
+          <span style={{ color: "#888", marginLeft: 6 }}>· J{daysSinceFirstPlay}</span>
         )}
-      </div>
-      <div style={{ height: 7, background: "rgba(255,255,255,0.1)", borderRadius: 6, overflow: "hidden" }}>
-        <div style={{
-          height: "100%",
-          width: `${pct}%`,
-          background: pct >= 100 ? "#4caf50" : "linear-gradient(90deg,#ff6f00,#ffd54f)",
-          borderRadius: 6,
-          transition: "width 0.5s",
-          boxShadow: `0 0 8px ${pct >= 100 ? "#4caf50" : "#ff8f00"}`,
-        }} />
-      </div>
-      <div style={{ color: "#ccc", fontSize: 10, marginTop: 4, textAlign: "right" }}>
-        💎 {progressInCurrentCycle} / {DIAMONDS_PER_MENU}
       </div>
     </div>
   );
 }
 
 /* ─── HUD en jeu ─────────────────────────────────────────────── */
-function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, totalDiamonds }: {
-  score: number; checkpointNumber: number; playTime: number; nextCheckpointAt: number; totalDiamonds: number;
+function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility }: {
+  score: number; checkpointNumber: number; playTime: number;
+  nextCheckpointAt: number; eligibility: MenuEligibility;
 }) {
   const timeToNext = Math.max(0, Math.ceil(nextCheckpointAt - playTime));
   const progress = Math.min(1, (40 - timeToNext) / 40);
@@ -227,15 +289,15 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, totalDiamond
         )}
       </div>
 
-      {/* Barre menu gratuit — en bas à gauche pendant le jeu */}
-      {totalDiamonds > 0 && (
+      {/* Carte engagement Bridge — en bas à gauche pendant le jeu */}
+      {eligibility.diamondsCollected > 0 && (
         <div style={{
           position: "absolute",
-          bottom: -70,
+          bottom: -110,
           left: 14,
           pointerEvents: "none",
         }}>
-          <MenuProgressBar totalDiamonds={totalDiamonds + sessionDiamonds} />
+          <EngagementCard eligibility={eligibility} compact />
         </div>
       )}
     </div>
@@ -250,7 +312,7 @@ function SwipeArea({ onChangeLane, onJump }: {
   const firedRef = useRef(false);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (e.pointerType === "mouse") return; // souris = clavier seulement
+    if (e.pointerType === "mouse") return;
     startRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
     firedRef.current = false;
   }, []);
@@ -261,22 +323,16 @@ function SwipeArea({ onChangeLane, onJump }: {
     const dy = e.clientY - startRef.current.y;
     const adx = Math.abs(dx);
     const ady = Math.abs(dy);
-
-    /* Swipe horizontal : > 35px et plus horizontal que vertical */
     if (adx > 35 && adx > ady * 1.2) {
       firedRef.current = true;
       onChangeLane(dx > 0 ? 1 : -1);
-    }
-    /* Swipe vertical haut : > 35px vers le haut */
-    else if (-dy > 35 && ady > adx * 1.2) {
+    } else if (-dy > 35 && ady > adx * 1.2) {
       firedRef.current = true;
       onJump();
     }
   }, [onChangeLane, onJump]);
 
-  const handlePointerUp = useCallback(() => {
-    startRef.current = null;
-  }, []);
+  const handlePointerUp = useCallback(() => { startRef.current = null; }, []);
 
   return (
     <div
@@ -285,13 +341,9 @@ function SwipeArea({ onChangeLane, onJump }: {
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       style={{
-        position: "absolute",
-        top: 80,        // sous le HUD
-        bottom: 130,    // au-dessus des boutons
-        left: 0, right: 0,
-        zIndex: 10,
-        touchAction: "none",
-        pointerEvents: "auto",
+        position: "absolute", top: 80, bottom: 130,
+        left: 0, right: 0, zIndex: 10,
+        touchAction: "none", pointerEvents: "auto",
       }}
     />
   );
@@ -303,10 +355,7 @@ function TouchControls({ onChangeLane, onJump }: {
 }) {
   return (
     <>
-      {/* Zone swipe sur tout l'écran de jeu */}
       <SwipeArea onChangeLane={onChangeLane} onJump={onJump} />
-
-      {/* Boutons style NFS Heat Mobile, glassmorphism néon */}
       <div style={{
         position: "absolute", bottom: 22, left: 0, right: 0,
         display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -322,114 +371,140 @@ function TouchControls({ onChangeLane, onJump }: {
           <NFSButton icon="›" glow="#ff1493" accent="#ff1493" onClick={() => onChangeLane(1)} />
         </div>
       </div>
-
-      {/* Indice swipe discret au-dessus des boutons (dispar après 8s via animation CSS) */}
       <div style={{
-        position: "absolute",
-        bottom: 130,
-        left: 0, right: 0,
-        textAlign: "center",
-        fontSize: 11,
-        color: "rgba(255,255,255,0.5)",
-        letterSpacing: 1.5,
-        fontWeight: 600,
-        pointerEvents: "none",
-        zIndex: 15,
+        position: "absolute", bottom: 130, left: 0, right: 0,
+        textAlign: "center", fontSize: 11,
+        color: "rgba(255,255,255,0.5)", letterSpacing: 1.5,
+        fontWeight: 600, pointerEvents: "none", zIndex: 15,
         textShadow: "0 0 10px rgba(0,0,0,0.8)",
         animation: "fadeOutSwipe 8s forwards",
       }}>
         ← SWIPE pour changer de voie · SWIPE ↑ pour sauter →
       </div>
-      <style>{`
-        @keyframes fadeOutSwipe {
-          0%, 70% { opacity: 1; }
-          100% { opacity: 0; }
-        }
-      `}</style>
+      <style>{`@keyframes fadeOutSwipe{0%,70%{opacity:1}100%{opacity:0}}`}</style>
     </>
   );
 }
 
-/* ─── Overlay récompense menu gratuit ───────────────────────── */
-function MenuUnlockOverlay({ menusCount, onClose }: { menusCount: number; onClose: () => void }) {
-  const [email, setEmail] = useState("");
-  const [step, setStep] = useState<"email" | "done">("email");
+/* ─── Overlay réclamation menu (téléphone Bridge) ─────────────
+   Affiche soit :
+     - "Pas encore éligible" + critères restants
+     - "Réclame ton menu" + champ tél + bouton
+   ─────────────────────────────────────────────────────────────── */
+function MenuUnlockOverlay({ eligibility, onClose }: {
+  eligibility: MenuEligibility; onClose: () => void;
+}) {
+  const [phone, setPhone] = useState("");
+  const [step, setStep] = useState<"phone" | "done">("phone");
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
 
+  const canClaim = eligibility.eligible;
+
   const handleClaim = async () => {
-    const trimmed = email.trim().toLowerCase();
-    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setErrMsg("Entrez un email valide pour réclamer.");
+    const trimmed = phone.trim();
+    if (!trimmed) {
+      setErrMsg("Entre ton numéro Bridge Eats.");
       return;
     }
-    setLoading(true);
-    setErrMsg("");
-    const result = await registerEmail(trimmed);
-    setLoading(false);
-    if (result.success) {
-      setStep("done");
-    } else {
-      setErrMsg(result.error ?? "Erreur — réessaie.");
+    setLoading(true); setErrMsg("");
+    const reg = await registerBridgePhone(trimmed);
+    if (!reg.success) {
+      setLoading(false);
+      setErrMsg(reg.error ?? "Erreur — réessaie.");
+      return;
     }
+    /* Téléphone OK → on consomme un menu */
+    const claim = await markMenuClaimed();
+    setLoading(false);
+    if (!claim.success) {
+      setErrMsg(claim.error ?? "Erreur — réessaie.");
+      return;
+    }
+    setStep("done");
   };
 
   return (
     <div style={{
       position: "absolute", inset: 0,
-      background: "radial-gradient(ellipse at center,rgba(0,70,0,0.97) 0%,rgba(0,20,0,0.99) 100%)",
+      background: canClaim
+        ? "radial-gradient(ellipse at center,rgba(0,70,0,0.97) 0%,rgba(0,20,0,0.99) 100%)"
+        : "radial-gradient(ellipse at center,rgba(40,20,0,0.97) 0%,rgba(15,5,0,0.99) 100%)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       zIndex: 200, pointerEvents: "auto",
       animation: "fadeIn 0.4s ease",
+      overflowY: "auto",
+      padding: "20px 0",
     }}>
       <style>{`
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         @keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
-        .email-input::placeholder{color:#aaa}
+        .phone-input::placeholder{color:#aaa}
       `}</style>
 
-      <div style={{ textAlign: "center", padding: "0 28px", maxWidth: 400, width: "100%" }}>
-        <div style={{ fontSize: 80, marginBottom: 8, animation: "bounce 1.2s infinite" }}>🎉</div>
-
-        <div style={{
-          fontSize: 34, fontWeight: 900, color: "#fff",
-          textShadow: "0 0 30px #4caf50",
-          letterSpacing: 2, marginBottom: 6, lineHeight: 1.1,
-        }}>
-          MENU GRATUIT<br />DÉBLOQUÉ !
-        </div>
-
-        <div style={{ color: "#a5d6a7", fontSize: 14, marginBottom: 20 }}>
-          Tu as collecté <strong style={{ color: "#ffd740" }}>{menusCount * DIAMONDS_PER_MENU} 💎</strong>
-        </div>
-
-        {step === "email" ? (
+      <div style={{ textAlign: "center", padding: "0 28px", maxWidth: 420, width: "100%" }}>
+        {canClaim ? (
           <>
-            {/* Explication */}
+            <div style={{ fontSize: 80, marginBottom: 8, animation: "bounce 1.2s infinite" }}>🎉</div>
+            <div style={{
+              fontSize: 32, fontWeight: 900, color: "#fff",
+              textShadow: "0 0 30px #4caf50",
+              letterSpacing: 2, marginBottom: 6, lineHeight: 1.1,
+            }}>
+              MENU GRATUIT<br />DÉBLOQUÉ !
+            </div>
+            <div style={{ color: "#a5d6a7", fontSize: 13, marginBottom: 18 }}>
+              Tu as joué <strong style={{ color: "#fff" }}>{eligibility.qualifyingDays} jours</strong> et collecté{" "}
+              <strong style={{ color: "#ffd740" }}>{eligibility.diamondsCollected.toLocaleString("fr-FR")} 💎</strong>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: 70, marginBottom: 8 }}>⏳</div>
+            <div style={{
+              fontSize: 26, fontWeight: 900, color: "#ffa726",
+              textShadow: "0 0 28px #ff6f00",
+              letterSpacing: 1.5, marginBottom: 6, lineHeight: 1.15,
+            }}>
+              Pas encore prêt
+            </div>
+            <div style={{ color: "#ffcc80", fontSize: 13, marginBottom: 18 }}>
+              {eligibility.blockerReason}
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <EngagementCard eligibility={eligibility} />
+            </div>
+          </>
+        )}
+
+        {step === "phone" && canClaim && (
+          <>
             <div style={{
               background: "rgba(0,0,0,0.4)", border: "1px solid rgba(76,175,80,0.4)",
               borderRadius: 14, padding: "14px 16px", marginBottom: 18, textAlign: "left",
             }}>
               <div style={{ color: "#fff", fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
-                📧 Entre ton email Bridge Eats
+                📱 Ton n° de téléphone Bridge Eats
               </div>
               <div style={{ color: "#aaa", fontSize: 11, lineHeight: 1.6 }}>
-                Ton email identifie ton compte Bridge Eats. Un seul menu par email — impossible d'utiliser plusieurs comptes.
+                Ce numéro identifie ton compte Bridge — c'est lui qui recevra ton menu gratuit. Un seul menu par numéro.
               </div>
             </div>
 
             <input
-              className="email-input"
-              type="email"
-              value={email}
-              onChange={e => { setEmail(e.target.value); setErrMsg(""); }}
-              placeholder="ton@email.com"
+              className="phone-input"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={e => { setPhone(e.target.value); setErrMsg(""); }}
+              placeholder="+212 6XX XXXXXX  ou  06XX XXXXXX"
               style={{
                 width: "100%", padding: "14px 16px", borderRadius: 12,
                 border: errMsg ? "2px solid #f44336" : "2px solid rgba(76,175,80,0.5)",
                 background: "rgba(0,0,0,0.6)", color: "#fff",
                 fontSize: 15, marginBottom: 8, boxSizing: "border-box",
-                outline: "none",
+                outline: "none", letterSpacing: 1,
               }}
               onKeyDown={e => { if (e.key === "Enter") handleClaim(); }}
             />
@@ -458,21 +533,22 @@ function MenuUnlockOverlay({ menusCount, onClose }: { menusCount: number; onClos
               background: "transparent", color: "#888",
               border: "none", fontSize: 12, cursor: "pointer",
             }}>
-              Continuer à jouer sans réclamer
+              Continuer à jouer
             </button>
           </>
-        ) : (
+        )}
+
+        {step === "done" && (
           <>
-            {/* Étape 2 : confirmation → redirection */}
             <div style={{
               background: "rgba(0,0,0,0.45)", border: "1px solid #4caf50",
               borderRadius: 14, padding: "16px", marginBottom: 22,
             }}>
               <div style={{ color: "#4caf50", fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
-                ✅ Email enregistré !
+                ✅ Numéro enregistré !
               </div>
               <div style={{ color: "#ccc", fontSize: 12 }}>
-                Clique ci-dessous pour réclamer ton menu sur Bridge Eats.
+                Ton menu sera lié à ton compte Bridge Eats. Clique ci-dessous pour le commander.
               </div>
             </div>
 
@@ -499,6 +575,19 @@ function MenuUnlockOverlay({ menusCount, onClose }: { menusCount: number; onClos
             </button>
           </>
         )}
+
+        {!canClaim && (
+          <button onClick={onClose} style={{
+            marginTop: 6,
+            background: "linear-gradient(135deg,#1565c0,#42a5f5)",
+            color: "#fff", border: "none", borderRadius: 50,
+            padding: "14px 36px", fontSize: 15, fontWeight: 800,
+            cursor: "pointer", letterSpacing: 1,
+            boxShadow: "0 0 24px #1565c088",
+          }}>
+            ▶ Continuer à jouer
+          </button>
+        )}
       </div>
     </div>
   );
@@ -510,6 +599,7 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
     localStorage.setItem("safi_runner_saw_instructions", "1");
     onStart();
   };
+  const hours = Math.round((REQUIRED_SECONDS_PER_DAY / 3600) * 10) / 10;
   return (
     <div style={{
       position: "absolute", inset: 0, zIndex: 50, pointerEvents: "auto",
@@ -523,13 +613,11 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
         display: "flex", flexDirection: "column", alignItems: "center",
         padding: "24px 20px 32px",
       }}>
-        {/* Titre */}
         <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", marginBottom: 4, textAlign: "center" }}>
           🦈 COMMENT JOUER
         </div>
         <div style={{ fontSize: 12, color: "#90caf9", marginBottom: 20, letterSpacing: 2 }}>SAFI RUNNER</div>
 
-        {/* Contrôles */}
         <div style={{ width: "100%", maxWidth: 420, marginBottom: 16 }}>
           {[
             { icon: "◀ ▶", label: "Changer de voie", desc: "Boutons GAUCHE / DROITE ou flèches clavier" },
@@ -551,26 +639,25 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
           ))}
         </div>
 
-        {/* Système de récompenses */}
+        {/* Système de récompenses détaillé */}
         <div style={{
           width: "100%", maxWidth: 420,
           background: "rgba(255,140,0,0.12)", border: "1px solid rgba(255,140,0,0.35)",
           borderRadius: 16, padding: "14px 18px", marginBottom: 16,
         }}>
           <div style={{ color: "#ffa726", fontWeight: 800, fontSize: 14, marginBottom: 8 }}>
-            🛵🚕 Système Bridge Eats
+            🛵🚕 Comment gagner un menu Bridge Eats
           </div>
           {[
-            "Collecte 500 💎 = 1 menu gratuit Bridge Eats",
+            `Collecte ${DIAMONDS_PER_MENU.toLocaleString("fr-FR")} 💎 au total`,
+            `Joue au moins ${hours}h par jour pendant ${REQUIRED_PLAY_DAYS} jours différents`,
+            `Le 4ᵉ jour : entre ton n° Bridge Eats pour réclamer le menu`,
             "Pause publicitaire toutes les 40 secondes",
-            "Quiz culture marocaine à chaque pause",
-            "Score classement mondial en ligne",
           ].map((t, i) => (
             <div key={i} style={{ color: "#e0e0e0", fontSize: 13, marginBottom: 4 }}>✓ {t}</div>
           ))}
         </div>
 
-        {/* Bouton jouer */}
         <button
           onClick={handlePlay}
           style={{
@@ -589,9 +676,10 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
 }
 
 /* ─── Écran de démarrage ─────────────────────────────────────── */
-function StartScreen({ onStart, totalDiamonds }: { onStart: () => void; totalDiamonds: number }) {
-  const menusEarned = Math.floor(totalDiamonds / DIAMONDS_PER_MENU);
-  const progressInCycle = totalDiamonds % DIAMONDS_PER_MENU;
+function StartScreen({ onStart, eligibility, onClaim }: {
+  onStart: () => void; eligibility: MenuEligibility; onClaim: () => void;
+}) {
+  const hasMenu = eligibility.menusAvailable > 0;
 
   return (
     <div style={{
@@ -599,18 +687,15 @@ function StartScreen({ onStart, totalDiamonds }: { onStart: () => void; totalDia
       backgroundImage: "url(/assets/shark-warrior-night.jpeg)",
       backgroundSize: "cover", backgroundPosition: "center top",
     }}>
-      {/* Overlay gradient */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
         background: "linear-gradient(to bottom,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.05) 30%,rgba(0,10,40,0.88) 60%,rgba(0,5,20,0.98) 100%)",
       }} />
 
-      {/* Bouton Bridge Eats fixe en haut */}
       <div style={{ position: "absolute", top: 16, left: 16, zIndex: 20, pointerEvents: "auto" }}>
         <BridgeEatsButton />
       </div>
 
-      {/* Zone scrollable — couvre tout l'écran */}
       <div style={{
         position: "absolute", inset: 0, zIndex: 10,
         overflowY: "auto", overflowX: "hidden",
@@ -618,19 +703,14 @@ function StartScreen({ onStart, totalDiamonds }: { onStart: () => void; totalDia
         display: "flex", flexDirection: "column",
         alignItems: "center",
       }}>
-        {/* Spacer hero — pousse le contenu vers le bas */}
         <div style={{ flex: 1, minHeight: 160 }} />
 
-        {/* Contenu principal */}
         <div style={{ width: "100%", maxWidth: 500, padding: "0 20px 32px", textAlign: "center" }}>
-
-          {/* Titre */}
           <div style={{
             fontFamily: "'Bangers', sans-serif",
             fontSize: "clamp(40px,12vw,58px)", letterSpacing: 4, color: "#ffeb3b",
             textShadow: "3px 3px 0 #1a1a1a, 6px 6px 0 #c62828, 0 0 40px #ff8f00",
-            lineHeight: 1, marginBottom: 4,
-            transform: "rotate(-2deg)",
+            lineHeight: 1, marginBottom: 4, transform: "rotate(-2deg)",
           }}>
             🦈 SAFI RUNNER
           </div>
@@ -638,51 +718,31 @@ function StartScreen({ onStart, totalDiamonds }: { onStart: () => void; totalDia
             Médina de Safi · Course Infinie 3D
           </div>
 
-          {/* Carte menu gratuit */}
-          <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center",
-            background: "rgba(0,0,0,0.65)", backdropFilter: "blur(10px)",
-            border: `1px solid ${menusEarned > 0 ? "#4caf50" : "rgba(255,140,0,0.4)"}`,
-            borderRadius: 18, padding: "12px 20px", marginBottom: 14,
-            boxShadow: menusEarned > 0 ? "0 0 20px #4caf5044" : "none",
-          }}>
-            {menusEarned > 0 ? (
-              <>
-                <div style={{ color: "#4caf50", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
-                  🎉 {menusEarned} Menu{menusEarned > 1 ? "s" : ""} Gratuit{menusEarned > 1 ? "s" : ""} disponible{menusEarned > 1 ? "s" : ""} !
-                </div>
-                <a href={BRIDGE_EATS_URL} target="_blank" rel="noreferrer" style={{
-                  color: "#a5d6a7", fontSize: 12, textDecoration: "underline", cursor: "pointer",
-                }}>
-                  → Réclamer sur Bridge Eats
-                </a>
-              </>
-            ) : (
-              <>
-                <div style={{ color: "#ffa726", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
-                  🛵🚕 Collecte 💎 pour un menu gratuit Bridge Eats
-                </div>
-                <div style={{ width: "100%", height: 7, background: "rgba(255,255,255,0.15)", borderRadius: 6, overflow: "hidden", marginBottom: 5 }}>
-                  <div style={{
-                    height: "100%",
-                    width: `${(progressInCycle / DIAMONDS_PER_MENU) * 100}%`,
-                    background: "linear-gradient(90deg,#ff6f00,#ffd54f)",
-                    borderRadius: 6, transition: "width 0.5s",
-                  }} />
-                </div>
-                <div style={{ color: "#aaa", fontSize: 10 }}>
-                  💎 {progressInCycle} / {DIAMONDS_PER_MENU} pour 1 menu gratuit
-                </div>
-              </>
-            )}
+          {/* Carte engagement Bridge */}
+          <div style={{ marginBottom: 14 }}>
+            <EngagementCard eligibility={eligibility} />
           </div>
+
+          {/* Bouton Réclamer si menu disponible */}
+          {hasMenu && (
+            <button onClick={onClaim} style={{
+              background: "linear-gradient(135deg,#2e7d32,#66bb6a)",
+              color: "#fff", border: "none", borderRadius: 50,
+              padding: "12px 30px", fontSize: 15, fontWeight: 900,
+              cursor: "pointer", letterSpacing: 1.5, marginBottom: 14,
+              boxShadow: "0 0 30px #4caf5088",
+              width: "100%", maxWidth: 340,
+            }}>
+              🛵🚕 RÉCLAMER MON MENU
+            </button>
+          )}
 
           {/* Badges */}
           <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
             {[
               { icon: "💎", text: "Collecte des diamants" },
-              { icon: "🍽️", text: "Pauses toutes les 40s" },
-              { icon: "🏆", text: "Score en ligne" },
+              { icon: "📅", text: `${REQUIRED_PLAY_DAYS} jours de jeu` },
+              { icon: "🛵🚕", text: "Menu offert au 4ᵉ jour" },
             ].map((b, i) => (
               <div key={i} style={{
                 background: "rgba(255,255,255,0.1)", backdropFilter: "blur(6px)",
@@ -695,7 +755,6 @@ function StartScreen({ onStart, totalDiamonds }: { onStart: () => void; totalDia
             ))}
           </div>
 
-          {/* Contrôles */}
           <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, marginBottom: 18, color: "#aaa", fontSize: 10 }}>
             <span>◀ ▶ Voies</span>
             <span style={{ opacity: 0.4 }}>|</span>
@@ -704,7 +763,6 @@ function StartScreen({ onStart, totalDiamonds }: { onStart: () => void; totalDia
             <span>Boutons tactiles ✓</span>
           </div>
 
-          {/* Bouton JOUER */}
           <button
             onClick={onStart}
             style={{
@@ -728,14 +786,13 @@ function StartScreen({ onStart, totalDiamonds }: { onStart: () => void; totalDia
 }
 
 /* ─── Écran Game Over ────────────────────────────────────────── */
-function GameOverScreen({ score, checkpointNumber, totalDiamonds, onRestart }: {
-  score: number; checkpointNumber: number; totalDiamonds: number; onRestart: () => void;
+function GameOverScreen({ score, checkpointNumber, eligibility, onRestart, onClaim }: {
+  score: number; checkpointNumber: number; eligibility: MenuEligibility;
+  onRestart: () => void; onClaim: () => void;
 }) {
   const sessionDiamonds = Math.floor(score / 10);
-  const totalNow = totalDiamonds + sessionDiamonds;
-  const menusEarned = Math.floor(totalNow / DIAMONDS_PER_MENU);
-  const progressInCycle = totalNow % DIAMONDS_PER_MENU;
   const sardines = Math.floor(score / 50);
+  const hasMenu = eligibility.menusAvailable > 0;
 
   return (
     <div style={{
@@ -750,7 +807,6 @@ function GameOverScreen({ score, checkpointNumber, totalDiamonds, onRestart }: {
         pointerEvents: "none",
       }} />
 
-      {/* Zone scrollable */}
       <div style={{
         position: "absolute", inset: 0, zIndex: 10,
         overflowY: "auto", overflowX: "hidden",
@@ -759,102 +815,77 @@ function GameOverScreen({ score, checkpointNumber, totalDiamonds, onRestart }: {
         alignItems: "center", justifyContent: "center",
         padding: "20px 0",
       }}>
-      <div style={{ position: "relative", textAlign: "center", padding: "0 24px", width: "100%", maxWidth: 440 }}>
+        <div style={{ position: "relative", textAlign: "center", padding: "0 24px", width: "100%", maxWidth: 440 }}>
 
-        {/* Bouton Bridge Eats en haut */}
-        <div style={{ marginBottom: 18 }}>
-          <BridgeEatsButton variant="dark" />
-        </div>
+          <div style={{ marginBottom: 18 }}>
+            <BridgeEatsButton variant="dark" />
+          </div>
 
-        {/* Titre GAME OVER */}
-        <div style={{
-          fontSize: 52, fontWeight: 900, color: "#ef5350",
-          textShadow: "0 0 40px #b71c1c, 0 4px 16px rgba(0,0,0,0.9)",
-          letterSpacing: 3, lineHeight: 1, marginBottom: 4,
-        }}>
-          GAME OVER
-        </div>
-        <div style={{ color: "#ff8a80", fontSize: 13, marginBottom: 20, opacity: 0.8 }}>
-          Le Requin Guerrier s'est arrêté !
-        </div>
+          <div style={{
+            fontSize: 52, fontWeight: 900, color: "#ef5350",
+            textShadow: "0 0 40px #b71c1c, 0 4px 16px rgba(0,0,0,0.9)",
+            letterSpacing: 3, lineHeight: 1, marginBottom: 4,
+          }}>
+            GAME OVER
+          </div>
+          <div style={{ color: "#ff8a80", fontSize: 13, marginBottom: 20, opacity: 0.8 }}>
+            Le Requin Guerrier s'est arrêté !
+          </div>
 
-        {/* Cartes stats */}
-        <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 18 }}>
-          {[
-            { icon: "💎", label: "Session", value: sessionDiamonds, color: "#42a5f5" },
-            { icon: "🏆", label: "Score", value: score, color: "#ffd740" },
-            { icon: "🍽️", label: "Pauses", value: checkpointNumber, color: "#66bb6a" },
-            { icon: "🐟", label: "Sardines", value: sardines, color: "#80cbc4" },
-          ].map((stat, i) => (
-            <div key={i} style={{
-              background: "rgba(255,255,255,0.06)", backdropFilter: "blur(8px)",
-              border: `1px solid ${stat.color}40`, borderRadius: 14,
-              padding: "10px 8px", minWidth: 68,
-            }}>
-              <div style={{ fontSize: 20, marginBottom: 3 }}>{stat.icon}</div>
-              <div style={{ color: stat.color, fontSize: 18, fontWeight: 900, lineHeight: 1 }}>{stat.value}</div>
-              <div style={{ color: "#888", fontSize: 9, marginTop: 3, letterSpacing: 0.5 }}>{stat.label.toUpperCase()}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Progression menu gratuit */}
-        <div style={{
-          background: menusEarned > 0 ? "rgba(0,80,0,0.5)" : "rgba(0,0,0,0.55)",
-          backdropFilter: "blur(8px)",
-          border: `1px solid ${menusEarned > 0 ? "#4caf50" : "rgba(255,140,0,0.35)"}`,
-          borderRadius: 16, padding: "14px 18px", marginBottom: 20,
-          boxShadow: menusEarned > 0 ? "0 0 20px #4caf5044" : "none",
-        }}>
-          {menusEarned > 0 ? (
-            <>
-              <div style={{ color: "#4caf50", fontSize: 15, fontWeight: 800, marginBottom: 8 }}>
-                🎉 {menusEarned} menu{menusEarned > 1 ? "s" : ""} gratuit{menusEarned > 1 ? "s" : ""} disponible{menusEarned > 1 ? "s" : ""} !
-              </div>
-              <a href={BRIDGE_EATS_URL} style={{
-                display: "inline-flex", alignItems: "center", gap: 8,
-                background: "linear-gradient(135deg,#2e7d32,#66bb6a)",
-                color: "#fff", borderRadius: 30, padding: "10px 24px",
-                fontSize: 13, fontWeight: 800, textDecoration: "none", letterSpacing: 1,
+          {/* Cartes stats */}
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 18, flexWrap: "wrap" }}>
+            {[
+              { icon: "💎", label: "Session", value: sessionDiamonds, color: "#42a5f5" },
+              { icon: "🏆", label: "Score", value: score, color: "#ffd740" },
+              { icon: "🍽️", label: "Pauses", value: checkpointNumber, color: "#66bb6a" },
+              { icon: "🐟", label: "Sardines", value: sardines, color: "#80cbc4" },
+            ].map((stat, i) => (
+              <div key={i} style={{
+                background: "rgba(255,255,255,0.06)", backdropFilter: "blur(8px)",
+                border: `1px solid ${stat.color}40`, borderRadius: 14,
+                padding: "10px 8px", minWidth: 68,
               }}>
-                🛵🚕 Réclamer sur Bridge Eats
-              </a>
-            </>
-          ) : (
-            <>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <span style={{ color: "#ffa726", fontSize: 12, fontWeight: 700 }}>💎 Total : {totalNow}</span>
-                <span style={{ color: "#aaa", fontSize: 11 }}>{progressInCycle}/{DIAMONDS_PER_MENU} → menu gratuit</span>
+                <div style={{ fontSize: 20, marginBottom: 3 }}>{stat.icon}</div>
+                <div style={{ color: stat.color, fontSize: 18, fontWeight: 900, lineHeight: 1 }}>{stat.value}</div>
+                <div style={{ color: "#888", fontSize: 9, marginTop: 3, letterSpacing: 0.5 }}>{stat.label.toUpperCase()}</div>
               </div>
-              <div style={{ height: 8, background: "rgba(255,255,255,0.12)", borderRadius: 6, overflow: "hidden" }}>
-                <div style={{
-                  height: "100%",
-                  width: `${(progressInCycle / DIAMONDS_PER_MENU) * 100}%`,
-                  background: "linear-gradient(90deg,#ff6f00,#ffd54f)",
-                  borderRadius: 6, boxShadow: "0 0 8px #ff8f00",
-                }} />
-              </div>
-            </>
-          )}
-        </div>
+            ))}
+          </div>
 
-        {/* Bouton rejouer */}
-        <button
-          onClick={onRestart}
-          style={{
-            background: "linear-gradient(135deg,#b71c1c,#ef5350)",
-            color: "#fff", border: "none", borderRadius: 50,
-            padding: "16px 50px", fontSize: 18, fontWeight: 900,
-            cursor: "pointer", letterSpacing: 2, textTransform: "uppercase",
-            boxShadow: "0 0 28px #b71c1c88, 0 6px 24px rgba(0,0,0,0.6)",
-          }}
-          onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
-          onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-        >
-          🔄 RECOMMENCER
-        </button>
+          {/* Carte engagement Bridge */}
+          <div style={{ marginBottom: 18 }}>
+            <EngagementCard eligibility={eligibility} />
+          </div>
+
+          {hasMenu && (
+            <button onClick={onClaim} style={{
+              background: "linear-gradient(135deg,#2e7d32,#66bb6a)",
+              color: "#fff", border: "none", borderRadius: 50,
+              padding: "14px 32px", fontSize: 15, fontWeight: 900,
+              cursor: "pointer", letterSpacing: 1.5, marginBottom: 14,
+              boxShadow: "0 0 30px #4caf5088",
+            }}>
+              🛵🚕 RÉCLAMER MON MENU
+            </button>
+          )}
+          <br />
+
+          <button
+            onClick={onRestart}
+            style={{
+              background: "linear-gradient(135deg,#b71c1c,#ef5350)",
+              color: "#fff", border: "none", borderRadius: 50,
+              padding: "16px 50px", fontSize: 18, fontWeight: 900,
+              cursor: "pointer", letterSpacing: 2, textTransform: "uppercase",
+              boxShadow: "0 0 28px #b71c1c88, 0 6px 24px rgba(0,0,0,0.6)",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
+            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            🔄 RECOMMENCER
+          </button>
+        </div>
       </div>
-      </div>  {/* fin zone scrollable */}
     </div>
   );
 }
@@ -862,36 +893,42 @@ function GameOverScreen({ score, checkpointNumber, totalDiamonds, onRestart }: {
 /* ─── Export principal ───────────────────────────────────────── */
 export function GameUI({
   phase, score, checkpointNumber, nextCheckpointAt, playTime,
-  totalDiamonds, onStart, onRestart, onChangeLane, onJump,
+  profile, onStart, onRestart, onChangeLane, onJump,
 }: GameUIProps) {
   const [showReward, setShowReward] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
-  const prevMenuCountRef = useRef(Math.floor(totalDiamonds / DIAMONDS_PER_MENU));
+
+  /* Éligibilité = profile + diamants estimés de la session en cours */
+  const sessionDiamonds = Math.floor(score / 10);
+  const profileForCalc: Profile | null = profile
+    ? { ...profile, diamonds_collected: (profile.diamonds_collected ?? 0) + sessionDiamonds }
+    : null;
+  const eligibility = getMenuEligibility(profileForCalc);
+
+  /* Détection du PASSAGE de menusEarned :
+     on N'INTERROMPT PAS la partie en cours — on attend le game over
+     pour proposer la réclamation. */
+  const prevMenusEarnedRef = useRef(eligibility.menusEarned);
+  useEffect(() => {
+    if (
+      eligibility.menusEarned > prevMenusEarnedRef.current &&
+      (phase === "gameover" || phase === "checkpoint")
+    ) {
+      setShowReward(true);
+    }
+    prevMenusEarnedRef.current = eligibility.menusEarned;
+  }, [eligibility.menusEarned, phase]);
 
   const handleStart = () => {
     const saw = localStorage.getItem("safi_runner_saw_instructions");
-    if (!saw) {
-      setShowInstructions(true);
-    } else {
-      onStart();
-    }
+    if (!saw) setShowInstructions(true);
+    else onStart();
   };
 
   const handleInstructionsDone = () => {
     setShowInstructions(false);
     onStart();
   };
-
-  const sessionDiamonds = Math.floor(score / 10);
-  const totalNow = totalDiamonds + sessionDiamonds;
-  const currentMenuCount = Math.floor(totalNow / DIAMONDS_PER_MENU);
-
-  useEffect(() => {
-    if (currentMenuCount > prevMenuCountRef.current && phase === "playing") {
-      setShowReward(true);
-      prevMenuCountRef.current = currentMenuCount;
-    }
-  }, [currentMenuCount, phase]);
 
   return (
     <div style={{ position: "absolute", inset: 0, fontFamily: "'Segoe UI','Arial',sans-serif", overflow: "hidden" }}>
@@ -902,35 +939,35 @@ export function GameUI({
         }
       `}</style>
 
-      {/* Récompense menu gratuit */}
       {showReward && (
         <MenuUnlockOverlay
-          menusCount={currentMenuCount}
+          eligibility={eligibility}
           onClose={() => setShowReward(false)}
         />
       )}
 
-      {/* Instructions (1ère fois) */}
       {showInstructions && (
         <InstructionsScreen onStart={handleInstructionsDone} />
       )}
 
-      {/* Écran démarrage */}
       {phase === "start" && !showReward && !showInstructions && (
-        <StartScreen onStart={handleStart} totalDiamonds={totalDiamonds} />
+        <StartScreen
+          onStart={handleStart}
+          eligibility={eligibility}
+          onClaim={() => setShowReward(true)}
+        />
       )}
 
-      {/* Game Over */}
       {phase === "gameover" && !showReward && (
         <GameOverScreen
           score={score}
           checkpointNumber={checkpointNumber}
-          totalDiamonds={totalDiamonds}
+          eligibility={eligibility}
           onRestart={onRestart}
+          onClaim={() => setShowReward(true)}
         />
       )}
 
-      {/* HUD en jeu */}
       {phase === "playing" && !showReward && (
         <>
           <HUD
@@ -938,7 +975,7 @@ export function GameUI({
             checkpointNumber={checkpointNumber}
             playTime={playTime}
             nextCheckpointAt={nextCheckpointAt}
-            totalDiamonds={totalDiamonds}
+            eligibility={eligibility}
           />
           <TouchControls onChangeLane={onChangeLane} onJump={onJump} />
         </>

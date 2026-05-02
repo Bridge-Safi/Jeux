@@ -22,6 +22,11 @@ export type Profile = {
   device_fingerprint?: string;
   hardware_prefix?: string;
   player_email?: string;
+  /* Programme d'engagement Bridge */
+  bridge_phone?: string;
+  first_play_date?: string;     // ISO YYYY-MM-DD
+  play_days?: { date: string; playSeconds: number }[];
+  menus_claimed?: number;
   created_at?: string;
   updated_at?: string;
 };

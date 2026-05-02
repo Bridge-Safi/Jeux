@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { isSupabaseConfigured } from "../lib/supabase";
-import { ensureProfile, saveScore, getProfile } from "../lib/playerProfile";
+import { ensureProfile, saveScore, getProfile, recordPlaySession } from "../lib/playerProfile";
 import type { Profile } from "../lib/supabase";
 
 const AUTOSAVE_INTERVAL = 10_000; // rafraîchit le profil toutes les 10s
@@ -73,6 +73,9 @@ export function useSupabaseSync(score: number, phase: string, playTime: number) 
 
       /* saveScore valide côté client avant d'écrire dans Supabase */
       await saveScore(diamondsToSave, sardines, sessionTime);
+
+      /* Enregistre le temps de jeu de la session pour le programme d'engagement Bridge */
+      await recordPlaySession(sessionTime);
 
       const updated = await getProfile();
       if (updated) setProfile(updated);
