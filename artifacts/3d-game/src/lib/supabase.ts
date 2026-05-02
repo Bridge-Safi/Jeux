@@ -27,6 +27,8 @@ export type Profile = {
   first_play_date?: string;     // ISO YYYY-MM-DD
   play_days?: { date: string; playSeconds: number }[];
   menus_claimed?: number;
+  bonus_days?: string[];                // dates already awarded the +2 000 💎 bonus
+  free_delivery_credits?: number;       // crédits de livraison gratuite
   created_at?: string;
   updated_at?: string;
 };

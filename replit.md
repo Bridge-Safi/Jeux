@@ -38,7 +38,15 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - Checkpoint every 50s → interactive overlay (quiz, form, video ad, sponsor quiz)
 - Score = diamonds × 10; sardines = score ÷ 50
 
-### Bridge Eats engagement program (free menu unlock)
+### Bridge Shark engagement program (free menu unlock) — NEW RULES 2026
+- **15 000 💎** total to collect (DIAMONDS_PER_MENU = 15_000), pace 1 000 💎/h
+- **5 CONSECUTIVE days** of play, 3-4h each day (≥ 15h total)
+- Claim available **on day 6** (DAYS_BEFORE_CLAIM = 6)
+- Shortfall: **1 000 💎 missing = 5 DH** (DIAMONDS_PER_PACK / DH_PER_PACK)
+- Bonus: **2h MORE** in one session → +2 000 💎 + 100% free delivery
+- Home screen redesigned in green Bridge Shark theme: circular shark avatar with animated green ring, ID JOUEUR + SESSION cards, MES DIAMANTS / OBJECTIF progress, big green "JOUER MAINTENANT" button, "COMMENT GAGNER ?" section listing all 5 rules.
+
+### Legacy notes (superseded by 2026 rules above)
 Three cumulative criteria — all enforced server-side:
 1. **30,000 💎** total collected (DIAMONDS_PER_MENU)
 2. **3 distinct days** with **≥3h** play each (REQUIRED_PLAY_DAYS, REQUIRED_SECONDS_PER_DAY=10800)

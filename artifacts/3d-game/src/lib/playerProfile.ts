@@ -4,23 +4,36 @@ import { getDeviceId, getHardwarePrefix } from "./deviceFingerprint";
 const PLAYER_NAME_KEY = "safi_runner_player_name";
 const MAX_DIAMONDS_PER_SECOND = 1.8;
 
-/* ─── Programme Bridge Eats (engagement strict) ───────────────
-   - 30 000 💎 cumulés
-   - 3 jours distincts avec ≥ 3h de jeu chacun
-   - 4ᵉ jour à partir du 1ᵉʳ jour personnel pour réclamer le menu
+/* ─── Programme Bridge — nouvelles règles (5 jours consécutifs) ─
+   - 15 000 💎 cumulés (rythme cible : 1 000 💎/h)
+   - 5 jours CONSÉCUTIFS avec 3 à 4h de jeu chacun (≥ 15h total)
+   - Réclamation possible au 6ᵉ jour calendaire
+   - Bonus : 2h DE PLUS qu'une session normale → +2 000 💎 + livraison gratuite
    ─────────────────────────────────────────────────────────────── */
-export const DIAMONDS_PER_MENU      = 30_000;
-export const REQUIRED_PLAY_DAYS     = 3;
-export const REQUIRED_SECONDS_PER_DAY = 10_800;       // 3h
-export const DAYS_BEFORE_CLAIM      = 4;              // J+0 = 1ᵉʳ jour ; réclame au J+3 calendaire
+export const DIAMONDS_PER_MENU      = 15_000;
+export const REQUIRED_PLAY_DAYS     = 5;
+export const REQUIRED_SECONDS_PER_DAY = 10_800;       // 3h minimum / jour
+export const TARGET_SECONDS_PER_DAY   = 14_400;       // 4h cible / jour
+export const DAYS_BEFORE_CLAIM      = 6;              // J1 = 1ᵉʳ jour ; réclame au J6
+export const TOTAL_REQUIRED_HOURS   = 15;             // 15h cumulées sur 5 jours
 
-/* Complément payant : 1 DH = 1 000 💎 manquants (arrondi au DH supérieur). */
-export const DIAMONDS_PER_DIRHAM    = 1_000;
+/* Bonus livraison gratuite : 2h DE PLUS qu'une session normale (3h)
+   → soit ≥ 5h sur une seule journée → +2 000 💎 + livraison 100% offerte. */
+export const BONUS_EXTRA_SECONDS    = 7_200;          // 2h en plus
+export const BONUS_DIAMONDS         = 2_000;
+export const BONUS_TRIGGER_SECONDS  = REQUIRED_SECONDS_PER_DAY + BONUS_EXTRA_SECONDS; // 5h
 
-/* Convertit un nombre de 💎 manquants en DH à payer (entier, arrondi sup.). */
+/* Complément payant : 1 000 💎 manquants = 5 DH (arrondi au millier sup.). */
+export const DIAMONDS_PER_PACK     = 1_000;
+export const DH_PER_PACK           = 5;
+/* Rétrocompat : 1 DH = 200 💎. */
+export const DIAMONDS_PER_DIRHAM   = DIAMONDS_PER_PACK / DH_PER_PACK;
+
+/* Convertit un nombre de 💎 manquants en DH à payer.
+   Tarif : par paliers de 1 000 💎 = 5 DH (arrondi au millier supérieur). */
 export function shortfallDh(missingDiamonds: number): number {
   if (missingDiamonds <= 0) return 0;
-  return Math.ceil(missingDiamonds / DIAMONDS_PER_DIRHAM);
+  return Math.ceil(missingDiamonds / DIAMONDS_PER_PACK) * DH_PER_PACK;
 }
 
 /* ─── Types ──────────────────────────────────────────────────── */
@@ -217,6 +230,29 @@ export async function recordPlaySession(playTimeSeconds: number): Promise<void> 
   }
 }
 
+/* ─── Plus longue série de jours consécutifs qualifiants (≥ 3h)
+   Utilisée par l'UI pour afficher la progression "X / 5".
+   La validation finale stricte est faite côté SERVEUR dans claim_menu.
+   ─────────────────────────────────────────────────────────────── */
+export function longestQualifyingStreak(playDays: PlayDay[]): number {
+  const dates = playDays
+    .filter((d) => d.playSeconds >= REQUIRED_SECONDS_PER_DAY)
+    .map((d) => d.date)
+    .sort();
+  if (dates.length === 0) return 0;
+  let best = 1;
+  let cur = 1;
+  for (let i = 1; i < dates.length; i++) {
+    if (daysBetween(dates[i - 1], dates[i]) === 1) {
+      cur += 1;
+      if (cur > best) best = cur;
+    } else {
+      cur = 1;
+    }
+  }
+  return best;
+}
+
 /* ─── Calcule l'éligibilité au menu gratuit ────────────────────
    Pure function : ne touche pas la base, marche sur le Profile passé.
    ─────────────────────────────────────────────────────────────── */
@@ -227,7 +263,9 @@ export function getMenuEligibility(profile: Profile | null): MenuEligibility {
   const menusAvailable    = Math.max(0, menusEarnedRaw - menusClaimed);
 
   const playDays: PlayDay[] = Array.isArray(profile?.play_days) ? profile!.play_days! : [];
-  const qualifyingDays = playDays.filter((d) => d.playSeconds >= REQUIRED_SECONDS_PER_DAY).length;
+  /* La règle "5 jours CONSÉCUTIFS" est appliquée côté serveur (claim_menu RPC).
+     Côté client on calcule la plus longue série actuelle pour l'UI. */
+  const qualifyingDays = longestQualifyingStreak(playDays);
 
   const today = todayISO();
   const todayEntry = playDays.find((d) => d.date === today);

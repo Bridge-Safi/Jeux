@@ -28,13 +28,11 @@ CREATE OR REPLACE FUNCTION get_player_diamonds(p_phone TEXT)
 RETURNS JSON AS $$
 DECLARE
   prof              RECORD;
-  required_secs     CONSTANT INTEGER := 10800;   -- 3h
-  diamonds_per_menu CONSTANT INTEGER := 30000;
-  qualifying        INTEGER := 0;
+  required_secs     CONSTANT INTEGER := 10800;   -- 3h min/jour
+  diamonds_per_menu CONSTANT INTEGER := 15000;   -- nouvelles règles 5j
+  best_streak       INTEGER := 0;
   menus_earned      INTEGER;
   menus_avail       INTEGER;
-  i                 INTEGER;
-  entry             JSONB;
   normalized_phone  TEXT;
 BEGIN
   -- Normalisation : ne garder que chiffres et +
@@ -44,7 +42,8 @@ BEGIN
     RETURN json_build_object('ok', false, 'error', 'invalid_phone');
   END IF;
 
-  SELECT diamonds_collected, play_days, menus_claimed, first_play_date, updated_at
+  SELECT diamonds_collected, play_days, menus_claimed, first_play_date,
+         updated_at, free_delivery_credits
     INTO prof
     FROM profiles
    WHERE bridge_phone = normalized_phone
@@ -54,14 +53,21 @@ BEGIN
     RETURN json_build_object('ok', false, 'error', 'not_found', 'phone', normalized_phone);
   END IF;
 
-  -- Compter les jours qualifiants (≥ 3h)
-  IF prof.play_days IS NOT NULL THEN
-    FOR i IN 0 .. (jsonb_array_length(prof.play_days) - 1) LOOP
-      entry := prof.play_days -> i;
-      IF (entry->>'playSeconds')::int >= required_secs THEN
-        qualifying := qualifying + 1;
-      END IF;
-    END LOOP;
+  -- Plus longue série de jours CONSÉCUTIFS qualifiants (≥ 3h chacun)
+  IF prof.play_days IS NOT NULL AND jsonb_array_length(prof.play_days) > 0 THEN
+    WITH q AS (
+      SELECT (e->>'date')::date AS d
+        FROM jsonb_array_elements(prof.play_days) e
+       WHERE (e->>'playSeconds')::int >= required_secs
+    ),
+    ord AS (
+      SELECT d, ROW_NUMBER() OVER (ORDER BY d)::int AS rn FROM q
+    ),
+    grp AS (
+      SELECT d, (d - rn) AS g FROM ord
+    )
+    SELECT COALESCE(MAX(c), 0) INTO best_streak
+      FROM (SELECT g, COUNT(*)::int AS c FROM grp GROUP BY g) s;
   END IF;
 
   menus_earned := FLOOR(COALESCE(prof.diamonds_collected, 0)::float / diamonds_per_menu);
@@ -69,14 +75,15 @@ BEGIN
 
   -- ATTENTION : ne JAMAIS retourner UUID/email/device_fingerprint ici.
   RETURN json_build_object(
-    'ok',              true,
-    'phone',           normalized_phone,
-    'diamonds',        COALESCE(prof.diamonds_collected, 0),
-    'qualifying_days', qualifying,
-    'menus_earned',    menus_earned,
-    'menus_claimed',   COALESCE(prof.menus_claimed, 0),
-    'menus_available', menus_avail,
-    'updated_at',      prof.updated_at
+    'ok',                    true,
+    'phone',                 normalized_phone,
+    'diamonds',              COALESCE(prof.diamonds_collected, 0),
+    'qualifying_days',       best_streak,                            -- série consécutive
+    'menus_earned',          menus_earned,
+    'menus_claimed',         COALESCE(prof.menus_claimed, 0),
+    'menus_available',       menus_avail,
+    'free_delivery_credits', COALESCE(prof.free_delivery_credits, 0),
+    'updated_at',            prof.updated_at
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;

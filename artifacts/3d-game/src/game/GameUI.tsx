@@ -185,15 +185,15 @@ function EngagementCard({ eligibility, compact = false }: {
 
   return (
     <div style={{
-      background: "linear-gradient(135deg,rgba(0,0,0,0.78),rgba(30,10,0,0.85))",
+      background: "linear-gradient(135deg,rgba(0,30,15,0.88),rgba(0,60,30,0.85))",
       backdropFilter: "blur(10px)",
-      border: "1px solid rgba(255,140,0,0.35)",
+      border: "1.5px solid rgba(0,230,118,0.45)",
       borderRadius: compact ? 12 : 16,
       padding: compact ? "8px 12px" : "12px 16px",
       minWidth: compact ? 200 : 0,
-      boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+      boxShadow: "0 4px 20px rgba(0,200,80,0.25), 0 0 0 1px rgba(0,230,118,0.15) inset",
     }}>
-      <div style={{ color: "#ffa726", fontSize: compact ? 10 : 12, fontWeight: 800, marginBottom: 8, letterSpacing: 0.5 }}>
+      <div style={{ color: "#00e676", fontSize: compact ? 10 : 12, fontWeight: 800, marginBottom: 8, letterSpacing: 0.5 }}>
         {t("bridge.programTitle")}
       </div>
 
@@ -205,25 +205,26 @@ function EngagementCard({ eligibility, compact = false }: {
             {formatNum(diamondsCollected)} / {formatNum(DIAMONDS_PER_MENU)}
           </span>
         </div>
-        <div style={{ height: compact ? 5 : 6, background: "rgba(255,255,255,0.1)", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ height: compact ? 5 : 6, background: "rgba(255,255,255,0.08)", borderRadius: 4, overflow: "hidden" }}>
           <div style={{
             height: "100%", width: `${diamondPct}%`,
-            background: "linear-gradient(90deg,#ff6f00,#ffd54f)",
+            background: "linear-gradient(90deg,#00c853,#00e676,#69f0ae)",
             transition: "width 0.5s",
+            boxShadow: "0 0 10px rgba(0,230,118,0.6)",
           }} />
         </div>
       </div>
 
-      {/* Critère 2 : Jours qualifiés (≥ 3h) */}
+      {/* Critère 2 : Jours consécutifs (3-4h) */}
       <div style={{ marginBottom: 7 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: compact ? 9 : 11, marginBottom: 3 }}>
           <span style={{ color: "#fff" }}>{t("bridge.activeDays")}</span>
-          <span style={{ color: "#90caf9", fontWeight: 700 }} dir="ltr">{qualifyingDays} / {REQUIRED_PLAY_DAYS}</span>
+          <span style={{ color: "#69f0ae", fontWeight: 700 }} dir="ltr">{qualifyingDays} / {REQUIRED_PLAY_DAYS}</span>
         </div>
-        <div style={{ height: compact ? 5 : 6, background: "rgba(255,255,255,0.1)", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ height: compact ? 5 : 6, background: "rgba(255,255,255,0.08)", borderRadius: 4, overflow: "hidden" }}>
           <div style={{
             height: "100%", width: `${dayPct}%`,
-            background: "linear-gradient(90deg,#1565c0,#42a5f5)",
+            background: "linear-gradient(90deg,#1b5e20,#4caf50,#a5d6a7)",
             transition: "width 0.5s",
           }} />
         </div>
@@ -232,8 +233,9 @@ function EngagementCard({ eligibility, compact = false }: {
       {/* Critère 3 : aujourd'hui */}
       <div style={{
         fontSize: compact ? 9 : 11, color: "#a5d6a7",
-        background: "rgba(0,0,0,0.3)", borderRadius: 6,
+        background: "rgba(0,0,0,0.35)", borderRadius: 6,
         padding: "4px 8px", textAlign: "center", marginTop: 6,
+        border: "1px solid rgba(0,230,118,0.15)",
       }}>
         {t("bridge.todayLabel", { time: formatTimeRemaining(todaySecondsRemaining) })}
         {daysSinceFirstPlay > 0 && (
@@ -770,12 +772,13 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
   );
 }
 
-/* ─── Écran de démarrage ─────────────────────────────────────── */
+/* ─── Écran de démarrage — thème "Bridge Shark" vert ─────────── */
 function StartScreen({ onStart, eligibility, onClaim }: {
   onStart: () => void; eligibility: MenuEligibility; onClaim: () => void;
 }) {
   const { t } = useT();
   const hasMenu = eligibility.menusAvailable > 0;
+  const diamondPct = Math.min(100, ((eligibility.diamondsCollected % DIAMONDS_PER_MENU) / DIAMONDS_PER_MENU) * 100);
 
   return (
     <div style={{
@@ -783,9 +786,10 @@ function StartScreen({ onStart, eligibility, onClaim }: {
       backgroundImage: "url(/assets/shark-warrior-night.jpeg)",
       backgroundSize: "cover", backgroundPosition: "center top",
     }}>
+      {/* Voile sombre teinté vert (au lieu de bleu) */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        background: "linear-gradient(to bottom,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.05) 30%,rgba(0,10,40,0.88) 60%,rgba(0,5,20,0.98) 100%)",
+        background: "linear-gradient(to bottom,rgba(0,30,15,0.45) 0%,rgba(0,20,10,0.7) 35%,rgba(0,15,8,0.94) 65%,rgba(0,10,5,0.99) 100%)",
       }} />
 
       <div style={{ position: "absolute", top: 16, left: 16, zIndex: 20, pointerEvents: "auto" }}>
@@ -799,84 +803,196 @@ function StartScreen({ onStart, eligibility, onClaim }: {
         display: "flex", flexDirection: "column",
         alignItems: "center",
       }}>
-        <div style={{ flex: 1, minHeight: 160 }} />
+        <div style={{ flex: 1, minHeight: 130 }} />
 
         <div style={{ width: "100%", maxWidth: 500, padding: "0 20px 32px", textAlign: "center" }}>
+
+          {/* Avatar circulaire avec anneau vert + badge LIVE */}
+          <div style={{
+            position: "relative", width: 156, height: 156, margin: "0 auto 14px",
+          }}>
+            <div style={{
+              position: "absolute", inset: -6, borderRadius: "50%",
+              background: "conic-gradient(from 0deg,#00e676,#00c853,#69f0ae,#00e676)",
+              animation: "spin 6s linear infinite",
+              filter: "blur(0.5px)",
+              opacity: 0.9,
+            }} />
+            <div style={{
+              position: "absolute", inset: 0, borderRadius: "50%",
+              border: "3px solid rgba(0,230,118,0.85)",
+              background: "url(/assets/shark-warrior-night.jpeg) center/cover",
+              boxShadow: "0 0 32px rgba(0,230,118,0.55), 0 0 0 6px rgba(0,30,15,0.85) inset",
+            }} />
+            <div style={{
+              position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)",
+              background: "linear-gradient(135deg,#00c853,#00e676)",
+              color: "#003311", fontWeight: 900, fontSize: 10, letterSpacing: 1.5,
+              padding: "3px 12px", borderRadius: 12,
+              boxShadow: "0 4px 12px rgba(0,200,80,0.55)",
+            }}>● LIVE</div>
+          </div>
+
+          {/* Titre SAFI RUNNER */}
           <div style={{
             fontFamily: "'Bangers', sans-serif",
-            fontSize: "clamp(40px,12vw,58px)", letterSpacing: 4, color: "#ffeb3b",
-            textShadow: "3px 3px 0 #1a1a1a, 6px 6px 0 #c62828, 0 0 40px #ff8f00",
-            lineHeight: 1, marginBottom: 4, transform: "rotate(-2deg)",
+            fontSize: "clamp(38px,11vw,54px)", letterSpacing: 4, color: "#ffeb3b",
+            textShadow: "3px 3px 0 #003311, 6px 6px 0 #00c853, 0 0 40px rgba(0,230,118,0.5)",
+            lineHeight: 1, marginBottom: 2, transform: "rotate(-2deg)",
           }}>
             {t("start.title")}
           </div>
-          <div style={{ fontSize: 12, color: "#90caf9", marginBottom: 14, letterSpacing: 2, fontWeight: 600, textTransform: "uppercase" }}>
-            {t("start.subtitle")}
+          <div style={{
+            display: "inline-block",
+            fontSize: 11, color: "#69f0ae", marginBottom: 16, letterSpacing: 3,
+            fontWeight: 700, textTransform: "uppercase",
+            borderTop: "1px solid rgba(0,230,118,0.4)",
+            borderBottom: "1px solid rgba(0,230,118,0.4)",
+            padding: "3px 10px",
+          }}>
+            ─ {t("start.subtitle")} ─
           </div>
 
-          {/* Carte engagement Bridge */}
-          <div style={{ marginBottom: 14 }}>
-            <EngagementCard eligibility={eligibility} />
+          {/* Cartes ID JOUEUR + SESSION (style Bridge Shark) */}
+          <div style={{
+            display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12, textAlign: "start",
+          }}>
+            <div style={{
+              background: "linear-gradient(135deg,rgba(0,40,20,0.9),rgba(0,25,12,0.85))",
+              border: "1px solid rgba(0,230,118,0.3)", borderRadius: 14,
+              padding: "10px 12px", boxShadow: "0 4px 16px rgba(0,80,40,0.3)",
+            }}>
+              <div style={{ fontSize: 9, color: "#69f0ae", letterSpacing: 1.5, fontWeight: 700, marginBottom: 4 }}>ID JOUEUR</div>
+              <div style={{ fontSize: 14, color: "#fff", fontWeight: 800, letterSpacing: 1, fontFamily: "'Fredoka', monospace" }} dir="ltr">
+                BR-{(eligibility.diamondsCollected.toString(36).toUpperCase() + "XXXXXX").slice(0, 6)}
+              </div>
+            </div>
+            <div style={{
+              background: "linear-gradient(135deg,rgba(40,30,0,0.9),rgba(25,18,0,0.85))",
+              border: "1px solid rgba(255,193,7,0.3)", borderRadius: 14,
+              padding: "10px 12px", boxShadow: "0 4px 16px rgba(80,60,0,0.3)",
+            }}>
+              <div style={{ fontSize: 9, color: "#ffd54f", letterSpacing: 1.5, fontWeight: 700, marginBottom: 4 }}>⏱ SESSION</div>
+              <div style={{ fontSize: 13, color: "#fff", fontWeight: 800 }}>
+                {t("bridge.session")}
+              </div>
+            </div>
+          </div>
+
+          {/* Carte MES DIAMANTS / OBJECTIF */}
+          <div style={{
+            background: "linear-gradient(135deg,rgba(0,40,20,0.92),rgba(0,25,12,0.88))",
+            border: "1.5px solid rgba(0,230,118,0.4)", borderRadius: 16,
+            padding: "12px 14px", marginBottom: 12,
+            boxShadow: "0 6px 24px rgba(0,100,50,0.35), 0 0 0 1px rgba(0,230,118,0.1) inset",
+            textAlign: "start",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <div>
+                <div style={{ fontSize: 9, color: "#69f0ae", letterSpacing: 1.5, fontWeight: 700 }}>{t("bridge.myDiamonds").toUpperCase()}</div>
+                <div style={{ fontSize: 24, color: "#ffd54f", fontWeight: 900, lineHeight: 1, textShadow: "0 0 12px rgba(255,213,79,0.5)" }} dir="ltr">
+                  {formatNum(eligibility.diamondsCollected)} 💎
+                </div>
+              </div>
+              <div style={{ textAlign: "end" }}>
+                <div style={{ fontSize: 9, color: "#69f0ae", letterSpacing: 1.5, fontWeight: 700 }}>{t("bridge.objective").toUpperCase()}</div>
+                <div style={{ fontSize: 18, color: "#a5d6a7", fontWeight: 900, lineHeight: 1.2 }} dir="ltr">
+                  {formatNum(DIAMONDS_PER_MENU)} 💎
+                </div>
+              </div>
+            </div>
+            <div style={{ height: 8, background: "rgba(0,0,0,0.4)", borderRadius: 6, overflow: "hidden", marginBottom: 4 }}>
+              <div style={{
+                height: "100%", width: `${diamondPct}%`,
+                background: "linear-gradient(90deg,#00c853,#00e676,#69f0ae)",
+                transition: "width 0.6s",
+                boxShadow: "0 0 12px rgba(0,230,118,0.7)",
+              }} />
+            </div>
+            <div style={{ fontSize: 10, color: "#a5d6a7", textAlign: "center", letterSpacing: 1 }}>
+              {Math.round(diamondPct)}% · {t("bridge.progress").toUpperCase()}
+            </div>
           </div>
 
           {/* Bouton Réclamer si menu disponible */}
           {hasMenu && (
             <button onClick={onClaim} style={{
-              background: "linear-gradient(135deg,#2e7d32,#66bb6a)",
-              color: "#fff", border: "none", borderRadius: 50,
+              background: "linear-gradient(135deg,#1b5e20,#388e3c,#1b5e20)",
+              color: "#fff", border: "2px solid #66bb6a", borderRadius: 50,
               padding: "12px 30px", fontSize: 15, fontWeight: 900,
-              cursor: "pointer", letterSpacing: 1.5, marginBottom: 14,
-              boxShadow: "0 0 30px #4caf5088",
+              cursor: "pointer", letterSpacing: 1.5, marginBottom: 12,
+              boxShadow: "0 0 30px rgba(76,175,80,0.6)",
               width: "100%", maxWidth: 340,
             }}>
               {t("claim.button.claim")}
             </button>
           )}
 
-          {/* Badges */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+          {/* GROS BOUTON JOUER MAINTENANT (style Bridge Shark) */}
+          <button
+            onClick={onStart}
+            style={{
+              background: "linear-gradient(135deg,#00c853 0%,#00e676 50%,#00c853 100%)",
+              color: "#003311", border: "none", borderRadius: 50,
+              padding: "16px 32px", fontSize: "clamp(16px,4.5vw,20px)", fontWeight: 900,
+              cursor: "pointer", letterSpacing: 2, textTransform: "uppercase",
+              boxShadow: "0 0 36px rgba(0,230,118,0.65), 0 8px 24px rgba(0,80,40,0.6)",
+              animation: "pulse 2s infinite", transition: "transform 0.1s",
+              width: "100%", maxWidth: 340, marginBottom: 16,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.03)")}
+            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            {t("bridge.playNow")}
+          </button>
+
+          {/* Section "COMMENT GAGNER ?" — nouvelles règles */}
+          <div style={{
+            background: "linear-gradient(135deg,rgba(0,30,15,0.92),rgba(0,20,10,0.88))",
+            border: "1px solid rgba(0,230,118,0.25)", borderRadius: 16,
+            padding: "12px 14px", textAlign: "start", marginBottom: 12,
+          }}>
+            <div style={{
+              fontSize: 12, color: "#00e676", fontWeight: 800, letterSpacing: 1.5,
+              marginBottom: 10, textTransform: "uppercase",
+            }}>
+              {t("bridge.howTitle")}
+            </div>
             {[
-              { icon: "💎",   text: t("start.badge.diamonds") },
-              { icon: "📅",   text: t("start.badge.days", { n: REQUIRED_PLAY_DAYS }) },
-              { icon: "🛵🚕", text: t("start.badge.menu") },
-            ].map((b, i) => (
+              t("bridge.how.duration"),
+              t("bridge.how.rate"),
+              t("bridge.how.shortfall"),
+              t("bridge.how.bonus"),
+              t("bridge.how.claim"),
+            ].map((line, i) => (
               <div key={i} style={{
-                background: "rgba(255,255,255,0.1)", backdropFilter: "blur(6px)",
-                border: "1px solid rgba(255,255,255,0.2)", borderRadius: 20,
-                padding: "4px 10px", fontSize: 10, color: "#e0e0e0",
-                display: "flex", alignItems: "center", gap: 4,
+                display: "flex", alignItems: "flex-start", gap: 8,
+                fontSize: 11, color: "#e0f2e7", marginBottom: 7, lineHeight: 1.45,
               }}>
-                {b.icon} {b.text}
+                <div style={{
+                  flexShrink: 0, width: 18, height: 18, borderRadius: "50%",
+                  background: "linear-gradient(135deg,#00c853,#00e676)",
+                  color: "#003311", fontSize: 10, fontWeight: 900,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginTop: 1,
+                }}>{i + 1}</div>
+                <div style={{ flex: 1 }}>{line}</div>
               </div>
             ))}
           </div>
 
-          <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, marginBottom: 18, color: "#aaa", fontSize: 10 }}>
+          {/* Contrôles (footer discret) */}
+          <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, color: "#666", fontSize: 10 }}>
             <span>{t("start.controls.lanes")}</span>
             <span style={{ opacity: 0.4 }}>|</span>
             <span>{t("start.controls.jump")}</span>
             <span style={{ opacity: 0.4 }}>|</span>
             <span>{t("start.controls.touch")}</span>
           </div>
-
-          <button
-            onClick={onStart}
-            style={{
-              background: "linear-gradient(135deg,#1565c0 0%,#42a5f5 50%,#1565c0 100%)",
-              color: "#fff", border: "none", borderRadius: 50,
-              padding: "16px 52px", fontSize: "clamp(18px,5vw,22px)", fontWeight: 900,
-              cursor: "pointer", letterSpacing: 3, textTransform: "uppercase",
-              boxShadow: "0 0 30px #1565c088, 0 6px 24px rgba(0,0,0,0.6)",
-              animation: "pulse 2s infinite", transition: "transform 0.1s",
-              width: "100%", maxWidth: 340,
-            }}
-            onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.04)")}
-            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-          >
-            {t("start.play")}
-          </button>
         </div>
       </div>
+
+      <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }
