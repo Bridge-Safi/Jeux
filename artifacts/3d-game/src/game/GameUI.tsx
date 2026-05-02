@@ -14,6 +14,7 @@ import {
 import type { Profile } from "../lib/supabase";
 import { useT, formatNum, t as tStatic } from "../lib/i18n";
 import { useDarkMode } from "../hooks/useDarkMode";
+import { useMusic } from "../hooks/useMusic";
 
 /* ─── Configuration Bridge Eats ─────────────────────────────── */
 export const BRIDGE_EATS_URL = "https://44474adc-9074-4015-a3b9-4e111cb8be39-00-11nld147gir6y.kirk.replit.dev/";
@@ -118,6 +119,7 @@ export const WHATSAPP_URL = `https://wa.me/${BRIDGE_EATS_WHATSAPP}?text=${WA_PRE
 function FloatingActions() {
   const { t } = useT();
   const [dark, toggleDark] = useDarkMode();
+  const { enabled: musicOn, toggle: toggleMusic } = useMusic();
   const baseBtn: React.CSSProperties = {
     width: 48, height: 48, borderRadius: "50%",
     border: "2px solid rgba(255,255,255,0.3)",
@@ -139,6 +141,23 @@ function FloatingActions() {
         pointerEvents: "auto",
       }}
     >
+      <button
+        onClick={toggleMusic}
+        title={t("ui.music")}
+        aria-label={musicOn ? t("ui.musicOn") : t("ui.musicOff")}
+        type="button"
+        style={{
+          ...baseBtn,
+          background: musicOn
+            ? "linear-gradient(135deg,#ad1457,#d81b60)"
+            : "linear-gradient(135deg,#37474f,#546e7a)",
+          color: "#fff",
+        }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        <span aria-hidden>{musicOn ? "🎵" : "🔇"}</span>
+      </button>
       <button
         onClick={toggleDark}
         title={dark ? t("ui.light") : t("ui.dark")}

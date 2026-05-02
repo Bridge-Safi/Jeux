@@ -66,6 +66,9 @@ const DICT: Record<Lang, Record<string, string>> = {
     "ui.darkOff": "Mode sombre désactivé",
     "ui.dark": "Sombre",
     "ui.light": "Clair",
+    "ui.music": "Musique",
+    "ui.musicOn": "Musique orientale activée",
+    "ui.musicOff": "Musique coupée",
 
     /* Touch controls */
     "controls.swipeHint": "← SWIPE pour changer de voie · SWIPE ↑ pour sauter →",
@@ -275,6 +278,9 @@ const DICT: Record<Lang, Record<string, string>> = {
     "ui.darkOff": "Dark mode off",
     "ui.dark": "Dark",
     "ui.light": "Light",
+    "ui.music": "Music",
+    "ui.musicOn": "Oriental music on",
+    "ui.musicOff": "Music muted",
 
     "controls.swipeHint": "← SWIPE to switch lane · SWIPE ↑ to jump →",
 
@@ -471,6 +477,9 @@ const DICT: Record<Lang, Record<string, string>> = {
     "ui.darkOff": "تم إيقاف الوضع الداكن",
     "ui.dark": "داكن",
     "ui.light": "فاتح",
+    "ui.music": "موسيقى",
+    "ui.musicOn": "تم تفعيل الموسيقى الشرقية",
+    "ui.musicOff": "تم كتم الموسيقى",
 
     "controls.swipeHint": "← اسحب لتغيير المسار · اسحب لأعلى للقفز →",
 

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { KeyboardControls, useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -15,6 +15,7 @@ import { useSupabaseSync } from "../hooks/useSupabaseSync";
 import { useGamepad } from "../hooks/useGamepad";
 import { useT } from "../lib/i18n";
 import { useDarkMode } from "../hooks/useDarkMode";
+import { useMusic } from "../hooks/useMusic";
 
 enum Controls {
   left = "left",
@@ -127,6 +128,23 @@ export function Game() {
   const { state, startGame, resumeGame, changeLane, jump, tick } = gameState;
   const { t } = useT();
   const [dark] = useDarkMode();
+  const { startIfEnabled: startMusic, stop: stopMusic } = useMusic();
+
+  /* Démarre la musique orientale dès que la partie commence (ce clic
+     est le user-gesture exigé par les navigateurs pour activer
+     l'AudioContext). Coupe quand la partie se termine. */
+  const handleStart = useCallback(() => {
+    startMusic();
+    startGame();
+  }, [startMusic, startGame]);
+
+  useEffect(() => {
+    if (state.phase === "gameover") stopMusic();
+  }, [state.phase, stopMusic]);
+
+  useEffect(() => {
+    return () => { stopMusic(); };
+  }, [stopMusic]);
 
   const { profile, status } = useSupabaseSync(state.score, state.phase, state.playTime);
 
@@ -179,8 +197,8 @@ export function Game() {
         nextCheckpointAt={state.nextCheckpointAt}
         playTime={state.playTime}
         profile={profile}
-        onStart={startGame}
-        onRestart={startGame}
+        onStart={handleStart}
+        onRestart={handleStart}
         onChangeLane={changeLane}
         onJump={jump}
       />
