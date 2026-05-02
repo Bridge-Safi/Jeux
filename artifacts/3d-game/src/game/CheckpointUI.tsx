@@ -577,17 +577,302 @@ function SponsorQuizActivity({ onComplete }: { onComplete: () => void }) {
 }
 
 // ——————————————————————————————————————————————
+// SUIVRE LES RÉSEAUX (3 TAPS RAPIDES)
+// ——————————————————————————————————————————————
+const socialAccounts = [
+  {
+    name: "Bridge Eats",
+    handle: "@bridge.eats",
+    insta: "https://www.instagram.com/bridge.eats",
+    facebook: "https://www.facebook.com/bridge.eats",
+    tiktok: "https://www.tiktok.com/@bridge.eats",
+  },
+  {
+    name: "Safi Runner",
+    handle: "@safirunner",
+    insta: "https://www.instagram.com/safirunner",
+    facebook: "https://www.facebook.com/safirunner",
+    tiktok: "https://www.tiktok.com/@safirunner",
+  },
+  {
+    name: "Médina Safi",
+    handle: "@medina.safi",
+    insta: "https://www.instagram.com/medina.safi",
+    facebook: "https://www.facebook.com/medina.safi",
+    tiktok: "https://www.tiktok.com/@medina.safi",
+  },
+];
+
+function SocialFollowActivity({ onComplete }: { onComplete: () => void }) {
+  const account = useMemo(
+    () => socialAccounts[Math.floor(Math.random() * socialAccounts.length)],
+    []
+  );
+  const [followed, setFollowed] = useState({ insta: false, facebook: false, tiktok: false });
+
+  const handleFollow = (platform: "insta" | "facebook" | "tiktok", url: string) => {
+    setFollowed((f) => ({ ...f, [platform]: true }));
+    try { window.open(url, "_blank", "noopener"); } catch {}
+  };
+
+  const allDone = followed.insta && followed.facebook && followed.tiktok;
+  const count = Number(followed.insta) + Number(followed.facebook) + Number(followed.tiktok);
+
+  const platforms = [
+    { key: "insta" as const, label: "Instagram", icon: "📸", color: "linear-gradient(135deg,#fd1d1d,#fcb045,#833ab4)", url: account.insta },
+    { key: "facebook" as const, label: "Facebook", icon: "👍", color: "linear-gradient(135deg,#1877f2,#0a4ea3)", url: account.facebook },
+    { key: "tiktok" as const, label: "TikTok", icon: "🎵", color: "linear-gradient(135deg,#000,#25f4ee 60%,#fe2c55)", url: account.tiktok },
+  ];
+
+  if (allDone) {
+    return (
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 52 }}>💖</div>
+        <div style={{ fontSize: 22, fontWeight: 900, color: "#e65100", marginTop: 8, fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>
+          Merci de nous suivre !
+        </div>
+        <div style={{ color: "#555", marginTop: 6, fontSize: 14 }}>
+          Ton soutien aide la médina de Safi à briller en ligne 🌟
+        </div>
+        <button style={BTN_PRIMARY} onClick={onComplete}>
+          Reprendre la course 🏃
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ textAlign: "center", marginBottom: 14 }}>
+        <div style={{ fontSize: 18, fontWeight: 800, color: "#1a1a1a" }}>
+          Suis <span style={{ color: "#e65100" }}>{account.handle}</span>
+        </div>
+        <div style={{ fontSize: 13, color: "#777", marginTop: 4 }}>
+          Tape les 3 boutons pour continuer ({count}/3)
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+        {platforms.map((p) => (
+          <button
+            key={p.key}
+            onClick={() => handleFollow(p.key, p.url)}
+            disabled={followed[p.key]}
+            style={{
+              background: followed[p.key] ? "linear-gradient(135deg,#43a047,#2e7d32)" : p.color,
+              color: "white",
+              border: "3px solid #1a1a1a",
+              borderRadius: 16,
+              padding: "16px 18px",
+              fontSize: 17,
+              fontWeight: 800,
+              cursor: followed[p.key] ? "default" : "pointer",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              boxShadow: followed[p.key] ? "0 2px 0 #1a1a1a" : "0 4px 0 #1a1a1a, 0 6px 16px rgba(0,0,0,0.3)",
+              transform: followed[p.key] ? "translateY(2px)" : "translateY(0)",
+              transition: "all 0.1s",
+              fontFamily: "'Fredoka', sans-serif",
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 26 }}>{p.icon}</span>
+              <span>{p.label}</span>
+            </span>
+            <span style={{ fontSize: 14, fontWeight: 700 }}>
+              {followed[p.key] ? "✓ Suivi" : "Suivre"}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ height: 10, background: "#eee", borderRadius: 8, overflow: "hidden", marginBottom: 6 }}>
+        <div style={{
+          height: "100%",
+          width: `${(count / 3) * 100}%`,
+          background: "linear-gradient(90deg,#fd1d1d,#fcb045,#833ab4)",
+          transition: "width 0.3s",
+        }} />
+      </div>
+      <div style={{ fontSize: 11, color: "#999", textAlign: "center" }}>
+        Tu peux fermer chaque page après l'avoir suivi
+      </div>
+    </div>
+  );
+}
+
+// ——————————————————————————————————————————————
+// REEL RESTAURANT (mini vidéo verticale)
+// ——————————————————————————————————————————————
+const reelRestos = [
+  {
+    name: "Snack So Safi",
+    handle: "@so.safi",
+    tagline: "Le tajine de poisson le plus frais de Safi 🐟",
+    bg: "linear-gradient(180deg,#1a237e 0%,#7e57c2 50%,#ff7043 100%)",
+    items: ["Tajine sardine", "Pastilla poisson", "Couscous mer"],
+    offer: "Code SAFIRUNNER → -15%",
+    emoji: "🍽️",
+  },
+  {
+    name: "Café Atlas",
+    handle: "@cafe.atlas.safi",
+    tagline: "Thé à la menthe & pâtisseries marocaines depuis 1952 ☕",
+    bg: "linear-gradient(180deg,#3e2723 0%,#6d4c41 50%,#bf360c 100%)",
+    items: ["Thé à la menthe", "Cornes de gazelle", "Briouates"],
+    offer: "Thé offert pour les joueurs Safi Runner",
+    emoji: "☕",
+  },
+  {
+    name: "Pizzeria El Bahar",
+    handle: "@elbahar.pizza",
+    tagline: "Pizza croustillante au bord de l'océan 🌊",
+    bg: "linear-gradient(180deg,#01579b 0%,#0288d1 50%,#ffd54f 100%)",
+    items: ["Pizza thon Safi", "Calzone aux fruits de mer", "Salade Atlas"],
+    offer: "1 pizza achetée = 1 boisson offerte",
+    emoji: "🍕",
+  },
+  {
+    name: "Burger Médina",
+    handle: "@burger.medina",
+    tagline: "Le smash burger fait main de la médina 🍔",
+    bg: "linear-gradient(180deg,#bf360c 0%,#ff5722 50%,#ffeb3b 100%)",
+    items: ["Smash classic", "Double cheese", "Burger kefta"],
+    offer: "Menu maxi à 49 DH avec le code SAFI",
+    emoji: "🍔",
+  },
+];
+
+function ReelActivity({ onComplete }: { onComplete: () => void }) {
+  const reel = useMemo(() => reelRestos[Math.floor(Math.random() * reelRestos.length)], []);
+  const [progress, setProgress] = useState(0);
+  const [liked, setLiked] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(() => setProgress((p) => Math.min(100, p + 100 / 80)), 100);
+    return () => clearInterval(id);
+  }, []);
+
+  const canContinue = progress >= 100;
+
+  return (
+    <div>
+      {/* Phone frame style reel vertical */}
+      <div style={{
+        background: "#000",
+        borderRadius: 24,
+        padding: 6,
+        margin: "0 auto 14px",
+        maxWidth: 280,
+        boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+      }}>
+        <div style={{
+          background: reel.bg,
+          borderRadius: 20,
+          height: 360,
+          position: "relative",
+          overflow: "hidden",
+          color: "white",
+        }}>
+          {/* Progress bar reel */}
+          <div style={{ position: "absolute", top: 8, left: 10, right: 10, height: 3, background: "rgba(255,255,255,0.3)", borderRadius: 2 }}>
+            <div style={{ height: "100%", width: `${progress}%`, background: "white", borderRadius: 2, transition: "width 0.1s linear" }} />
+          </div>
+
+          {/* Decorative emoji center */}
+          <div style={{
+            position: "absolute", top: "30%", left: 0, right: 0,
+            textAlign: "center", fontSize: 100,
+            filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))",
+            animation: "pulse 2s infinite",
+          }}>
+            {reel.emoji}
+          </div>
+
+          {/* Bottom info */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px 14px",
+            background: "linear-gradient(0deg,rgba(0,0,0,0.7),transparent)" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, fontFamily: "'Fredoka', sans-serif" }}>
+              {reel.name}
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 6 }}>{reel.handle}</div>
+            <div style={{ fontSize: 12, lineHeight: 1.4, marginBottom: 8 }}>{reel.tagline}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {reel.items.map((it, i) => (
+                <span key={i} style={{
+                  background: "rgba(255,255,255,0.2)",
+                  borderRadius: 8, padding: "3px 8px",
+                  fontSize: 10, fontWeight: 600,
+                  backdropFilter: "blur(4px)",
+                }}>
+                  {it}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Right action buttons (insta style) */}
+          <div style={{ position: "absolute", right: 10, bottom: 100, display: "flex", flexDirection: "column", gap: 14, alignItems: "center" }}>
+            <div onClick={() => setLiked(true)} style={{ cursor: "pointer", textAlign: "center" }}>
+              <div style={{ fontSize: 30, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }}>
+                {liked ? "❤️" : "🤍"}
+              </div>
+              <div style={{ fontSize: 10, fontWeight: 700 }}>{liked ? "1.2k" : "1.1k"}</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 28, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }}>💬</div>
+              <div style={{ fontSize: 10, fontWeight: 700 }}>89</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 28, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }}>📤</div>
+              <div style={{ fontSize: 10, fontWeight: 700 }}>Share</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Offer banner */}
+      <div style={{
+        background: "#fff8e1",
+        border: "2px dashed #ffd700",
+        borderRadius: 12,
+        padding: "10px 14px",
+        fontSize: 13,
+        color: "#e65100",
+        fontWeight: 700,
+        marginBottom: 12,
+        textAlign: "center",
+      }}>
+        🎁 {reel.offer}
+      </div>
+
+      {canContinue ? (
+        <button style={BTN_PRIMARY} onClick={onComplete}>
+          Reprendre la course 🏃
+        </button>
+      ) : (
+        <button style={{ ...BTN_PRIMARY, opacity: 0.4, cursor: "not-allowed" }} disabled>
+          Patienter… {Math.ceil((100 - progress) / 12.5)}s
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ——————————————————————————————————————————————
 // CHECKPOINT UI PRINCIPAL
 // ——————————————————————————————————————————————
-type ActivityType = "quiz" | "form" | "video" | "sponsorQuiz";
+type ActivityType = "quiz" | "form" | "video" | "sponsorQuiz" | "social" | "reel";
 
-const activityTypes: ActivityType[] = ["quiz", "form", "video", "sponsorQuiz"];
+const activityTypes: ActivityType[] = ["reel", "social", "quiz", "video", "sponsorQuiz", "form"];
 
 const activityTitles: Record<ActivityType, string> = {
   quiz: "🕌 Quiz Culture Marocaine",
   form: "📝 Sondage Satisfaction",
   video: "📺 Pause Publicitaire",
   sponsorQuiz: "🤝 Quiz Sponsor",
+  social: "💖 Suis-nous sur les réseaux !",
+  reel: "🎬 Reel Resto Safi",
 };
 
 const activitySubtitles: Record<ActivityType, string> = {
@@ -595,6 +880,8 @@ const activitySubtitles: Record<ActivityType, string> = {
   form: "Partagez votre avis sur Safi Runner",
   video: "Découvrez nos partenaires locaux",
   sponsorQuiz: "Répondez et découvrez une info sur Safi !",
+  social: "3 taps rapides : Insta, Facebook, TikTok",
+  reel: "Découvre une pépite de la médina en 8s",
 };
 
 const venueNames = [
@@ -610,10 +897,12 @@ export function CheckpointUI({ checkpointNumber, score, onResume }: CheckpointUI
   const [started, setStarted] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  const activity = useMemo<ActivityType>(
-    () => activityTypes[(checkpointNumber - 1) % activityTypes.length],
-    [checkpointNumber]
-  );
+  /* Sélection aléatoire pondérée pour de la variété (au lieu d'un cycle prévisible) */
+  const activity = useMemo<ActivityType>(() => {
+    // Mélange : 1er checkpoint = reel resto (toujours engageant), puis aléatoire
+    if (checkpointNumber === 1) return "reel";
+    return activityTypes[Math.floor(Math.random() * activityTypes.length)];
+  }, [checkpointNumber]);
   const venue = useMemo(
     () => venueNames[(checkpointNumber - 1) % venueNames.length],
     [checkpointNumber]
@@ -675,6 +964,8 @@ export function CheckpointUI({ checkpointNumber, score, onResume }: CheckpointUI
             {activity === "form" && <FormActivity onComplete={handleComplete} />}
             {activity === "video" && <VideoActivity onComplete={handleComplete} />}
             {activity === "sponsorQuiz" && <SponsorQuizActivity onComplete={handleComplete} />}
+            {activity === "social" && <SocialFollowActivity onComplete={handleComplete} />}
+            {activity === "reel" && <ReelActivity onComplete={handleComplete} />}
           </>
         )}
 

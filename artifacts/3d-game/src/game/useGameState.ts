@@ -34,7 +34,7 @@ export interface GameState {
    Le jeu démarre TRÈS facile (échauffement 15s) puis monte
    progressivement. Pour atteindre 1000 il faudra ~80s à fond.
    ─────────────────────────────────────────────────────────────── */
-const CHECKPOINT_INTERVAL = 60;   // pub toutes les 60s
+const CHECKPOINT_INTERVAL = 40;   // checkpoint toutes les 40s
 
 /* Vitesse — progression douce */
 const SPEED_START = 8;            // démarrage zen
