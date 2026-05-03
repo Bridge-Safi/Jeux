@@ -87,8 +87,11 @@ const DICT: Record<Lang, Record<string, string>> = {
     "start.badge.menu": "Menu offert au 6ᵉ jour",
 
     /* Classement TOP 7 */
-    "leader.title": "🏆 TOP 7 JOUEURS",
-    "leader.empty": "Aucun joueur classé pour le moment",
+    "leader.title": "🏆 TOP 7 — 3 JOURS",
+    "leader.subtitle": "Réinitialisation tous les 3 jours · seuls les 💎 gagnés CE CYCLE comptent",
+    "leader.resetIn": "Nouveau classement dans {d}j {h}h",
+    "leader.resetSoon": "Nouveau classement dans {h}h {m}min",
+    "leader.empty": "Personne dans ce cycle — sois le premier !",
     "leader.you": "VOUS",
     "leader.diamonds": "💎",
 
@@ -345,8 +348,11 @@ const DICT: Record<Lang, Record<string, string>> = {
     "start.badge.days": "{n} consecutive days",
     "start.badge.menu": "Free meal on day 6",
 
-    "leader.title": "🏆 TOP 7 PLAYERS",
-    "leader.empty": "No ranked player yet",
+    "leader.title": "🏆 TOP 7 — 3 DAYS",
+    "leader.subtitle": "Resets every 3 days · only 💎 earned THIS CYCLE count",
+    "leader.resetIn": "New ranking in {d}d {h}h",
+    "leader.resetSoon": "New ranking in {h}h {m}min",
+    "leader.empty": "No one in this cycle yet — be first!",
     "leader.you": "YOU",
     "leader.diamonds": "💎",
 
@@ -592,8 +598,11 @@ const DICT: Record<Lang, Record<string, string>> = {
     "hud.coins": "العملات",
     "hud.diamonds": "ألماس",
     "hud.score": "النتيجة",
-    "leader.title": "🏆 أفضل 7 لاعبين",
-    "leader.empty": "لا يوجد لاعب مصنف بعد",
+    "leader.title": "🏆 أفضل 7 — 3 أيام",
+    "leader.subtitle": "يُعاد كل 3 أيام · فقط 💎 المكتسبة في هذه الدورة",
+    "leader.resetIn": "تصنيف جديد خلال {d}ي {h}س",
+    "leader.resetSoon": "تصنيف جديد خلال {h}س {m}د",
+    "leader.empty": "لا أحد في هذه الدورة — كن الأول!",
     "leader.you": "أنت",
     "leader.diamonds": "💎",
 

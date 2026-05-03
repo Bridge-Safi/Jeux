@@ -6,6 +6,7 @@ import {
   getMenuEligibility,
   shortfallDh,
   getTopPlayers,
+  secondsUntilNextLeaderCycle,
   DIAMONDS_PER_MENU,
   DIAMONDS_PER_DIRHAM,
   REQUIRED_PLAY_DAYS,
@@ -1095,10 +1096,11 @@ function rankTier(rank: number): { bg: string; border: string; text: string; bad
   };
 }
 
-/* ─── Carte CLASSEMENT TOP 7 ──────────────────────────────────── */
+/* ─── Carte CLASSEMENT TOP 7 (cycle 3 jours) ──────────────────── */
 function LeaderboardCard() {
   const { t } = useT();
   const [entries, setEntries] = useState<LeaderEntry[] | null>(null);
+  const [secLeft, setSecLeft] = useState(secondsUntilNextLeaderCycle());
 
   useEffect(() => {
     let cancel = false;
@@ -1106,8 +1108,18 @@ function LeaderboardCard() {
       const top = await getTopPlayers(7);
       if (!cancel) setEntries(top);
     })();
-    return () => { cancel = true; };
+    /* Rafraîchit le compte à rebours toutes les minutes */
+    const tick = setInterval(() => setSecLeft(secondsUntilNextLeaderCycle()), 60_000);
+    return () => { cancel = true; clearInterval(tick); };
   }, []);
+
+  /* Formate le compte à rebours en "Xj Yh" si > 24h, sinon "Yh Zmin" */
+  const days = Math.floor(secLeft / 86400);
+  const hours = Math.floor((secLeft % 86400) / 3600);
+  const mins = Math.floor((secLeft % 3600) / 60);
+  const countdown = days > 0
+    ? t("leader.resetIn", { d: String(days), h: String(hours) })
+    : t("leader.resetSoon", { h: String(hours), m: String(mins) });
 
   return (
     <div style={{
@@ -1121,9 +1133,27 @@ function LeaderboardCard() {
     }}>
       <div style={{
         fontSize: 13, color: "#00e676", fontWeight: 800, letterSpacing: 1.5,
-        marginBottom: 10, textTransform: "uppercase", textAlign: "center",
+        marginBottom: 4, textTransform: "uppercase", textAlign: "center",
       }}>
         {t("leader.title")}
+      </div>
+
+      {/* Sous-titre explicatif + compte à rebours du cycle */}
+      <div style={{
+        fontSize: 9.5, color: "#9ec9b3", textAlign: "center",
+        letterSpacing: 0.3, lineHeight: 1.4, marginBottom: 8,
+        padding: "0 6px",
+      }}>
+        {t("leader.subtitle")}
+      </div>
+      <div style={{
+        fontSize: 10, color: "#ffd54f", textAlign: "center",
+        fontWeight: 800, letterSpacing: 0.8,
+        background: "rgba(255,193,7,0.08)",
+        border: "1px solid rgba(255,193,7,0.25)",
+        borderRadius: 8, padding: "4px 8px", marginBottom: 10,
+      }} dir="ltr">
+        ⏳ {countdown}
       </div>
 
       {entries === null && (

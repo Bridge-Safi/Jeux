@@ -5,6 +5,33 @@ import { getBridgeAuth } from "./bridgeAuth";
 const PLAYER_NAME_KEY = "safi_runner_player_name";
 const MAX_DIAMONDS_PER_SECOND = 2.0; // anti-cheat cap, > 6000/h = 1.67/s
 
+/* ─── Classement à fenêtre glissante de 3 jours ────────────────
+   Le TOP 7 se réinitialise tous les 3 jours. On utilise un ancrage
+   fixe (1er janvier 2026) et des cycles strictement de 72h, pour
+   que TOUS les joueurs partagent la même borne (peu importe leur
+   fuseau horaire — calculé en UTC). */
+const LEADER_CYCLE_DAYS = 3;
+const LEADER_EPOCH_MS = Date.UTC(2026, 0, 1); // 2026-01-01 00:00 UTC
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/* Renvoie le 1er jour du cycle courant au format ISO YYYY-MM-DD. */
+export function currentLeaderCycleStart(now: number = Date.now()): string {
+  const elapsedDays = Math.floor((now - LEADER_EPOCH_MS) / DAY_MS);
+  const cycleIndex = Math.floor(elapsedDays / LEADER_CYCLE_DAYS);
+  const startMs = LEADER_EPOCH_MS + cycleIndex * LEADER_CYCLE_DAYS * DAY_MS;
+  return new Date(startMs).toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
+/* Renvoie le nb de SECONDES restantes avant la fin du cycle courant
+   (= début du prochain cycle). Utilisé par l'UI pour afficher un
+   compte à rebours "Réinitialisation dans Xj Yh". */
+export function secondsUntilNextLeaderCycle(now: number = Date.now()): number {
+  const elapsedDays = Math.floor((now - LEADER_EPOCH_MS) / DAY_MS);
+  const cycleIndex = Math.floor(elapsedDays / LEADER_CYCLE_DAYS);
+  const nextStartMs = LEADER_EPOCH_MS + (cycleIndex + 1) * LEADER_CYCLE_DAYS * DAY_MS;
+  return Math.max(0, Math.floor((nextStartMs - now) / 1000));
+}
+
 /* ─── Programme Bridge — règles officielles (3 jours consécutifs) ─
    MATH OFFICIELLE :
      • Rythme : 6 000 💎 / heure de jeu
@@ -305,16 +332,30 @@ export async function saveScore(
 
   try {
     const { data: current } = await supabase
-      .from("profiles").select("diamonds_collected, sardines_points").eq("id", targetId).single();
-    const existing = current as Profile | null;
+      .from("profiles").select("diamonds_collected, sardines_points, period_diamonds, period_start").eq("id", targetId).single();
+    const existing = current as (Profile & { period_diamonds?: number; period_start?: string }) | null;
+
+    /* ── Fenêtre glissante : RESET si on entre dans un nouveau cycle ── */
+    const cycleStart = currentLeaderCycleStart();
+    const inSameCycle = existing?.period_start === cycleStart;
+    const periodBaseline = inSameCycle ? (existing?.period_diamonds ?? 0) : 0;
 
     const updates: Record<string, unknown> = {
       diamonds_collected: (existing?.diamonds_collected ?? 0) + validatedDiamonds,
       sardines_points:    (existing?.sardines_points ?? 0)    + validatedSardines,
+      period_diamonds:    periodBaseline + validatedDiamonds,
+      period_start:       cycleStart,
       updated_at: new Date().toISOString(),
     };
 
-    await supabase.from("profiles").update(updates).eq("id", targetId);
+    const { error } = await supabase.from("profiles").update(updates).eq("id", targetId);
+    /* 42703 = colonne manquante → la migration SQL n'a pas été passée.
+       On retente sans les colonnes period_* pour rester fonctionnel. */
+    if (error && error.code === "42703") {
+      delete updates.period_diamonds;
+      delete updates.period_start;
+      await supabase.from("profiles").update(updates).eq("id", targetId);
+    }
   } catch (err) {
     console.error("saveScore:", err);
   }
@@ -498,37 +539,56 @@ export async function markMenuClaimed(): Promise<{ success: boolean; error?: str
   }
 }
 
-/* ─── Classement TOP joueurs ───────────────────────────────────
-   Récupère les meilleurs joueurs triés par diamants collectés
-   (descendant). Utilisé par le LeaderboardCard sur l'écran d'accueil.
-   Anonymise le nom : "BR-XYZ123" si pas de username, sinon username. */
+/* ─── Classement TOP joueurs (fenêtre glissante 3 jours) ────────
+   Renvoie les `limit` meilleurs joueurs CE CYCLE-CI :
+   - Filtre `period_start = cycle courant` (= les autres sont d'un
+     ancien cycle, donc ignorés — leur compteur sera reset à leur
+     prochaine partie).
+   - Trie par `period_diamonds DESC`.
+   - Anonymise : "BR-XYZ123" si pas de username.
+   FALLBACK : si la migration SQL n'est pas passée (period_* absents),
+   on retombe sur le classement cumulatif `diamonds_collected`. */
 export type LeaderEntry = {
   id: string;
   rank: number;          // 1-based
   name: string;          // affichage : username ou code BR-XXXXXX
-  diamonds: number;
+  diamonds: number;      // 💎 GAGNÉS dans le cycle courant
 };
+
+function entriesFromRows(rows: Array<{ id: string; username?: string | null; diamonds: number }>): LeaderEntry[] {
+  return rows.map((p, i) => {
+    const code = (p.id ?? "XXXXXX").toString().replace(/-/g, "").slice(0, 6).toUpperCase();
+    const fallback = `BR-${code}`;
+    const name = (p.username && p.username.trim().length > 0) ? p.username : fallback;
+    return { id: p.id, rank: i + 1, name, diamonds: Number(p.diamonds) || 0 };
+  });
+}
 
 export async function getTopPlayers(limit = 7): Promise<LeaderEntry[]> {
   if (!isSupabaseConfigured) return [];
+  const cycleStart = currentLeaderCycleStart();
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id,username,diamonds_collected")
-      .order("diamonds_collected", { ascending: false })
+      .select("id,username,period_diamonds")
+      .eq("period_start", cycleStart)
+      .gt("period_diamonds", 0)
+      .order("period_diamonds", { ascending: false })
       .limit(limit);
+
+    /* 42703 = colonnes period_* absentes → fallback cumulatif */
+    if (error && error.code === "42703") {
+      const { data: fb } = await supabase
+        .from("profiles")
+        .select("id,username,diamonds_collected")
+        .order("diamonds_collected", { ascending: false })
+        .limit(limit);
+      if (!fb) return [];
+      return entriesFromRows(fb.map((p) => ({ id: p.id, username: p.username, diamonds: p.diamonds_collected })));
+    }
     if (error || !data) return [];
-    return data.map((p, i) => {
-      const code = (p.id ?? "XXXXXX").toString().replace(/-/g, "").slice(0, 6).toUpperCase();
-      const fallback = `BR-${code}`;
-      const name = (p.username && p.username.trim().length > 0) ? p.username : fallback;
-      return {
-        id: p.id,
-        rank: i + 1,
-        name,
-        diamonds: Number(p.diamonds_collected) || 0,
-      };
-    });
+
+    return entriesFromRows(data.map((p) => ({ id: p.id, username: p.username, diamonds: p.period_diamonds })));
   } catch {
     return [];
   }
