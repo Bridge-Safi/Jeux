@@ -3,6 +3,7 @@ import { getBridgeAuth, listenForParentAuth, setBridgeAuthManual, EVENT_NAME, ty
 import { navigateInApp } from "../lib/inAppNav";
 import { BRIDGE_EATS_URL } from "./GameUI";
 import { useT } from "../lib/i18n";
+import { LanguageSelector } from "../components/LanguageSelector";
 
 /* Écran de blocage : affiché tant que le joueur n'a pas son auth
    Bridge Eats (email + n°). Un gros bouton renvoie l'utilisateur sur
@@ -54,7 +55,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       background: "linear-gradient(135deg,#0d1b2a 0%,#1b263b 50%,#000814 100%)",
       padding: 20, boxSizing: "border-box",
       fontFamily: "'Fredoka', sans-serif",
+      position: "relative",
     }}>
+      {/* Sélecteur de langue — visible même quand bloqué (FR · EN · AR) */}
+      <LanguageSelector position="topRight" />
+
       <div style={{
         maxWidth: 460, width: "100%",
         background: "rgba(0,0,0,0.55)",

@@ -4,24 +4,24 @@ import { getDeviceId, getHardwarePrefix } from "./deviceFingerprint";
 const PLAYER_NAME_KEY = "safi_runner_player_name";
 const MAX_DIAMONDS_PER_SECOND = 1.8;
 
-/* ─── Programme Bridge — nouvelles règles (5 jours consécutifs) ─
-   - 15 000 💎 cumulés (rythme cible : 1 000 💎/h)
-   - 5 jours CONSÉCUTIFS avec 3 à 4h de jeu chacun (≥ 15h total)
-   - Réclamation possible au 6ᵉ jour calendaire
-   - Bonus : 2h DE PLUS qu'une session normale → +2 000 💎 + livraison gratuite
+/* ─── Programme Bridge — règles officielles (3 jours consécutifs) ─
+   - 15 000 💎 cumulés (rythme cible : 1 000 💎/h ≈ 5 000 💎/jour × 3)
+   - 3 jours CONSÉCUTIFS avec 3h de jeu par jour (≥ 9h total)
+   - Réclamation possible au 4ᵉ jour calendaire
+   - Bonus : 1h DE PLUS qu'une session normale → +2 000 💎 + livraison gratuite
    ─────────────────────────────────────────────────────────────── */
 export const DIAMONDS_PER_MENU      = 15_000;
-export const REQUIRED_PLAY_DAYS     = 5;
-export const REQUIRED_SECONDS_PER_DAY = 10_800;       // 3h minimum / jour
-export const TARGET_SECONDS_PER_DAY   = 14_400;       // 4h cible / jour
-export const DAYS_BEFORE_CLAIM      = 6;              // J1 = 1ᵉʳ jour ; réclame au J6
-export const TOTAL_REQUIRED_HOURS   = 15;             // 15h cumulées sur 5 jours
+export const REQUIRED_PLAY_DAYS     = 3;
+export const REQUIRED_SECONDS_PER_DAY = 10_800;       // 3h / jour
+export const TARGET_SECONDS_PER_DAY   = 10_800;       // 3h cible / jour
+export const DAYS_BEFORE_CLAIM      = 4;              // J1 = 1ᵉʳ jour ; réclame au J4
+export const TOTAL_REQUIRED_HOURS   = 9;              // 9h cumulées sur 3 jours
 
-/* Bonus livraison gratuite : 2h DE PLUS qu'une session normale (3h)
-   → soit ≥ 5h sur une seule journée → +2 000 💎 + livraison 100% offerte. */
-export const BONUS_EXTRA_SECONDS    = 7_200;          // 2h en plus
+/* Bonus livraison gratuite : 1h DE PLUS qu'une session normale (3h)
+   → soit ≥ 4h sur une seule journée → +2 000 💎 + livraison 100% offerte. */
+export const BONUS_EXTRA_SECONDS    = 3_600;          // 1h en plus
 export const BONUS_DIAMONDS         = 2_000;
-export const BONUS_TRIGGER_SECONDS  = REQUIRED_SECONDS_PER_DAY + BONUS_EXTRA_SECONDS; // 5h
+export const BONUS_TRIGGER_SECONDS  = REQUIRED_SECONDS_PER_DAY + BONUS_EXTRA_SECONDS; // 4h
 
 /* Complément payant : 1 000 💎 manquants = 5 DH (arrondi au millier sup.). */
 export const DIAMONDS_PER_PACK     = 1_000;

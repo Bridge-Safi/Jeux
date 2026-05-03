@@ -322,7 +322,7 @@ function EngagementCard({ eligibility, compact = false }: {
         </div>
       </div>
 
-      {/* Critère 2 : Jours consécutifs (3-4h) */}
+      {/* Critère 2 : Jours consécutifs (3h) */}
       <div style={{ marginBottom: 7 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: compact ? 9 : 11, marginBottom: 3 }}>
           <span style={{ color: "#fff" }}>{t("bridge.activeDays")}</span>
