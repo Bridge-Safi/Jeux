@@ -87,9 +87,10 @@ function Tajine({ x, z }: { x: number; z: number }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   COUSCOUS — grand plat creux jaune avec montagne de semoule
-   Légumes colorés + viande au sommet
+   COUSCOUS / BARBECUE — gardés en commentaire historique mais
+   plus utilisés : seul le tajine est désormais obstacle.
    ───────────────────────────────────────────────────────────── */
+// @ts-expect-error - composant conservé pour réintroduction future
 function Couscous({ x, z }: { x: number; z: number }) {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(() => {
@@ -183,9 +184,10 @@ function Couscous({ x, z }: { x: number; z: number }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   BARBECUE DE SARDINES — grill métallique avec braises rouges
-   Brochettes de sardines argentées + flammes + fumée
+   BARBECUE DE SARDINES — gardé en commentaire historique mais
+   plus utilisé : seul le tajine est désormais obstacle.
    ───────────────────────────────────────────────────────────── */
+// @ts-expect-error - composant conservé pour réintroduction future
 function BarbecueSardines({ x, z }: { x: number; z: number }) {
   const flameRef = useRef<THREE.Mesh>(null);
   const flame2Ref = useRef<THREE.Mesh>(null);
@@ -337,12 +339,9 @@ function BarbecueSardines({ x, z }: { x: number; z: number }) {
 export function Obstacles({ obstacles }: { obstacles: Obstacle[] }) {
   return (
     <>
-      {obstacles.map((o, idx) => {
+      {obstacles.map((o) => {
         const x = LANE_X[o.lane + 1];
-        const kind = idx % 3;
-        if (kind === 0) return <Tajine key={o.id} x={x} z={o.z} />;
-        if (kind === 1) return <Couscous key={o.id} x={x} z={o.z} />;
-        return <BarbecueSardines key={o.id} x={x} z={o.z} />;
+        return <Tajine key={o.id} x={x} z={o.z} />;
       })}
     </>
   );
