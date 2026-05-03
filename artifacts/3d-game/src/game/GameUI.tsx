@@ -359,7 +359,7 @@ function NitroMeter({ meter, active, timeLeft }: { meter: number; active: boolea
   const ready = meter >= 100 && !active;
   return (
     <div style={{
-      position: "absolute", top: 12, left: 12,
+      position: "absolute", bottom: 130, left: 16,
       width: 280, maxWidth: "55vw",
       pointerEvents: "none", zIndex: 30,
       fontFamily: "'Fredoka', sans-serif",
@@ -661,9 +661,9 @@ function TouchControls({ onChangeLane, onJump, onBoost, boostReady, boostActive 
           <NFSButton icon="›" glow="#ff1493" accent="#ff1493" onClick={() => onChangeLane(1)} />
         </div>
       </div>
-      {/* Bouton NITRO flottant en haut à droite */}
+      {/* Bouton NITRO flottant juste au-dessus des contrôles, à droite */}
       <div style={{
-        position: "absolute", top: 12, right: 12, zIndex: 30,
+        position: "absolute", bottom: 130, right: 16, zIndex: 30,
         pointerEvents: "auto",
       }}>
         <NitroButton ready={boostReady} active={boostActive} onBoost={onBoost} />
