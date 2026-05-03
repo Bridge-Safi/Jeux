@@ -17,6 +17,7 @@ if (isSupabaseConfigured) {
 export type Profile = {
   id: string;
   username: string;
+  avatar_url?: string | null;   // photo de profil (data URL ou https://...)
   sardines_points: number;
   diamonds_collected: number;
   device_fingerprint?: string;

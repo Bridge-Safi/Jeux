@@ -124,3 +124,21 @@ Pour du temps réel (sans polling), utiliser Supabase Realtime sur la table
 | `menus_claimed`    | Menus déjà réclamés (incrémenté côté serveur, anti-double-claim).  |
 | `menus_available`  | `menus_earned − menus_claimed` — réclamables maintenant.           |
 | `updated_at`       | Dernière mise à jour du profil joueur.                             |
+| `username`         | Nom d'affichage choisi par le joueur (peut être null).             |
+| `avatar_url`       | Photo de profil (data URL ou https://...) — **à afficher partout** : Bridge Eats, Fleurs, Pharmacie, Tabac, Taxi Confort. Null si le joueur n'en a pas choisi. |
+
+---
+
+## Photo de profil partagée
+
+Le joueur peut uploader sa photo depuis la page Profil de Safi Runner. Elle est
+stockée dans `profiles.avatar_url` (data URL JPEG 256px ~30-50 KB).
+
+Pour l'afficher dans Bridge Eats / Fleurs / Pharmacie / Tabac / Taxi Confort :
+
+```tsx
+const { data } = await supabase.rpc('get_player_diamonds', { p_phone: phone });
+return <img src={data.avatar_url ?? '/default-avatar.png'} alt="" />;
+```
+
+C'est la **même** image partout — un seul upload côté jeu suffit.

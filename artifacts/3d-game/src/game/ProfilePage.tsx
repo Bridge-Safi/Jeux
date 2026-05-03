@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useT } from "../lib/i18n";
 import type { Profile } from "../lib/supabase";
-import { getMyRank, updateUsername, type MenuEligibility } from "../lib/playerProfile";
+import { getMyRank, updateUsername, updateAvatar, type MenuEligibility } from "../lib/playerProfile";
 
 interface Props {
   profile: Profile | null;
@@ -24,10 +24,76 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
   const [savedFlash, setSavedFlash] = useState(false);
   const [saving, setSaving] = useState(false);
   const [rank, setRank] = useState<number | null>(null);
+  const [avatar, setAvatar] = useState<string | null>(profile?.avatar_url ?? null);
+  const [photoFlash, setPhotoFlash] = useState<"saved" | "tooLarge" | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setName(profile?.username ?? "");
-  }, [profile?.username]);
+    setAvatar(profile?.avatar_url ?? null);
+  }, [profile?.username, profile?.avatar_url]);
+
+  /* Redimensionne une image en JPEG ~256px max (carré centré, ~30-50 KB).
+     Renvoie la data URL "data:image/jpeg;base64,..." prête à stocker. */
+  const compressToDataUrl = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const SIZE = 256;
+        const canvas = document.createElement("canvas");
+        canvas.width = SIZE; canvas.height = SIZE;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("canvas")); return; }
+        const min = Math.min(img.width, img.height);
+        const sx = (img.width - min) / 2;
+        const sy = (img.height - min) / 2;
+        ctx.drawImage(img, sx, sy, min, min, 0, 0, SIZE, SIZE);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.onerror = () => reject(new Error("image"));
+      img.src = String(reader.result);
+    };
+    reader.onerror = () => reject(new Error("reader"));
+    reader.readAsDataURL(file);
+  });
+
+  const handlePickPhoto = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permet de re-choisir le même fichier plus tard
+    if (!file || uploadingPhoto) return;
+    setUploadingPhoto(true);
+    try {
+      const dataUrl = await compressToDataUrl(file);
+      if (dataUrl.length > 200_000) {
+        setPhotoFlash("tooLarge");
+        setTimeout(() => setPhotoFlash(null), 2400);
+        return;
+      }
+      const updated = await updateAvatar(dataUrl);
+      if (updated) {
+        setAvatar(dataUrl);
+        setPhotoFlash("saved");
+        setTimeout(() => setPhotoFlash(null), 1800);
+      }
+    } catch {
+      setPhotoFlash("tooLarge");
+      setTimeout(() => setPhotoFlash(null), 2400);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (uploadingPhoto) return;
+    setUploadingPhoto(true);
+    const updated = await updateAvatar(null);
+    if (updated) setAvatar(null);
+    setUploadingPhoto(false);
+  };
 
   useEffect(() => {
     let cancel = false;
@@ -94,7 +160,7 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
             <div style={{
               position: "absolute", inset: 0, borderRadius: "50%",
               border: "2px solid rgba(0,230,118,0.85)",
-              background: "url(/assets/player-avatar.jpeg) center/cover",
+              background: `url(${avatar && avatar.length > 0 ? avatar : "/assets/player-avatar.jpeg"}) center/cover`,
               boxShadow: "0 0 22px rgba(0,230,118,0.5)",
             }} />
           </div>
@@ -110,6 +176,61 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
             </div>
           </div>
         </div>
+
+        {/* Boutons photo de profil */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+          />
+          <button
+            onClick={handlePickPhoto}
+            disabled={uploadingPhoto}
+            style={{
+              flex: 1, minWidth: 140,
+              background: photoFlash === "saved"
+                ? "linear-gradient(135deg,#00c853,#00e676)"
+                : "linear-gradient(135deg,rgba(0,200,83,0.85),rgba(0,230,118,0.85))",
+              color: "#003311", border: "none", borderRadius: 12,
+              padding: "11px 14px", fontSize: 13, fontWeight: 900,
+              letterSpacing: 0.5, cursor: uploadingPhoto ? "wait" : "pointer",
+              opacity: uploadingPhoto ? 0.6 : 1,
+              fontFamily: "'Segoe UI', sans-serif",
+            }}
+          >
+            {photoFlash === "saved" ? t("profile.photoSaved") : t("profile.changePhoto")}
+          </button>
+          {avatar && avatar.length > 0 && (
+            <button
+              onClick={handleRemovePhoto}
+              disabled={uploadingPhoto}
+              style={{
+                background: "rgba(0,0,0,0.55)", color: "#a5d6a7",
+                border: "1px solid rgba(0,230,118,0.35)", borderRadius: 12,
+                padding: "11px 14px", fontSize: 12, fontWeight: 800,
+                letterSpacing: 0.5, cursor: uploadingPhoto ? "wait" : "pointer",
+                opacity: uploadingPhoto ? 0.6 : 1,
+                fontFamily: "'Segoe UI', sans-serif",
+              }}
+            >
+              {t("profile.removePhoto")}
+            </button>
+          )}
+        </div>
+        {photoFlash === "tooLarge" && (
+          <div style={{
+            background: "rgba(239,83,80,0.15)",
+            border: "1px solid rgba(239,83,80,0.45)",
+            color: "#ff8a80", borderRadius: 10,
+            padding: "8px 12px", fontSize: 12, fontWeight: 700,
+            marginBottom: 12, textAlign: "center",
+          }}>
+            {t("profile.photoTooLarge")}
+          </div>
+        )}
 
         {/* Section IDENTITÉ */}
         <SectionCard title={t("profile.identityTitle")}>

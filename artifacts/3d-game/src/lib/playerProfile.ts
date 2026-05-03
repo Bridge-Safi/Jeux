@@ -553,14 +553,15 @@ export type LeaderEntry = {
   rank: number;          // 1-based
   name: string;          // affichage : username ou code BR-XXXXXX
   diamonds: number;      // 💎 GAGNÉS dans le cycle courant
+  avatarUrl?: string | null; // photo de profil (data URL ou https://...)
 };
 
-function entriesFromRows(rows: Array<{ id: string; username?: string | null; diamonds: number }>): LeaderEntry[] {
+function entriesFromRows(rows: Array<{ id: string; username?: string | null; diamonds: number; avatar_url?: string | null }>): LeaderEntry[] {
   return rows.map((p, i) => {
     const code = (p.id ?? "XXXXXX").toString().replace(/-/g, "").slice(0, 6).toUpperCase();
     const fallback = `BR-${code}`;
     const name = (p.username && p.username.trim().length > 0) ? p.username : fallback;
-    return { id: p.id, rank: i + 1, name, diamonds: Number(p.diamonds) || 0 };
+    return { id: p.id, rank: i + 1, name, diamonds: Number(p.diamonds) || 0, avatarUrl: p.avatar_url ?? null };
   });
 }
 
@@ -570,13 +571,13 @@ export async function getTopPlayers(limit = 7): Promise<LeaderEntry[]> {
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id,username,period_diamonds")
+      .select("id,username,avatar_url,period_diamonds")
       .eq("period_start", cycleStart)
       .gt("period_diamonds", 0)
       .order("period_diamonds", { ascending: false })
       .limit(limit);
 
-    /* 42703 = colonnes period_* absentes → fallback cumulatif */
+    /* 42703 = colonnes period_* OU avatar_url absentes → fallback cumulatif */
     if (error && error.code === "42703") {
       const { data: fb } = await supabase
         .from("profiles")
@@ -588,10 +589,31 @@ export async function getTopPlayers(limit = 7): Promise<LeaderEntry[]> {
     }
     if (error || !data) return [];
 
-    return entriesFromRows(data.map((p) => ({ id: p.id, username: p.username, diamonds: p.period_diamonds })));
+    return entriesFromRows(data.map((p) => ({ id: p.id, username: p.username, avatar_url: p.avatar_url, diamonds: p.period_diamonds })));
   } catch {
     return [];
   }
+}
+
+/* ─── Met à jour la photo de profil du joueur courant ───────────
+   `dataUrl` : "data:image/jpeg;base64,..." (≤ ~80 KB recommandé)
+   ou une URL externe (https://...). Vide → réinitialise.
+   Renvoie le profil mis à jour, ou null en cas d'erreur. */
+export async function updateAvatar(dataUrl: string | null): Promise<Profile | null> {
+  if (!isSupabaseConfigured) return null;
+  const byDevice = await findByDevice();
+  const targetId = byDevice?.id ?? await getCurrentUserId();
+  if (!targetId) return null;
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ avatar_url: dataUrl, updated_at: new Date().toISOString() })
+      .eq("id", targetId)
+      .select()
+      .single();
+    if (error) return null;
+    return data as Profile;
+  } catch { return null; }
 }
 
 /* ─── Met à jour le username (nom d'affichage) du joueur courant ─

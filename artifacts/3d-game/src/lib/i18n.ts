@@ -117,6 +117,10 @@ const DICT: Record<Lang, Record<string, string>> = {
     "profile.statsTitle": "📊 Statistiques",
     "profile.engagementTitle": "🦈 Engagement Bridge",
     "profile.identityTitle": "🪪 Identité",
+    "profile.changePhoto": "📷 Changer ma photo",
+    "profile.removePhoto": "Retirer la photo",
+    "profile.photoSaved": "✓ Photo enregistrée",
+    "profile.photoTooLarge": "Image trop lourde — choisis-en une plus petite",
 
     /* HUD */
     "hud.coins": "Pièces",
@@ -401,6 +405,10 @@ const DICT: Record<Lang, Record<string, string>> = {
     "profile.statsTitle": "📊 Statistics",
     "profile.engagementTitle": "🦈 Bridge engagement",
     "profile.identityTitle": "🪪 Identity",
+    "profile.changePhoto": "📷 Change my photo",
+    "profile.removePhoto": "Remove photo",
+    "profile.photoSaved": "✓ Photo saved",
+    "profile.photoTooLarge": "Image too large — pick a smaller one",
 
     "hud.coins": "Coins",
     "hud.diamonds": "Diamonds",
@@ -674,6 +682,10 @@ const DICT: Record<Lang, Record<string, string>> = {
     "profile.statsTitle": "📊 إحصائيات",
     "profile.engagementTitle": "🦈 التزام Bridge",
     "profile.identityTitle": "🪪 الهوية",
+    "profile.changePhoto": "📷 تغيير صورتي",
+    "profile.removePhoto": "إزالة الصورة",
+    "profile.photoSaved": "✓ تم حفظ الصورة",
+    "profile.photoTooLarge": "الصورة كبيرة جداً — اختر صورة أصغر",
 
     "hud.nextStop": "🍽️ المحطة التالية · {s}ث",
     "ui.darkOn": "تم تفعيل الوضع الداكن",

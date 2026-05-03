@@ -1180,7 +1180,7 @@ function LeaderboardCard() {
               <div
                 key={e.id}
                 style={{
-                  display: "flex", alignItems: "center", gap: 10,
+                  display: "flex", alignItems: "center", gap: 8,
                   background: tier.bg,
                   border: `1px solid ${tier.border}`,
                   borderRadius: 10,
@@ -1193,16 +1193,25 @@ function LeaderboardCard() {
                 {/* Badge numéro de rang */}
                 <div style={{
                   flexShrink: 0,
-                  width: 26, height: 26, borderRadius: "50%",
+                  width: 24, height: 24, borderRadius: "50%",
                   background: tier.badge,
                   color: tier.label,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontWeight: 900, fontSize: 13,
+                  fontWeight: 900, fontSize: 12,
                   fontFamily: "'Fredoka','Segoe UI',sans-serif",
                   boxShadow: "0 2px 6px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.15) inset",
                 }} dir="ltr">
                   {e.rank === 1 ? "👑" : e.rank}
                 </div>
+
+                {/* Photo de profil du joueur (ou avatar par défaut) */}
+                <div style={{
+                  flexShrink: 0,
+                  width: 26, height: 26, borderRadius: "50%",
+                  background: `url(${e.avatarUrl && e.avatarUrl.length > 0 ? e.avatarUrl : "/assets/player-avatar.jpeg"}) center/cover, #0d1f12`,
+                  border: "1.5px solid rgba(0,230,118,0.55)",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.5)",
+                }} />
 
                 {/* Nom du joueur */}
                 <div style={{
@@ -1233,9 +1242,12 @@ function LeaderboardCard() {
   );
 }
 
-function StartScreen({ onStart, eligibility, onClaim, onShowProfile }: {
-  onStart: () => void; eligibility: MenuEligibility; onClaim: () => void; onShowProfile: () => void;
+function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: {
+  onStart: () => void; eligibility: MenuEligibility; profile: Profile | null; onClaim: () => void; onShowProfile: () => void;
 }) {
+  const avatarSrc = (profile?.avatar_url && profile.avatar_url.length > 0)
+    ? profile.avatar_url
+    : "/assets/player-avatar.jpeg";
   const { t } = useT();
   const hasMenu = eligibility.menusAvailable > 0;
   const diamondPct = Math.min(100, ((eligibility.diamondsCollected % DIAMONDS_PER_MENU) / DIAMONDS_PER_MENU) * 100);
@@ -1284,7 +1296,7 @@ function StartScreen({ onStart, eligibility, onClaim, onShowProfile }: {
           <div style={{
             position: "absolute", inset: 0, borderRadius: "50%",
             border: "2px solid rgba(0,230,118,0.9)",
-            background: "url(/assets/player-avatar.jpeg) center/cover",
+            background: `url(${avatarSrc}) center/cover`,
             boxShadow: "0 0 18px rgba(0,230,118,0.5), 0 0 0 3px rgba(0,30,15,0.85) inset",
           }} />
           <div style={{
@@ -1671,6 +1683,7 @@ export function GameUI({
         <StartScreen
           onStart={handleStart}
           eligibility={eligibility}
+          profile={profile}
           onClaim={() => setShowReward(true)}
           onShowProfile={() => setShowProfile(true)}
         />
