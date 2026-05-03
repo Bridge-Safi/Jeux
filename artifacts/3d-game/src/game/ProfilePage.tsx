@@ -63,19 +63,25 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
       WebkitOverflowScrolling: "touch" as never,
       pointerEvents: "auto",
     }}>
-      <div style={{ maxWidth: 500, margin: "0 auto", padding: "20px 18px 80px" }}>
-
-        {/* Bouton retour */}
-        <button onClick={onClose} style={{
+      {/* Bouton × pour fermer — flottant en haut à droite */}
+      <button
+        onClick={onClose}
+        aria-label={t("profile.close")}
+        style={{
+          position: "absolute", top: 14, right: 14, zIndex: 10,
+          width: 38, height: 38, borderRadius: "50%",
           background: "rgba(0,0,0,0.55)", color: "#a5d6a7",
-          border: "1px solid rgba(0,230,118,0.35)", borderRadius: 20,
-          padding: "8px 14px", fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
-          cursor: "pointer", marginBottom: 16, fontFamily: "'Segoe UI', sans-serif",
-        }}>
-          {t("profile.close")}
-        </button>
+          border: "1px solid rgba(0,230,118,0.35)",
+          fontSize: 20, fontWeight: 700, lineHeight: 1,
+          cursor: "pointer", fontFamily: "'Segoe UI', sans-serif",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
+        }}
+      >×</button>
 
-        {/* En-tête : avatar + titre */}
+      <div style={{ maxWidth: 500, margin: "0 auto", padding: "24px 18px 80px" }}>
+
+        {/* En-tête : avatar + identifiant uniquement (sobre) */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
           <div style={{
             position: "relative", width: 78, height: 78, flexShrink: 0,
@@ -94,18 +100,13 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
-              fontSize: 11, color: "#69f0ae", fontWeight: 800,
-              letterSpacing: 2, textTransform: "uppercase",
-            }}>{t("profile.title")}</div>
-            <div style={{
               fontSize: 22, color: "#fff", fontWeight: 900, lineHeight: 1.15,
               textShadow: "0 0 12px rgba(0,230,118,0.4)",
-              fontFamily: "'Fredoka', sans-serif",
+              fontFamily: "'Fredoka', monospace",
+              letterSpacing: 1,
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
-              {profile?.username && profile.username.trim().length > 0
-                ? profile.username
-                : shortId(profile?.id)}
+            }} dir="ltr">
+              {shortId(profile?.id)}
             </div>
           </div>
         </div>
