@@ -145,6 +145,13 @@ export function Game() {
     startGame();
   }, [startMusic, startGame]);
 
+  /* Après un game over : on reprend EXACTEMENT au même endroit, en
+     gardant score, playTime, checkpointNumber, etc. La musique est
+     déjà active (pas besoin de la relancer). */
+  const handleResumeAfterDeath = useCallback(() => {
+    resumeGame();
+  }, [resumeGame]);
+
   /* ── SFX tonals (gamme Hijaz) — chaque action son distinct ── */
   const jumpWithSfx = useCallback(() => {
     sfxJump();
@@ -258,7 +265,7 @@ export function Game() {
         boostActive={state.boostActive}
         boostTimeLeft={state.boostTimeLeft}
         onStart={handleStart}
-        onRestart={handleStart}
+        onRestart={handleResumeAfterDeath}
         onChangeLane={changeLaneWithSfx}
         onJump={jumpWithSfx}
         onBoost={boostWithSfx}

@@ -90,7 +90,6 @@ function Tajine({ x, z }: { x: number; z: number }) {
    COUSCOUS / BARBECUE — gardés en commentaire historique mais
    plus utilisés : seul le tajine est désormais obstacle.
    ───────────────────────────────────────────────────────────── */
-// @ts-expect-error - composant conservé pour réintroduction future
 function Couscous({ x, z }: { x: number; z: number }) {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(() => {
@@ -187,7 +186,6 @@ function Couscous({ x, z }: { x: number; z: number }) {
    BARBECUE DE SARDINES — gardé en commentaire historique mais
    plus utilisé : seul le tajine est désormais obstacle.
    ───────────────────────────────────────────────────────────── */
-// @ts-expect-error - composant conservé pour réintroduction future
 function BarbecueSardines({ x, z }: { x: number; z: number }) {
   const flameRef = useRef<THREE.Mesh>(null);
   const flame2Ref = useRef<THREE.Mesh>(null);

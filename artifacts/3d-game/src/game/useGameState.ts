@@ -124,12 +124,21 @@ export function useGameState() {
     setState({ ...initialState(), phase: "playing", obstacles: preObstacles, diamonds: preDiamonds });
   }, []);
 
+  /* Reprend la partie au même endroit (utilisé après checkpoint
+     ET après game over). Préserve score, playTime, distance,
+     checkpointNumber, boostMeter. Nettoie l'écran (obstacles,
+     diamants visibles, état de saut) pour repartir proprement. */
   const resumeGame = useCallback(() => {
     setState((s) => ({
       ...s,
       phase: "playing",
       obstacles: [],
       diamonds: [],
+      isJumping: false,
+      jumpVelocity: 0,
+      playerY: 0,
+      boostActive: false,
+      boostTimeLeft: 0,
       nextCheckpointAt: s.playTime + CHECKPOINT_INTERVAL,
     }));
   }, []);

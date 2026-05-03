@@ -15,6 +15,11 @@ export function useSupabaseSync(score: number, phase: string, playTime: number) 
   const initialized = useRef(false);
   const lastScore = useRef(score);
   const lastPlayTime = useRef(playTime);
+  /* Pour gérer correctement la sauvegarde après "reprendre" suite à un
+     game over : on enregistre le score/temps déjà sauvegardés pour ne
+     compter QUE le delta à chaque mort (sinon double-comptage). */
+  const savedScoreSoFar = useRef(0);
+  const savedPlayTimeSoFar = useRef(0);
 
   /* Initialisation du profil au démarrage */
   useEffect(() => {
@@ -62,20 +67,42 @@ export function useSupabaseSync(score: number, phase: string, playTime: number) 
     return () => clearInterval(interval);
   }, [phase]);
 
-  /* Sauvegarde à la fin de la partie avec validation anti-triche */
+  /* Réinitialise les compteurs cumulés au démarrage d'une nouvelle
+     partie (pas après une simple reprise post-mort). */
+  useEffect(() => {
+    if (phase === "start") {
+      savedScoreSoFar.current = 0;
+      savedPlayTimeSoFar.current = 0;
+    }
+  }, [phase]);
+
+  /* Sauvegarde à chaque game over avec validation anti-triche.
+     On ne sauvegarde QUE le DELTA depuis la dernière sauvegarde,
+     car le joueur peut reprendre au même endroit (= même partie
+     continuée) et on ne veut pas compter les 💎 deux fois. */
   useEffect(() => {
     if (!isSupabaseConfigured || phase !== "gameover") return;
 
     (async () => {
-      const diamondsToSave = Math.floor(lastScore.current / 10);
-      const sardines = Math.floor(lastScore.current / 50);
-      const sessionTime = lastPlayTime.current; // secondes réelles jouées
+      const totalScore = lastScore.current;
+      const totalPlayTime = lastPlayTime.current;
+
+      /* DELTA depuis la dernière sauvegarde */
+      const deltaScore = Math.max(0, totalScore - savedScoreSoFar.current);
+      const deltaPlayTime = Math.max(0, totalPlayTime - savedPlayTimeSoFar.current);
+
+      const diamondsToSave = Math.floor(deltaScore / 10);
+      const sardines = Math.floor(deltaScore / 50);
 
       /* saveScore valide côté client avant d'écrire dans Supabase */
-      await saveScore(diamondsToSave, sardines, sessionTime);
+      await saveScore(diamondsToSave, sardines, deltaPlayTime);
 
-      /* Enregistre le temps de jeu de la session pour le programme d'engagement Bridge */
-      await recordPlaySession(sessionTime);
+      /* Enregistre uniquement le temps de jeu non-encore-comptabilisé */
+      await recordPlaySession(deltaPlayTime);
+
+      /* Met à jour les marqueurs cumulés pour la prochaine sauvegarde */
+      savedScoreSoFar.current = totalScore;
+      savedPlayTimeSoFar.current = totalPlayTime;
 
       const updated = await getProfile();
       if (updated) setProfile(updated);
