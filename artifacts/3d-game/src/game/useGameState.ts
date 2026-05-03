@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback } from "react";
+import { getCurrentMultiplier } from "../lib/happyHour";
 
 export type GamePhase = "start" | "playing" | "checkpoint" | "gameover";
 
@@ -324,7 +325,8 @@ export function useGameState() {
 
       /* ── Collecte diamants ──────────────────────────────────── */
       const newDiamonds: Diamond[] = [];
-      const diamondPoints = boostActive ? 10 * BOOST_SCORE_MULT : 10;
+      const happyMult = getCurrentMultiplier();
+      const diamondPoints = (boostActive ? 10 * BOOST_SCORE_MULT : 10) * happyMult;
       for (const d of diamonds) {
         const dx2 = Math.abs(playerX - LANE_X[d.lane + 1]);
         const dz2 = Math.abs(PLAYER_Z - d.z);

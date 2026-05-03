@@ -20,6 +20,13 @@ import { ProfilePage } from "./ProfilePage";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { useMusic } from "../hooks/useMusic";
 import { navigateInApp } from "../lib/inAppNav";
+import {
+  useHappyHour,
+  isAdminMode,
+  exitAdminMode,
+  activateHappyHour,
+  stopHappyHour,
+} from "../lib/happyHour";
 
 /* ─── Configuration Bridge Eats ─────────────────────────────── */
 export const BRIDGE_EATS_URL = "https://44474adc-9074-4015-a3b9-4e111cb8be39-00-11nld147gir6y.kirk.replit.dev/";
@@ -1610,6 +1617,181 @@ function GameOverScreen({ score, checkpointNumber, eligibility, onRestart, onCla
   );
 }
 
+/* ─── Bannière Happy Hour ×2 ─────────────────────────────────── */
+function HappyHourBanner() {
+  const { t } = useT();
+  const hh = useHappyHour();
+  if (!hh.active) return null;
+  const m = String(Math.floor(hh.secondsLeft / 60)).padStart(2, "0");
+  const s = String(hh.secondsLeft % 60).padStart(2, "0");
+  return (
+    <div style={{
+      position: "absolute", top: 76, left: "50%", transform: "translateX(-50%)",
+      zIndex: 30, pointerEvents: "none",
+      background: "linear-gradient(135deg,#ff6f00,#ffd54f)",
+      color: "#1a0a00", fontWeight: 900,
+      fontFamily: "'Fredoka','Segoe UI',sans-serif",
+      letterSpacing: 1, fontSize: 13,
+      padding: "8px 18px", borderRadius: 999,
+      boxShadow: "0 6px 22px rgba(255,140,0,0.6), 0 0 0 2px rgba(255,255,255,0.15) inset",
+      animation: "happyPulse 1.2s ease-in-out infinite",
+      whiteSpace: "nowrap",
+      display: "flex", alignItems: "center", gap: 10,
+    }}>
+      <span>{t("happy.banner")}</span>
+      <span style={{
+        background: "rgba(0,0,0,0.25)", color: "#fff",
+        padding: "2px 10px", borderRadius: 999, fontSize: 12,
+      }} dir="ltr">{t("happy.timeLeft", { m, s })}</span>
+      <style>{`
+        @keyframes happyPulse {
+          0%,100% { box-shadow: 0 6px 22px rgba(255,140,0,0.6), 0 0 0 2px rgba(255,255,255,0.15) inset; }
+          50%     { box-shadow: 0 6px 32px rgba(255,200,80,0.9), 0 0 0 2px rgba(255,255,255,0.3) inset; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/* ─── Panneau admin (URL ?admin=1) ───────────────────────────── */
+function AdminPanel() {
+  const { t } = useT();
+  const hh = useHappyHour();
+  const [open, setOpen] = useState(false);
+  const [secret, setSecret] = useState("");
+  const [duration, setDuration] = useState(60);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  if (!isAdminMode()) return null;
+
+  const handleActivate = async () => {
+    setBusy(true); setMsg(null);
+    const r = await activateHappyHour(duration, secret);
+    setBusy(false);
+    if (!r.ok) {
+      setMsg(r.error === "invalid_secret" ? t("admin.invalid") : r.error);
+      return;
+    }
+    const time = new Date(r.until).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setMsg(t("admin.activated", { time }));
+  };
+  const handleStop = async () => {
+    setBusy(true); setMsg(null);
+    const r = await stopHappyHour(secret);
+    setBusy(false);
+    if (!r.ok) { setMsg(r.error === "invalid_secret" ? t("admin.invalid") : (r.error ?? "")); return; }
+    setMsg(t("admin.stopped"));
+  };
+
+  return (
+    <>
+      {/* Bouton flottant en bas à gauche */}
+      <button
+        onClick={() => setOpen(true)}
+        style={{
+          position: "absolute", bottom: 14, left: 14, zIndex: 40,
+          width: 44, height: 44, borderRadius: "50%", border: "none",
+          background: "linear-gradient(135deg,#37474f,#263238)",
+          color: "#fff", fontSize: 20, cursor: "pointer",
+          boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
+        }}
+        aria-label={t("admin.title")}
+      >🛠️</button>
+
+      {open && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 100,
+          background: "rgba(0,0,0,0.8)", display: "flex",
+          alignItems: "center", justifyContent: "center", padding: 20,
+        }}>
+          <div style={{
+            background: "#1c2730", color: "#fff",
+            borderRadius: 16, padding: 22, width: "100%", maxWidth: 360,
+            border: "1px solid rgba(255,255,255,0.1)",
+            fontFamily: "'Fredoka','Segoe UI',sans-serif",
+          }}>
+            <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 14 }}>
+              {t("admin.title")}
+            </div>
+
+            {hh.active && (
+              <div style={{
+                background: "rgba(255,140,0,0.15)", color: "#ffb74d",
+                padding: "8px 12px", borderRadius: 10, fontSize: 12,
+                marginBottom: 12, fontWeight: 700,
+              }}>
+                {t("happy.banner")} · {Math.floor(hh.secondsLeft / 60)} min
+              </div>
+            )}
+
+            <label style={{ fontSize: 12, opacity: 0.8 }}>{t("admin.secret")}</label>
+            <input
+              type="password" value={secret} onChange={(e) => setSecret(e.target.value)}
+              style={{
+                width: "100%", marginTop: 4, marginBottom: 14,
+                padding: "10px 12px", borderRadius: 10, border: "1px solid #455a64",
+                background: "#0f1620", color: "#fff", fontSize: 14,
+                boxSizing: "border-box",
+              }}
+            />
+
+            <label style={{ fontSize: 12, opacity: 0.8 }}>{t("admin.duration")}</label>
+            <div style={{ display: "flex", gap: 6, marginTop: 6, marginBottom: 14 }}>
+              {[30, 60, 120, 240].map((m) => (
+                <button key={m} onClick={() => setDuration(m)} style={{
+                  flex: 1, padding: "8px 0", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                  background: duration === m ? "#00c853" : "#37474f",
+                  color: duration === m ? "#003311" : "#fff",
+                  border: "none", cursor: "pointer",
+                }}>{t("admin.minutes", { n: m })}</button>
+              ))}
+            </div>
+
+            <button onClick={handleActivate} disabled={busy || !secret}
+              style={{
+                width: "100%", padding: "12px", borderRadius: 10, fontWeight: 900,
+                background: "linear-gradient(135deg,#ff6f00,#ffa726)", color: "#1a0a00",
+                border: "none", fontSize: 14, cursor: busy ? "wait" : "pointer",
+                opacity: busy || !secret ? 0.6 : 1, marginBottom: 8,
+              }}>{t("admin.activate")}</button>
+
+            {hh.active && (
+              <button onClick={handleStop} disabled={busy || !secret}
+                style={{
+                  width: "100%", padding: "10px", borderRadius: 10, fontWeight: 700,
+                  background: "transparent", color: "#ff8a80",
+                  border: "1px solid #ff8a80", fontSize: 13, cursor: "pointer",
+                  marginBottom: 8,
+                }}>{t("admin.stop")}</button>
+            )}
+
+            {msg && (
+              <div style={{
+                fontSize: 12, padding: "8px 10px", borderRadius: 8,
+                background: "rgba(255,255,255,0.06)", color: "#b0bec5",
+                marginBottom: 8, textAlign: "center",
+              }}>{msg}</div>
+            )}
+
+            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              <button onClick={() => setOpen(false)} style={{
+                flex: 1, padding: "10px", borderRadius: 10, fontWeight: 700,
+                background: "#37474f", color: "#fff", border: "none", cursor: "pointer",
+              }}>{t("admin.close")}</button>
+              <button onClick={() => { exitAdminMode(); window.location.search = ""; }} style={{
+                flex: 1, padding: "10px", borderRadius: 10, fontWeight: 700,
+                background: "transparent", color: "#90a4ae", border: "1px solid #455a64",
+                cursor: "pointer", fontSize: 12,
+              }}>Logout admin</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ─── Export principal ───────────────────────────────────────── */
 export function GameUI({
   phase, score, checkpointNumber, nextCheckpointAt, playTime,
@@ -1706,6 +1888,12 @@ export function GameUI({
           onClaim={() => setShowReward(true)}
         />
       )}
+
+      {(phase === "start" || phase === "playing") && !showReward && !showInstructions && !showProfile && (
+        <HappyHourBanner />
+      )}
+
+      <AdminPanel />
 
       {phase === "playing" && !showReward && (
         <>
