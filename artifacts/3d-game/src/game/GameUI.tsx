@@ -359,14 +359,15 @@ function NitroMeter({ meter, active, timeLeft }: { meter: number; active: boolea
   const ready = meter >= 100 && !active;
   return (
     <div style={{
-      position: "absolute", left: "50%", bottom: 118, transform: "translateX(-50%)",
-      width: 240, maxWidth: "60%",
-      pointerEvents: "none", zIndex: 18,
+      position: "absolute", top: 12, left: 12,
+      width: 280, maxWidth: "55vw",
+      pointerEvents: "none", zIndex: 30,
       fontFamily: "'Fredoka', sans-serif",
+      animation: !active && !ready ? "nitroFloat 1.6s ease-in-out infinite" : "none",
     }}>
       <div style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
-        fontSize: 10, fontWeight: 800, letterSpacing: 1.5, marginBottom: 4,
+        fontSize: 12, fontWeight: 800, letterSpacing: 1.8, marginBottom: 5,
         color: active ? "#fff" : ready ? "#ffeb3b" : "#ffb74d",
         textShadow: active
           ? "0 0 12px #ff1744, 0 0 24px #ff5252"
@@ -376,13 +377,13 @@ function NitroMeter({ meter, active, timeLeft }: { meter: number; active: boolea
         <span>{active ? `${timeLeft.toFixed(1)}s` : ready ? t("nitro.ready") : `${Math.floor(meter)}%`}</span>
       </div>
       <div style={{
-        height: 10, borderRadius: 8, overflow: "hidden",
-        background: "rgba(0,0,0,0.65)",
-        border: `2px solid ${active ? "#ff1744" : ready ? "#ffeb3b" : "rgba(255,140,0,0.5)"}`,
+        height: 14, borderRadius: 10, overflow: "hidden",
+        background: "rgba(0,0,0,0.7)",
+        border: `2px solid ${active ? "#ff1744" : ready ? "#ffeb3b" : "rgba(255,140,0,0.55)"}`,
         boxShadow: active
           ? "0 0 28px #ff1744, 0 0 50px #ff5252, inset 0 0 12px #ff8a80"
           : ready ? "0 0 22px #ffeb3b, inset 0 0 8px #fff176"
-                  : "0 0 8px rgba(0,0,0,0.6)",
+                  : "0 0 14px rgba(255,140,0,0.45), inset 0 0 6px rgba(0,0,0,0.6)",
         animation: active ? "nitroFlash 0.18s linear infinite" : ready ? "nitroPulse 0.7s ease-in-out infinite" : "none",
       }}>
         <div style={{
@@ -390,17 +391,21 @@ function NitroMeter({ meter, active, timeLeft }: { meter: number; active: boolea
           width: active ? "100%" : `${meter}%`,
           background: active
             ? "linear-gradient(90deg,#fff176,#ff1744,#fff176)"
-            : "linear-gradient(90deg,#ff9800,#ff1744)",
-          borderRadius: 6,
-          transition: active ? "none" : "width 0.18s linear",
-          backgroundSize: active ? "200% 100%" : "100% 100%",
-          animation: active ? "nitroSlide 0.5s linear infinite" : "none",
+            : "linear-gradient(90deg,#ff9800,#ffb74d,#ff5722,#ff9800)",
+          borderRadius: 8,
+          transition: active ? "none" : "width 0.25s ease-out",
+          backgroundSize: active ? "200% 100%" : "300% 100%",
+          animation: active
+            ? "nitroSlide 0.5s linear infinite"
+            : !ready ? "nitroFill 1.4s linear infinite" : "none",
         }} />
       </div>
       <style>{`
         @keyframes nitroPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
         @keyframes nitroFlash { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.5)} }
         @keyframes nitroSlide { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+        @keyframes nitroFill { 0%{background-position:0% 50%} 100%{background-position:300% 50%} }
+        @keyframes nitroFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
       `}</style>
     </div>
   );
@@ -653,9 +658,15 @@ function TouchControls({ onChangeLane, onJump, onBoost, boostReady, boostActive 
           <NFSButton icon="▲" glow="#ffd700" accent="#ffd700" size={88} onClick={onJump} />
         </div>
         <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <NitroButton ready={boostReady} active={boostActive} onBoost={onBoost} />
           <NFSButton icon="›" glow="#ff1493" accent="#ff1493" onClick={() => onChangeLane(1)} />
         </div>
+      </div>
+      {/* Bouton NITRO flottant en haut à droite */}
+      <div style={{
+        position: "absolute", top: 12, right: 12, zIndex: 30,
+        pointerEvents: "auto",
+      }}>
+        <NitroButton ready={boostReady} active={boostActive} onBoost={onBoost} />
       </div>
     </>
   );
