@@ -2,25 +2,33 @@ import { supabase, isSupabaseConfigured, type Profile } from "./supabase";
 import { getDeviceId, getHardwarePrefix } from "./deviceFingerprint";
 
 const PLAYER_NAME_KEY = "safi_runner_player_name";
-const MAX_DIAMONDS_PER_SECOND = 1.8;
+const MAX_DIAMONDS_PER_SECOND = 2.0; // anti-cheat cap, > 6000/h = 1.67/s
 
 /* ─── Programme Bridge — règles officielles (3 jours consécutifs) ─
-   - 15 000 💎 cumulés (rythme cible : 1 000 💎/h ≈ 5 000 💎/jour × 3)
-   - 3 jours CONSÉCUTIFS avec 3h de jeu par jour (≥ 9h total)
-   - Réclamation possible au 4ᵉ jour calendaire
-   - Bonus : 1h DE PLUS qu'une session normale → +2 000 💎 + livraison gratuite
+   MATH OFFICIELLE :
+     • Rythme : 6 000 💎 / heure de jeu
+     • Base : 3 jours × 3h × 6 000 = 54 000 💎
+     • Bonus : 3 jours × +2 000 💎 (1h supplémentaire) = 6 000 💎
+     • TOTAL = 60 000 💎 → livraison 100% GRATUITE
+     • Si le joueur ne fait PAS l'heure bonus, le jeu s'arrête net à 3h
+       et il doit revenir le lendemain.
+     • Pour la livraison 12 DH (2h) : même logique de complément payant
+       — s'il manque des 💎 à la fin des 3 jours, le joueur paie la
+       différence en DH (1 000 💎 = 5 DH).
    ─────────────────────────────────────────────────────────────── */
-export const DIAMONDS_PER_MENU      = 15_000;
+export const DIAMONDS_PER_MENU      = 60_000;         // objectif 60 000 💎 (3 jours)
 export const REQUIRED_PLAY_DAYS     = 3;
 export const REQUIRED_SECONDS_PER_DAY = 10_800;       // 3h / jour
 export const TARGET_SECONDS_PER_DAY   = 10_800;       // 3h cible / jour
 export const DAYS_BEFORE_CLAIM      = 4;              // J1 = 1ᵉʳ jour ; réclame au J4
-export const TOTAL_REQUIRED_HOURS   = 9;              // 9h cumulées sur 3 jours
+export const TOTAL_REQUIRED_HOURS   = 9;              // 9h cumulées sur 3 jours (3h × 3)
+export const DIAMONDS_PER_HOUR      = 6_000;          // rythme cible
 
-/* Bonus livraison gratuite : 1h DE PLUS qu'une session normale (3h)
-   → soit ≥ 4h sur une seule journée → +2 000 💎 + livraison 100% offerte. */
-export const BONUS_EXTRA_SECONDS    = 3_600;          // 1h en plus
-export const BONUS_DIAMONDS         = 2_000;
+/* Bonus livraison gratuite : 1h DE PLUS chaque jour (= 4h/jour)
+   → +2 000 💎 / jour bonus, soit 6 000 💎 cumulés sur 3 jours
+   → 54 000 (base) + 6 000 (bonus) = 60 000 💎 = livraison 100% offerte. */
+export const BONUS_EXTRA_SECONDS    = 3_600;          // 1h en plus / jour
+export const BONUS_DIAMONDS         = 2_000;          // bonus / jour
 export const BONUS_TRIGGER_SECONDS  = REQUIRED_SECONDS_PER_DAY + BONUS_EXTRA_SECONDS; // 4h
 
 /* Complément payant : 1 000 💎 manquants = 5 DH (arrondi au millier sup.). */
