@@ -1090,68 +1090,63 @@ function StartScreen({ onStart, eligibility, onClaim }: {
       }}>
         <div style={{ flex: 1, minHeight: 130 }} />
 
+        {/* Mini logo flottant en haut à droite — avatar requin + LIVE */}
+        <div style={{
+          position: "absolute", top: 14, right: 14, zIndex: 25,
+          width: 60, height: 60, pointerEvents: "none",
+        }}>
+          <div style={{
+            position: "absolute", inset: -3, borderRadius: "50%",
+            background: "conic-gradient(from 0deg,#00e676,#00c853,#69f0ae,#00e676)",
+            animation: "spin 6s linear infinite",
+            opacity: 0.9,
+          }} />
+          <div style={{
+            position: "absolute", inset: 0, borderRadius: "50%",
+            border: "2px solid rgba(0,230,118,0.9)",
+            background: "url(/assets/shark-warrior-night.jpeg) center/cover",
+            boxShadow: "0 0 18px rgba(0,230,118,0.5), 0 0 0 3px rgba(0,30,15,0.85) inset",
+          }} />
+          <div style={{
+            position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)",
+            background: "linear-gradient(135deg,#00c853,#00e676)",
+            color: "#003311", fontWeight: 900, fontSize: 8, letterSpacing: 1,
+            padding: "2px 7px", borderRadius: 8,
+            boxShadow: "0 2px 8px rgba(0,200,80,0.6)",
+            whiteSpace: "nowrap",
+          }}>● LIVE</div>
+        </div>
+
         <div style={{ width: "100%", maxWidth: 500, padding: "0 20px 32px", textAlign: "center" }}>
 
-          {/* Avatar circulaire avec anneau vert + badge LIVE */}
+          {/* Titre SAFI RUNNER — typographie épurée avec dégradé vert */}
           <div style={{
-            position: "relative", width: 168, height: 168, margin: "0 auto 18px",
+            fontFamily: "'Fredoka','Segoe UI',sans-serif",
+            fontSize: "clamp(26px,6.5vw,38px)",
+            fontWeight: 800,
+            letterSpacing: 4,
+            lineHeight: 1.1,
+            marginBottom: 4,
+            background: "linear-gradient(180deg,#ffffff 0%,#a5f5c5 55%,#00e676 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            color: "transparent",
+            filter: "drop-shadow(0 2px 0 rgba(0,80,40,0.6)) drop-shadow(0 0 18px rgba(0,230,118,0.35))",
+            textTransform: "uppercase",
           }}>
-            <div style={{
-              position: "absolute", inset: -8, borderRadius: "50%",
-              background: "conic-gradient(from 0deg,#00e676,#00c853,#69f0ae,#00e676)",
-              animation: "spin 6s linear infinite",
-              filter: "blur(0.5px)",
-              opacity: 0.95,
-            }} />
-            <div style={{
-              position: "absolute", inset: 0, borderRadius: "50%",
-              border: "4px solid rgba(0,230,118,0.9)",
-              background: "url(/assets/shark-warrior-night.jpeg) center/cover",
-              boxShadow: "0 0 36px rgba(0,230,118,0.6), 0 0 0 6px rgba(0,30,15,0.85) inset",
-            }} />
-            <div style={{
-              position: "absolute", bottom: -6, left: "50%", transform: "translateX(-50%)",
-              background: "linear-gradient(135deg,#00c853,#00e676)",
-              color: "#003311", fontWeight: 900, fontSize: 11, letterSpacing: 1.5,
-              padding: "4px 14px", borderRadius: 14,
-              boxShadow: "0 4px 14px rgba(0,200,80,0.6)",
-              whiteSpace: "nowrap",
-            }}>● LIVE</div>
+            {t("start.title")}
           </div>
 
-          {/* Titre SAFI RUNNER — style comic avec icône requin */}
+          {/* Sous-titre minimaliste */}
           <div style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-            marginBottom: 6,
+            display: "inline-flex", alignItems: "center", gap: 8,
+            fontSize: 10, color: "#9ec9b3", marginBottom: 18, letterSpacing: 2.5,
+            fontWeight: 600, textTransform: "uppercase",
           }}>
-            <span style={{ fontSize: "clamp(28px,7vw,38px)", filter: "drop-shadow(0 2px 8px rgba(0,230,118,0.6))" }} aria-hidden>🦈</span>
-            <div style={{
-              fontFamily: "'Bangers','Bowlby One SC','Impact',sans-serif",
-              fontSize: "clamp(44px,12vw,64px)",
-              letterSpacing: 3,
-              color: "#fff8b0",
-              WebkitTextStroke: "1.5px #1b3d1f",
-              textShadow: [
-                "2px 2px 0 #1b3d1f",
-                "4px 4px 0 #00c853",
-                "5px 5px 0 #1b3d1f",
-                "0 0 38px rgba(0,230,118,0.55)",
-              ].join(", "),
-              lineHeight: 1, transform: "rotate(-2deg) skew(-3deg,0)",
-              fontWeight: 900,
-            }}>
-              {t("start.title")}
-            </div>
-          </div>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 10,
-            fontSize: 11, color: "#cfeed9", marginBottom: 18, letterSpacing: 3,
-            fontWeight: 700, textTransform: "uppercase",
-            padding: "3px 4px",
-          }}>
-            <span style={{ display: "inline-block", width: 22, height: 1, background: "linear-gradient(90deg,transparent,#69f0ae)" }} />
+            <span style={{ display: "inline-block", width: 18, height: 1, background: "linear-gradient(90deg,transparent,#69f0ae)" }} />
             <span>{t("start.subtitle")}</span>
-            <span style={{ display: "inline-block", width: 22, height: 1, background: "linear-gradient(90deg,#69f0ae,transparent)" }} />
+            <span style={{ display: "inline-block", width: 18, height: 1, background: "linear-gradient(90deg,#69f0ae,transparent)" }} />
           </div>
 
           {/* Cartes ID JOUEUR + SESSION (style Bridge Shark) */}

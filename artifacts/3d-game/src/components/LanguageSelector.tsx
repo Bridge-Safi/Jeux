@@ -22,7 +22,7 @@ export function LanguageSelector({ position = "topRight" }: Props) {
 
   const pos: React.CSSProperties =
     position === "topRight"
-      ? { position: "absolute", top: 14, right: 56, zIndex: 100 }
+      ? { position: "absolute", top: 14, right: 88, zIndex: 100 }
       : { position: "absolute", top: 14, left: 14, zIndex: 100 };
 
   return (
@@ -59,7 +59,7 @@ export function LanguageSelector({ position = "topRight" }: Props) {
           style={{
             position: "fixed",
             top: 56,
-            right: 14,
+            right: 88,
             background: "rgba(10,15,30,0.96)",
             backdropFilter: "blur(14px)",
             WebkitBackdropFilter: "blur(14px)",
