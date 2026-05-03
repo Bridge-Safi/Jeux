@@ -1,0 +1,34 @@
+/* ─── Remise à zéro globale ──────────────────────────────────────
+   Quand on incrémente RESET_EPOCH, TOUS les appareils ouvrant le jeu
+   effacent automatiquement leur localStorage (auth Bridge Eats,
+   identifiant d'appareil, nom du joueur, progression, etc.) au
+   prochain chargement. Combiné avec un TRUNCATE de la table
+   `profiles` côté Supabase, on repart de zéro pour tout le monde.
+   ──────────────────────────────────────────────────────────────── */
+const RESET_EPOCH = "2026-05-03-v1";
+const EPOCH_KEY   = "safi_runner_reset_epoch";
+
+export function applyResetEpoch(): void {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    const current = window.localStorage.getItem(EPOCH_KEY);
+    if (current === RESET_EPOCH) return;
+
+    /* Efface toutes les clés "safi_*" — auth, device id, nom, instructions… */
+    const toRemove: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith("safi_")) toRemove.push(k);
+    }
+    toRemove.forEach((k) => window.localStorage.removeItem(k));
+
+    /* Marque l'epoch courant pour ne plus jamais re-effacer cet appareil. */
+    window.localStorage.setItem(EPOCH_KEY, RESET_EPOCH);
+
+    if (typeof console !== "undefined") {
+      console.info(`[safi-runner] Remise à zéro appliquée (${toRemove.length} clés effacées, epoch=${RESET_EPOCH})`);
+    }
+  } catch {
+    /* ignore — quota, mode privé, etc. */
+  }
+}
