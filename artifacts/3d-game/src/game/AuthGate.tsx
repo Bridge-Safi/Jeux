@@ -13,7 +13,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const { t } = useT();
   const [auth, setAuth] = useState<BridgeAuth | null>(() => getBridgeAuth());
   const [manualOpen, setManualOpen] = useState(false);
-  const [manualEmail, setManualEmail] = useState("");
   const [manualPhone, setManualPhone] = useState("");
   const [manualErr, setManualErr] = useState(false);
 
@@ -40,11 +39,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   const handleManualSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    const a = setBridgeAuthManual(manualEmail, manualPhone);
+    const a = setBridgeAuthManual(manualPhone);
     if (!a) { setManualErr(true); return; }
     setManualErr(false);
     setAuth(a);
-  }, [manualEmail, manualPhone]);
+  }, [manualPhone]);
 
   if (auth) return <>{children}</>;
 
@@ -130,25 +129,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           }}>
             <div style={{
               color: "#00e676", fontSize: 11, fontWeight: 800, letterSpacing: 1.5,
-              textTransform: "uppercase", marginBottom: 10, textAlign: "center",
+              textTransform: "uppercase", marginBottom: 6, textAlign: "center",
             }}>
               {t("auth.manual.title")}
             </div>
-            <input
-              type="email"
-              value={manualEmail}
-              onChange={(e) => { setManualEmail(e.target.value); setManualErr(false); }}
-              placeholder={t("auth.manual.email")}
-              autoComplete="email"
-              required
-              style={{
-                width: "100%", boxSizing: "border-box", marginBottom: 8,
-                background: "rgba(0,0,0,0.5)", color: "#fff",
-                border: `1px solid ${manualErr ? "#ef5350" : "rgba(0,230,118,0.4)"}`,
-                borderRadius: 10, padding: "10px 12px", fontSize: 14,
-                fontFamily: "inherit", outline: "none",
-              }}
-            />
+            <div style={{
+              color: "#9ec9b3", fontSize: 11, lineHeight: 1.45,
+              marginBottom: 10, textAlign: "center",
+            }}>
+              {t("auth.manual.hint")}
+            </div>
             <input
               type="tel"
               value={manualPhone}
@@ -157,6 +147,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
               autoComplete="tel"
               inputMode="tel"
               required
+              autoFocus
               style={{
                 width: "100%", boxSizing: "border-box", marginBottom: 10,
                 background: "rgba(0,0,0,0.5)", color: "#fff",
