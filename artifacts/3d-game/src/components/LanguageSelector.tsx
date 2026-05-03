@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { LANGS, useT, type Lang } from "../lib/i18n";
 
 interface Props {
-  position?: "topRight" | "topLeft" | "bottomRight" | "bottomLeft";
+  position?: "topRight" | "topLeft" | "bottomRight" | "bottomLeft" | "belowScore";
 }
 
 export function LanguageSelector({ position = "bottomRight" }: Props) {
@@ -23,10 +23,13 @@ export function LanguageSelector({ position = "bottomRight" }: Props) {
   /* La position détermine aussi le SENS d'ouverture du menu :
      - top* : le menu descend (top: 56)
      - bottom* : le menu MONTE (bottom: 56) pour ne pas dépasser de l'écran */
-  const isBottom = position.startsWith("bottom");
-  const isRight = position.endsWith("Right");
+  const isBelowScore = position === "belowScore";
+  const isBottom = !isBelowScore && position.startsWith("bottom");
+  const isRight = isBelowScore || position.endsWith("Right");
 
-  const pos: React.CSSProperties = isBottom
+  const pos: React.CSSProperties = isBelowScore
+    ? { position: "absolute", top: 108, right: 14, zIndex: 100 }
+    : isBottom
     ? isRight
       ? { position: "absolute", bottom: 14, right: 14, zIndex: 100 }
       : { position: "absolute", bottom: 14, left: 14, zIndex: 100 }

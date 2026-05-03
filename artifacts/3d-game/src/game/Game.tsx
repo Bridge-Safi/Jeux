@@ -280,8 +280,9 @@ export function Game() {
         />
       )}
 
-      {/* Sélecteur de langue (toujours visible, en haut à droite) */}
-      <LanguageSelector position="bottomRight" />
+      {/* Sélecteur de langue : pendant le jeu → juste sous le score (haut-droite),
+          sinon (accueil/checkpoint/gameover) → bas-droite. */}
+      <LanguageSelector position={state.phase === "playing" ? "belowScore" : "bottomRight"} />
 
       {/* Indicateur manette connectée (discret, en bas à droite) */}
       {gamepadConnected && (

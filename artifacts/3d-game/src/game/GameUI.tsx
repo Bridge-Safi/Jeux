@@ -1416,6 +1416,9 @@ function StartScreen({ onStart, eligibility, onClaim }: {
             {t("bridge.playNow")}
           </button>
 
+          {/* Classement TOP 7 — placé HAUT pour visibilité immédiate */}
+          <LeaderboardCard />
+
           {/* Section "COMMENT GAGNER ?" — règles officielles en 4 catégories */}
           <div style={{ textAlign: "start", marginBottom: 12 }}>
             <div style={{
@@ -1468,11 +1471,8 @@ function StartScreen({ onStart, eligibility, onClaim }: {
             <span>{t("start.controls.touch")}</span>
           </div>
 
-          {/* Classement TOP 7 — tout en bas de l'écran d'accueil */}
-          <LeaderboardCard />
-
           {/* Espace tampon pour ne pas que le sélecteur de langue
-              (en bas-droite) chevauche le dernier élément du classement. */}
+              (en bas-droite) chevauche le dernier élément. */}
           <div style={{ height: 56 }} />
         </div>
       </div>
