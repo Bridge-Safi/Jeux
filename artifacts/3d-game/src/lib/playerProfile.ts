@@ -498,6 +498,42 @@ export async function markMenuClaimed(): Promise<{ success: boolean; error?: str
   }
 }
 
+/* ─── Classement TOP joueurs ───────────────────────────────────
+   Récupère les meilleurs joueurs triés par diamants collectés
+   (descendant). Utilisé par le LeaderboardCard sur l'écran d'accueil.
+   Anonymise le nom : "BR-XYZ123" si pas de username, sinon username. */
+export type LeaderEntry = {
+  id: string;
+  rank: number;          // 1-based
+  name: string;          // affichage : username ou code BR-XXXXXX
+  diamonds: number;
+};
+
+export async function getTopPlayers(limit = 7): Promise<LeaderEntry[]> {
+  if (!isSupabaseConfigured) return [];
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id,username,diamonds_collected")
+      .order("diamonds_collected", { ascending: false })
+      .limit(limit);
+    if (error || !data) return [];
+    return data.map((p, i) => {
+      const code = (p.id ?? "XXXXXX").toString().replace(/-/g, "").slice(0, 6).toUpperCase();
+      const fallback = `BR-${code}`;
+      const name = (p.username && p.username.trim().length > 0) ? p.username : fallback;
+      return {
+        id: p.id,
+        rank: i + 1,
+        name,
+        diamonds: Number(p.diamonds_collected) || 0,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function getProfile(): Promise<Profile | null> {
   if (!isSupabaseConfigured) return null;
   const byDevice = await findByDevice();

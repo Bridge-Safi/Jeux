@@ -86,6 +86,12 @@ const DICT: Record<Lang, Record<string, string>> = {
     "start.badge.days": "{n} jours consécutifs",
     "start.badge.menu": "Menu offert au 6ᵉ jour",
 
+    /* Classement TOP 7 */
+    "leader.title": "🏆 TOP 7 JOUEURS",
+    "leader.empty": "Aucun joueur classé pour le moment",
+    "leader.you": "VOUS",
+    "leader.diamonds": "💎",
+
     /* HUD */
     "hud.coins": "Pièces",
     "hud.diamonds": "Diamants",
@@ -339,6 +345,11 @@ const DICT: Record<Lang, Record<string, string>> = {
     "start.badge.days": "{n} consecutive days",
     "start.badge.menu": "Free meal on day 6",
 
+    "leader.title": "🏆 TOP 7 PLAYERS",
+    "leader.empty": "No ranked player yet",
+    "leader.you": "YOU",
+    "leader.diamonds": "💎",
+
     "hud.coins": "Coins",
     "hud.diamonds": "Diamonds",
     "hud.score": "Score",
@@ -581,6 +592,11 @@ const DICT: Record<Lang, Record<string, string>> = {
     "hud.coins": "العملات",
     "hud.diamonds": "ألماس",
     "hud.score": "النتيجة",
+    "leader.title": "🏆 أفضل 7 لاعبين",
+    "leader.empty": "لا يوجد لاعب مصنف بعد",
+    "leader.you": "أنت",
+    "leader.diamonds": "💎",
+
     "hud.nextStop": "🍽️ المحطة التالية · {s}ث",
     "ui.darkOn": "تم تفعيل الوضع الداكن",
     "ui.darkOff": "تم إيقاف الوضع الداكن",

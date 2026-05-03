@@ -281,7 +281,7 @@ export function Game() {
       )}
 
       {/* Sélecteur de langue (toujours visible, en haut à droite) */}
-      <LanguageSelector position="topRight" />
+      <LanguageSelector position="bottomRight" />
 
       {/* Indicateur manette connectée (discret, en bas à droite) */}
       {gamepadConnected && (

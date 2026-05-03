@@ -2,10 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { LANGS, useT, type Lang } from "../lib/i18n";
 
 interface Props {
-  position?: "topRight" | "topLeft";
+  position?: "topRight" | "topLeft" | "bottomRight" | "bottomLeft";
 }
 
-export function LanguageSelector({ position = "topRight" }: Props) {
+export function LanguageSelector({ position = "bottomRight" }: Props) {
   const { lang, setLang, t } = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -20,8 +20,17 @@ export function LanguageSelector({ position = "topRight" }: Props) {
     return () => document.removeEventListener("mousedown", onClick);
   }, [open]);
 
-  const pos: React.CSSProperties =
-    position === "topRight"
+  /* La position détermine aussi le SENS d'ouverture du menu :
+     - top* : le menu descend (top: 56)
+     - bottom* : le menu MONTE (bottom: 56) pour ne pas dépasser de l'écran */
+  const isBottom = position.startsWith("bottom");
+  const isRight = position.endsWith("Right");
+
+  const pos: React.CSSProperties = isBottom
+    ? isRight
+      ? { position: "absolute", bottom: 14, right: 14, zIndex: 100 }
+      : { position: "absolute", bottom: 14, left: 14, zIndex: 100 }
+    : isRight
       ? { position: "absolute", top: 14, right: 88, zIndex: 100 }
       : { position: "absolute", top: 14, left: 14, zIndex: 100 };
 
@@ -57,9 +66,9 @@ export function LanguageSelector({ position = "topRight" }: Props) {
       {open && (
         <div
           style={{
-            position: "fixed",
-            top: 56,
-            right: 88,
+            position: "absolute",
+            ...(isBottom ? { bottom: 48 } : { top: 48 }),
+            ...(isRight ? { right: 0 } : { left: 0 }),
             background: "rgba(10,15,30,0.96)",
             backdropFilter: "blur(14px)",
             WebkitBackdropFilter: "blur(14px)",

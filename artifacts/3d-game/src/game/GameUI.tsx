@@ -5,11 +5,13 @@ import {
   markMenuClaimed,
   getMenuEligibility,
   shortfallDh,
+  getTopPlayers,
   DIAMONDS_PER_MENU,
   DIAMONDS_PER_DIRHAM,
   REQUIRED_PLAY_DAYS,
   REQUIRED_SECONDS_PER_DAY,
   type MenuEligibility,
+  type LeaderEntry,
 } from "../lib/playerProfile";
 import type { Profile } from "../lib/supabase";
 import { useT, formatNum, t as tStatic } from "../lib/i18n";
@@ -1055,6 +1057,151 @@ function InstructionsScreen({ onStart }: { onStart: () => void }) {
 }
 
 /* ─── Écran de démarrage — thème "Bridge Shark" vert ─────────── */
+/* ─── Couleurs des paliers du classement TOP 7 ──────────────────
+   Pyramide de prestige inspirée du podium olympique :
+     #1            → OR (champion)
+     #2, #3        → ARGENT (vice-champions)
+     #4, #5, #6    → BRONZE (élite)
+     #7            → AZUR (qualifié) */
+function rankTier(rank: number): { bg: string; border: string; text: string; badge: string; label: string } {
+  if (rank === 1) return {
+    bg: "linear-gradient(135deg,rgba(80,55,0,0.95),rgba(50,32,0,0.92))",
+    border: "rgba(255,215,0,0.85)",
+    text: "#ffd700",
+    badge: "linear-gradient(135deg,#ffd700,#ffeb3b,#ffb300)",
+    label: "#3d2c00",
+  };
+  if (rank === 2 || rank === 3) return {
+    bg: "linear-gradient(135deg,rgba(60,60,70,0.92),rgba(35,35,42,0.88))",
+    border: "rgba(200,200,210,0.7)",
+    text: "#e0e0e0",
+    badge: "linear-gradient(135deg,#bdbdbd,#eeeeee,#9e9e9e)",
+    label: "#2a2a2a",
+  };
+  if (rank >= 4 && rank <= 6) return {
+    bg: "linear-gradient(135deg,rgba(80,40,15,0.92),rgba(50,25,8,0.88))",
+    border: "rgba(205,127,50,0.7)",
+    text: "#ff9966",
+    badge: "linear-gradient(135deg,#cd7f32,#e8a05b,#a0522d)",
+    label: "#3a1d08",
+  };
+  /* #7 — azur "qualifié" */
+  return {
+    bg: "linear-gradient(135deg,rgba(0,40,70,0.9),rgba(0,25,45,0.85))",
+    border: "rgba(100,180,255,0.55)",
+    text: "#90caf9",
+    badge: "linear-gradient(135deg,#42a5f5,#90caf9,#1e88e5)",
+    label: "#0d2a4a",
+  };
+}
+
+/* ─── Carte CLASSEMENT TOP 7 ──────────────────────────────────── */
+function LeaderboardCard() {
+  const { t } = useT();
+  const [entries, setEntries] = useState<LeaderEntry[] | null>(null);
+
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      const top = await getTopPlayers(7);
+      if (!cancel) setEntries(top);
+    })();
+    return () => { cancel = true; };
+  }, []);
+
+  return (
+    <div style={{
+      width: "100%",
+      background: "linear-gradient(135deg,rgba(0,25,12,0.94),rgba(0,15,8,0.9))",
+      border: "1.5px solid rgba(0,230,118,0.35)",
+      borderRadius: 16,
+      padding: "12px 12px 14px",
+      marginTop: 8, marginBottom: 16,
+      boxShadow: "0 6px 24px rgba(0,80,40,0.35)",
+    }}>
+      <div style={{
+        fontSize: 13, color: "#00e676", fontWeight: 800, letterSpacing: 1.5,
+        marginBottom: 10, textTransform: "uppercase", textAlign: "center",
+      }}>
+        {t("leader.title")}
+      </div>
+
+      {entries === null && (
+        <div style={{
+          fontSize: 11, color: "#9ec9b3", textAlign: "center", padding: "10px 0",
+          letterSpacing: 0.5,
+        }}>···</div>
+      )}
+
+      {entries && entries.length === 0 && (
+        <div style={{
+          fontSize: 11, color: "#9ec9b3", textAlign: "center", padding: "10px 0",
+        }}>
+          {t("leader.empty")}
+        </div>
+      )}
+
+      {entries && entries.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {entries.map((e) => {
+            const tier = rankTier(e.rank);
+            return (
+              <div
+                key={e.id}
+                style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  background: tier.bg,
+                  border: `1px solid ${tier.border}`,
+                  borderRadius: 10,
+                  padding: "7px 10px",
+                  boxShadow: e.rank === 1
+                    ? "0 0 14px rgba(255,215,0,0.35)"
+                    : "0 2px 8px rgba(0,0,0,0.35)",
+                }}
+              >
+                {/* Badge numéro de rang */}
+                <div style={{
+                  flexShrink: 0,
+                  width: 26, height: 26, borderRadius: "50%",
+                  background: tier.badge,
+                  color: tier.label,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 900, fontSize: 13,
+                  fontFamily: "'Fredoka','Segoe UI',sans-serif",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.15) inset",
+                }} dir="ltr">
+                  {e.rank === 1 ? "👑" : e.rank}
+                </div>
+
+                {/* Nom du joueur */}
+                <div style={{
+                  flex: 1, minWidth: 0,
+                  fontSize: 12, color: tier.text,
+                  fontWeight: 800, letterSpacing: 0.5,
+                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  fontFamily: "'Fredoka','Segoe UI',sans-serif",
+                }} dir="ltr">
+                  {e.name}
+                </div>
+
+                {/* Diamants collectés */}
+                <div style={{
+                  flexShrink: 0,
+                  fontSize: 12, color: tier.text,
+                  fontWeight: 900, letterSpacing: 0.5,
+                  fontFamily: "'Fredoka','Segoe UI',sans-serif",
+                }} dir="ltr">
+                  {formatNum(e.diamonds)} 💎
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StartScreen({ onStart, eligibility, onClaim }: {
   onStart: () => void; eligibility: MenuEligibility; onClaim: () => void;
 }) {
@@ -1101,7 +1248,7 @@ function StartScreen({ onStart, eligibility, onClaim }: {
           <div style={{
             position: "absolute", inset: 0, borderRadius: "50%",
             border: "2px solid rgba(0,230,118,0.9)",
-            background: "url(/assets/shark-warrior-night.jpeg) center/cover",
+            background: "url(/assets/player-avatar.jpeg) center/cover",
             boxShadow: "0 0 18px rgba(0,230,118,0.5), 0 0 0 3px rgba(0,30,15,0.85) inset",
           }} />
           <div style={{
@@ -1283,13 +1430,20 @@ function StartScreen({ onStart, eligibility, onClaim }: {
           </div>
 
           {/* Contrôles (footer discret) */}
-          <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, color: "#666", fontSize: 10 }}>
+          <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, color: "#666", fontSize: 10, marginBottom: 12 }}>
             <span>{t("start.controls.lanes")}</span>
             <span style={{ opacity: 0.4 }}>|</span>
             <span>{t("start.controls.jump")}</span>
             <span style={{ opacity: 0.4 }}>|</span>
             <span>{t("start.controls.touch")}</span>
           </div>
+
+          {/* Classement TOP 7 — tout en bas de l'écran d'accueil */}
+          <LeaderboardCard />
+
+          {/* Espace tampon pour ne pas que le sélecteur de langue
+              (en bas-droite) chevauche le dernier élément du classement. */}
+          <div style={{ height: 56 }} />
         </div>
       </div>
 
