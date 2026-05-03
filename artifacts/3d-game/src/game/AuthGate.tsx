@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { getBridgeAuth, listenForParentAuth, setBridgeAuthManual, EVENT_NAME, type BridgeAuth } from "../lib/bridgeAuth";
+import { getBridgeAuth, listenForParentAuth, setBridgeAuthManual, clearBridgeAuth, EVENT_NAME, type BridgeAuth } from "../lib/bridgeAuth";
+import { verifyActiveDevice } from "../lib/playerProfile";
 import { navigateInApp } from "../lib/inAppNav";
 import { BRIDGE_EATS_URL } from "./GameUI";
 import { useT } from "../lib/i18n";
@@ -15,6 +16,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const [manualOpen, setManualOpen] = useState(false);
   const [manualPhone, setManualPhone] = useState("");
   const [manualErr, setManualErr] = useState(false);
+  const [kicked, setKicked] = useState(false);
 
   /* Re-sync si Bridge Eats parent envoie un postMessage avec l'auth. */
   useEffect(() => {
@@ -29,6 +31,34 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  /* Vérifie périodiquement que CE téléphone est toujours l'appareil
+     actif du compte. Si le joueur s'est reconnecté ailleurs avec le
+     même n°, on le déconnecte ici (one-device-at-a-time). */
+  useEffect(() => {
+    if (!auth?.phone) return;
+    let cancelled = false;
+    const check = async () => {
+      const ok = await verifyActiveDevice();
+      if (cancelled) return;
+      if (!ok) {
+        clearBridgeAuth();
+        setAuth(null);
+        setKicked(true);
+      }
+    };
+    check();
+    const interval = setInterval(check, 30_000); // toutes les 30s
+    const onFocus = () => check();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [auth?.phone]);
+
   const handleLogin = useCallback(() => {
     /* On signale à Bridge Eats qu'on attend une auth — il pourra
        réembarquer le jeu avec ?email=...&phone=... après login. */
@@ -42,6 +72,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     const a = setBridgeAuthManual(manualPhone);
     if (!a) { setManualErr(true); return; }
     setManualErr(false);
+    setKicked(false);
     setAuth(a);
   }, [manualPhone]);
 
@@ -68,6 +99,26 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,230,118,0.1) inset",
         textAlign: "center",
       }}>
+        {/* Bandeau "kicked" : affiché si le joueur a été déconnecté
+            parce que son compte vient de se connecter ailleurs. */}
+        {kicked && (
+          <div style={{
+            background: "linear-gradient(135deg,#ff8a65,#ff5722)",
+            color: "#fff",
+            borderRadius: 14,
+            padding: "12px 14px",
+            marginBottom: 16,
+            textAlign: "start",
+            boxShadow: "0 4px 18px rgba(255,87,34,0.45)",
+          }}>
+            <div style={{ fontWeight: 900, fontSize: 13, marginBottom: 4, letterSpacing: 0.5 }}>
+              ⚠️ {t("auth.kicked.title")}
+            </div>
+            <div style={{ fontSize: 12, lineHeight: 1.45, opacity: 0.95 }}>
+              {t("auth.kicked.body")}
+            </div>
+          </div>
+        )}
         <div style={{ fontSize: 64, lineHeight: 1, marginBottom: 12 }} aria-hidden>🔒</div>
         <div style={{
           color: "#00e676", fontSize: 11, fontWeight: 800, letterSpacing: 2,

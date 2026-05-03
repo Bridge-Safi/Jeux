@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured, type Profile } from "./supabase";
 import { getDeviceId, getHardwarePrefix } from "./deviceFingerprint";
+import { getBridgeAuth } from "./bridgeAuth";
 
 const PLAYER_NAME_KEY = "safi_runner_player_name";
 const MAX_DIAMONDS_PER_SECOND = 2.0; // anti-cheat cap, > 6000/h = 1.67/s
@@ -85,7 +86,33 @@ async function getOrCreateAuthUser(): Promise<string | null> {
   }
 }
 
+/* ─── Lookup canonique d'un profil ─────────────────────────────────
+   PRIORITÉ : bridge_phone > device_fingerprint > hardware_prefix.
+   C'est le téléphone Bridge Eats qui suit le joueur d'un appareil à
+   l'autre. L'empreinte appareil n'est qu'un fallback (et un marqueur
+   "appareil actif" — voir claimDeviceForProfile). */
+async function findByBridgePhone(phone: string): Promise<Profile | null> {
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("bridge_phone", phone)
+      .maybeSingle();
+    if (error) return null;
+    return data as Profile | null;
+  } catch {
+    return null;
+  }
+}
+
 async function findByDevice(): Promise<Profile | null> {
+  /* 1. Si Bridge auth dispo → lookup par téléphone (cross-device). */
+  const auth = getBridgeAuth();
+  if (auth?.phone) {
+    const byPhone = await findByBridgePhone(auth.phone);
+    if (byPhone) return byPhone;
+  }
+  /* 2. Fallback : empreinte appareil (avant que bridge_phone soit posé). */
   try {
     const deviceId = getDeviceId();
     const hwPrefix = getHardwarePrefix();
@@ -103,6 +130,50 @@ async function findByDevice(): Promise<Profile | null> {
   }
 }
 
+/* Marque CE téléphone comme l'appareil actif du profil. Tout appareil
+   précédemment connecté avec le même bridge_phone verra son
+   device_fingerprint ne plus matcher → verifyActiveDevice() le
+   déconnectera à la prochaine vérification. */
+async function claimDeviceForProfile(profileId: string): Promise<void> {
+  try {
+    await supabase
+      .from("profiles")
+      .update({
+        device_fingerprint: getDeviceId(),
+        hardware_prefix: getHardwarePrefix(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", profileId);
+  } catch (err) {
+    console.warn("claimDeviceForProfile:", err);
+  }
+}
+
+/* Vérifie que CE téléphone est toujours l'appareil actif du profil.
+   Si le joueur s'est connecté ailleurs avec le même n°, le
+   device_fingerprint serveur ne matche plus → on retourne false et
+   l'AuthGate forcera une déconnexion locale.
+   Retourne `true` si pas de bridge_phone (rien à protéger), ou si
+   Supabase répond mal (on ne kick pas en cas de doute). */
+export async function verifyActiveDevice(): Promise<boolean> {
+  if (!isSupabaseConfigured) return true;
+  const auth = getBridgeAuth();
+  if (!auth?.phone) return true;
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("device_fingerprint")
+      .eq("bridge_phone", auth.phone)
+      .maybeSingle();
+    if (error || !data) return true;
+    const serverFp = (data as { device_fingerprint?: string }).device_fingerprint;
+    if (!serverFp) return true;
+    return serverFp === getDeviceId();
+  } catch {
+    return true;
+  }
+}
+
 async function getCurrentUserId(): Promise<string | null> {
   if (!isSupabaseConfigured) return null;
   try {
@@ -117,9 +188,49 @@ export async function ensureProfile(): Promise<Profile | null> {
     const userId = await getOrCreateAuthUser();
     if (!userId) return null;
 
-    const byDevice = await findByDevice();
-    if (byDevice) return byDevice;
+    const auth = getBridgeAuth();
+    const deviceId = getDeviceId();
+    const hwPrefix = getHardwarePrefix();
 
+    /* 1. Si Bridge auth dispo → on cherche d'abord par téléphone.
+       C'est le cas typique de connexion sur un nouvel appareil :
+       le profil avec tous les 💎 existe déjà côté serveur. */
+    if (auth?.phone) {
+      const byPhone = await findByBridgePhone(auth.phone);
+      if (byPhone) {
+        /* Si CE téléphone n'est pas l'appareil actif → on le revendique.
+           Les autres appareils seront déconnectés par verifyActiveDevice. */
+        if (byPhone.device_fingerprint !== deviceId) {
+          await claimDeviceForProfile(byPhone.id);
+          return { ...byPhone, device_fingerprint: deviceId, hardware_prefix: hwPrefix };
+        }
+        return byPhone;
+      }
+    }
+
+    /* 2. Sinon, on cherche par empreinte appareil (cas anonyme). */
+    const byDevice = await findByDevice();
+    if (byDevice) {
+      /* Le joueur vient juste de se connecter avec Bridge auth →
+         on attache son téléphone au profil de l'appareil. */
+      if (auth?.phone && !byDevice.bridge_phone) {
+        try {
+          await supabase
+            .from("profiles")
+            .update({
+              bridge_phone: auth.phone,
+              player_email: auth.email,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", byDevice.id);
+          return { ...byDevice, bridge_phone: auth.phone, player_email: auth.email };
+        } catch { /* colonnes absentes ou conflit unicité — on garde le profil */ }
+      }
+      return byDevice;
+    }
+
+    /* 3. Aucun profil existant → on en crée un et on y attache
+       directement le téléphone Bridge si dispo. */
     const { data: existing, error: fetchErr } = await supabase
       .from("profiles").select("*").eq("id", userId).maybeSingle();
     if (fetchErr && fetchErr.code !== "PGRST116") {
@@ -128,8 +239,6 @@ export async function ensureProfile(): Promise<Profile | null> {
     }
     if (existing) return existing as Profile;
 
-    const deviceId = getDeviceId();
-    const hwPrefix = getHardwarePrefix();
     const insertData: Record<string, unknown> = {
       id: userId,
       username: getPlayerName(),
@@ -143,6 +252,10 @@ export async function ensureProfile(): Promise<Profile | null> {
         insertData.hardware_prefix = hwPrefix;
       }
     } catch { /* colonnes absentes */ }
+    if (auth?.phone) {
+      insertData.bridge_phone = auth.phone;
+      insertData.player_email = auth.email;
+    }
 
     const { data: created, error: insertErr } = await supabase
       .from("profiles").insert(insertData).select().single();

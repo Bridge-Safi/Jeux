@@ -109,6 +109,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "auth.manual.submit": "Entrer dans le jeu",
     "auth.manual.error": "Numéro invalide.",
     "auth.manual.hint": "C'est le numéro lié à ton compte Bridge Eats. On l'utilise pour synchroniser tes 💎.",
+    "auth.kicked.title": "Connexion sur un autre appareil",
+    "auth.kicked.body": "Ton compte vient d'être utilisé sur un autre téléphone. Pour des raisons de sécurité, un seul appareil peut être connecté à la fois. Reconnecte-toi pour reprendre.",
 
     /* Touch controls */
     "controls.swipeHint": "← SWIPE pour changer de voie · SWIPE ↑ pour sauter →",
@@ -359,6 +361,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "auth.manual.submit": "Enter the game",
     "auth.manual.error": "Invalid phone number.",
     "auth.manual.hint": "This is the number linked to your Bridge Eats account. We use it to sync your 💎.",
+    "auth.kicked.title": "Logged in on another device",
+    "auth.kicked.body": "Your account was just used on another phone. For security reasons, only one device can be connected at a time. Sign in again to resume.",
 
     "controls.swipeHint": "← SWIPE to switch lane · SWIPE ↑ to jump →",
     "nitro.ready": "READY! 🔥",
@@ -596,6 +600,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "auth.manual.submit": "ادخل إلى اللعبة",
     "auth.manual.error": "رقم غير صالح.",
     "auth.manual.hint": "هذا هو الرقم المرتبط بحسابك في Bridge Eats. نستخدمه لمزامنة 💎.",
+    "auth.kicked.title": "تم تسجيل الدخول من جهاز آخر",
+    "auth.kicked.body": "تم استخدام حسابك للتو على هاتف آخر. لأسباب أمنية، يمكن لجهاز واحد فقط أن يكون متصلاً في نفس الوقت. سجّل الدخول مرة أخرى للمتابعة.",
 
     "controls.swipeHint": "← اسحب لتغيير المسار · اسحب لأعلى للقفز →",
     "nitro.ready": "جاهز! 🔥",
