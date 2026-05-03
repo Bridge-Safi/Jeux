@@ -16,6 +16,7 @@ import {
 } from "../lib/playerProfile";
 import type { Profile } from "../lib/supabase";
 import { useT, formatNum, t as tStatic } from "../lib/i18n";
+import { ProfilePage } from "./ProfilePage";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { useMusic } from "../hooks/useMusic";
 import { navigateInApp } from "../lib/inAppNav";
@@ -1232,8 +1233,8 @@ function LeaderboardCard() {
   );
 }
 
-function StartScreen({ onStart, eligibility, onClaim }: {
-  onStart: () => void; eligibility: MenuEligibility; onClaim: () => void;
+function StartScreen({ onStart, eligibility, onClaim, onShowProfile }: {
+  onStart: () => void; eligibility: MenuEligibility; onClaim: () => void; onShowProfile: () => void;
 }) {
   const { t } = useT();
   const hasMenu = eligibility.menusAvailable > 0;
@@ -1264,11 +1265,16 @@ function StartScreen({ onStart, eligibility, onClaim }: {
       }}>
         <div style={{ flex: 1, minHeight: 130 }} />
 
-        {/* Mini logo flottant en haut à droite — avatar requin + LIVE */}
-        <div style={{
-          position: "absolute", top: 14, right: 14, zIndex: 25,
-          width: 60, height: 60, pointerEvents: "none",
-        }}>
+        {/* Mini logo flottant en haut à droite — avatar joueur + LIVE.
+            CLIQUABLE : ouvre la page Profil dédiée. */}
+        <div
+          onClick={onShowProfile}
+          role="button"
+          aria-label={t("profile.button")}
+          style={{
+            position: "absolute", top: 14, right: 14, zIndex: 25,
+            width: 60, height: 60, pointerEvents: "auto", cursor: "pointer",
+          }}>
           <div style={{
             position: "absolute", inset: -3, borderRadius: "50%",
             background: "conic-gradient(from 0deg,#00e676,#00c853,#69f0ae,#00e676)",
@@ -1327,16 +1333,20 @@ function StartScreen({ onStart, eligibility, onClaim }: {
           <div style={{
             display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12, textAlign: "start",
           }}>
-            <div style={{
-              background: "linear-gradient(135deg,rgba(0,40,20,0.9),rgba(0,25,12,0.85))",
-              border: "1px solid rgba(0,230,118,0.3)", borderRadius: 14,
-              padding: "10px 12px", boxShadow: "0 4px 16px rgba(0,80,40,0.3)",
-            }}>
-              <div style={{ fontSize: 9, color: "#69f0ae", letterSpacing: 1.5, fontWeight: 700, marginBottom: 4 }}>ID JOUEUR</div>
+            <button
+              onClick={onShowProfile}
+              style={{
+                background: "linear-gradient(135deg,rgba(0,40,20,0.9),rgba(0,25,12,0.85))",
+                border: "1px solid rgba(0,230,118,0.3)", borderRadius: 14,
+                padding: "10px 12px", boxShadow: "0 4px 16px rgba(0,80,40,0.3)",
+                textAlign: "start", cursor: "pointer",
+                color: "inherit", font: "inherit",
+              }}>
+              <div style={{ fontSize: 9, color: "#69f0ae", letterSpacing: 1.5, fontWeight: 700, marginBottom: 4 }}>{t("profile.button")}</div>
               <div style={{ fontSize: 14, color: "#fff", fontWeight: 800, letterSpacing: 1, fontFamily: "'Fredoka', monospace" }} dir="ltr">
                 BR-{(eligibility.diamondsCollected.toString(36).toUpperCase() + "XXXXXX").slice(0, 6)}
               </div>
-            </div>
+            </button>
             <div style={{
               background: "linear-gradient(135deg,rgba(40,30,0,0.9),rgba(25,18,0,0.85))",
               border: "1px solid rgba(255,193,7,0.3)", borderRadius: 14,
@@ -1596,6 +1606,7 @@ export function GameUI({
 }: GameUIProps) {
   const [showReward, setShowReward] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   /* Éligibilité = profile + diamants estimés de la session en cours */
   const sessionDiamonds = Math.floor(score / 10);
@@ -1656,11 +1667,20 @@ export function GameUI({
         <InstructionsScreen onStart={handleInstructionsDone} />
       )}
 
-      {phase === "start" && !showReward && !showInstructions && (
+      {phase === "start" && !showReward && !showInstructions && !showProfile && (
         <StartScreen
           onStart={handleStart}
           eligibility={eligibility}
           onClaim={() => setShowReward(true)}
+          onShowProfile={() => setShowProfile(true)}
+        />
+      )}
+
+      {showProfile && (
+        <ProfilePage
+          profile={profile}
+          eligibility={eligibility}
+          onClose={() => setShowProfile(false)}
         />
       )}
 

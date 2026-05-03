@@ -594,6 +594,50 @@ export async function getTopPlayers(limit = 7): Promise<LeaderEntry[]> {
   }
 }
 
+/* ─── Met à jour le username (nom d'affichage) du joueur courant ─
+   Utilisé par la page Profil. Limite à 24 caractères, trim.
+   Renvoie le profil mis à jour, ou null en cas d'erreur. */
+export async function updateUsername(newName: string): Promise<Profile | null> {
+  if (!isSupabaseConfigured) return null;
+  const clean = newName.trim().slice(0, 24);
+  if (!clean) return null;
+  const byDevice = await findByDevice();
+  const targetId = byDevice?.id ?? await getCurrentUserId();
+  if (!targetId) return null;
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ username: clean, updated_at: new Date().toISOString() })
+      .eq("id", targetId)
+      .select()
+      .single();
+    if (error) return null;
+    /* miroir local pour les classements anonymes éventuels */
+    try { localStorage.setItem(PLAYER_NAME_KEY, clean); } catch { /* ignore */ }
+    return data as Profile;
+  } catch { return null; }
+}
+
+/* ─── Position dans le classement TOP 7 du cycle courant ────────
+   Renvoie le rang (1-based) si le joueur est dans le top du cycle,
+   sinon null. Pour la page Profil. */
+export async function getMyRank(myPeriodDiamonds: number): Promise<number | null> {
+  if (!isSupabaseConfigured) return null;
+  if (myPeriodDiamonds <= 0) return null;
+  const cycleStart = currentLeaderCycleStart();
+  try {
+    /* Compte combien de joueurs ont STRICTEMENT plus de diamants que moi
+       dans le cycle courant. Mon rang = ce compte + 1. */
+    const { count, error } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("period_start", cycleStart)
+      .gt("period_diamonds", myPeriodDiamonds);
+    if (error || count === null) return null;
+    return count + 1;
+  } catch { return null; }
+}
+
 export async function getProfile(): Promise<Profile | null> {
   if (!isSupabaseConfigured) return null;
   const byDevice = await findByDevice();
