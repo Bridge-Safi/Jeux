@@ -359,8 +359,8 @@ function NitroMeter({ meter, active, timeLeft }: { meter: number; active: boolea
   const ready = meter >= 100 && !active;
   return (
     <div style={{
-      position: "absolute", left: "50%", bottom: 12, transform: "translateX(-50%)",
-      width: 220, maxWidth: "55%",
+      position: "absolute", left: "50%", bottom: 118, transform: "translateX(-50%)",
+      width: 240, maxWidth: "60%",
       pointerEvents: "none", zIndex: 18,
       fontFamily: "'Fredoka', sans-serif",
     }}>
@@ -515,9 +515,6 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
         </div>
       )}
 
-      {/* Jauge NITRO — au centre en bas, au-dessus des contrôles tactiles */}
-      <NitroMeter meter={boostMeter} active={boostActive} timeLeft={boostTimeLeft} />
-
       {/* Voile rouge clignotant pendant le boost — sensation de vitesse */}
       {boostActive && (
         <div style={{
@@ -660,17 +657,6 @@ function TouchControls({ onChangeLane, onJump, onBoost, boostReady, boostActive 
           <NFSButton icon="›" glow="#ff1493" accent="#ff1493" onClick={() => onChangeLane(1)} />
         </div>
       </div>
-      <div style={{
-        position: "absolute", bottom: 130, left: 0, right: 0,
-        textAlign: "center", fontSize: 11,
-        color: "rgba(255,255,255,0.5)", letterSpacing: 1.5,
-        fontWeight: 600, pointerEvents: "none", zIndex: 15,
-        textShadow: "0 0 10px rgba(0,0,0,0.8)",
-        animation: "fadeOutSwipe 8s forwards",
-      }}>
-        {tStatic("controls.swipeHint")}
-      </div>
-      <style>{`@keyframes fadeOutSwipe{0%,70%{opacity:1}100%{opacity:0}}`}</style>
     </>
   );
 }
@@ -1517,6 +1503,8 @@ export function GameUI({
               boostActive={boostActive}
             />
           </div>
+          {/* Jauge NITRO — centrée juste au-dessus des contrôles, monte un peu */}
+          <NitroMeter meter={boostMeter} active={boostActive} timeLeft={boostTimeLeft} />
           <style>{`
             @media (hover: hover) and (pointer: fine) {
               .touch-only { display: none !important; }
