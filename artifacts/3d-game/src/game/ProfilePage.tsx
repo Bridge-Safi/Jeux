@@ -27,6 +27,7 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
   const [avatar, setAvatar] = useState<string | null>(profile?.avatar_url ?? null);
   const [photoFlash, setPhotoFlash] = useState<"saved" | "tooLarge" | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -34,8 +35,6 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
     setAvatar(profile?.avatar_url ?? null);
   }, [profile?.username, profile?.avatar_url]);
 
-  /* Redimensionne une image en JPEG ~256px max (carré centré, ~30-50 KB).
-     Renvoie la data URL "data:image/jpeg;base64,..." prête à stocker. */
   const compressToDataUrl = (file: File): Promise<string> => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -63,7 +62,7 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    e.target.value = ""; // permet de re-choisir le même fichier plus tard
+    e.target.value = "";
     if (!file || uploadingPhoto) return;
     setUploadingPhoto(true);
     try {
@@ -87,14 +86,6 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
     }
   };
 
-  const handleRemovePhoto = async () => {
-    if (uploadingPhoto) return;
-    setUploadingPhoto(true);
-    const updated = await updateAvatar(null);
-    if (updated) setAvatar(null);
-    setUploadingPhoto(false);
-  };
-
   useEffect(() => {
     let cancel = false;
     const periodDiamonds = (profile as (Profile & { period_diamonds?: number }) | null)?.period_diamonds ?? 0;
@@ -112,152 +103,178 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
     setSaving(false);
     if (updated) {
       setSavedFlash(true);
+      setEditingName(false);
       setTimeout(() => setSavedFlash(false), 1800);
     }
   };
 
   const periodDiamonds = (profile as (Profile & { period_diamonds?: number }) | null)?.period_diamonds ?? 0;
   const totalDiamonds = profile?.diamonds_collected ?? 0;
-  const phone = profile?.bridge_phone ?? null;
-  const firstPlay = profile?.first_play_date ?? null;
+  const avatarSrc = avatar && avatar.length > 0 ? avatar : "/assets/player-avatar.jpeg";
+  const displayName = profile?.username ?? shortId(profile?.id);
 
   return (
     <div style={{
       position: "absolute", inset: 0, zIndex: 90,
-      background: "linear-gradient(180deg,rgba(0,30,15,0.96) 0%,rgba(0,15,8,0.99) 60%,rgba(0,8,4,1) 100%)",
+      background: "linear-gradient(180deg,#00170a 0%,#000e06 100%)",
       overflowY: "auto", overflowX: "hidden",
       WebkitOverflowScrolling: "touch" as never,
       pointerEvents: "auto",
+      fontFamily: "'Segoe UI','Arial',sans-serif",
     }}>
-      {/* Bouton × pour fermer — flottant en haut à droite */}
-      <button
-        onClick={onClose}
-        aria-label={t("profile.close")}
-        style={{
-          position: "absolute", top: 14, right: 14, zIndex: 10,
-          width: 38, height: 38, borderRadius: "50%",
-          background: "rgba(0,0,0,0.55)", color: "#a5d6a7",
-          border: "1px solid rgba(0,230,118,0.35)",
-          fontSize: 20, fontWeight: 700, lineHeight: 1,
-          cursor: "pointer", fontFamily: "'Segoe UI', sans-serif",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
-        }}
-      >×</button>
+      <style>{`
+        @keyframes spinProf { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+        @keyframes popIn { from{transform:scale(0.85);opacity:0} to{transform:scale(1);opacity:1} }
+        @keyframes shimmer {
+          0%{background-position:-200% center}
+          100%{background-position:200% center}
+        }
+      `}</style>
 
-      <div style={{ maxWidth: 500, margin: "0 auto", padding: "24px 18px 80px" }}>
+      {/* Bouton × */}
+      <button onClick={onClose} style={{
+        position: "absolute", top: 14, right: 14, zIndex: 10,
+        width: 36, height: 36, borderRadius: "50%",
+        background: "rgba(255,255,255,0.08)", color: "#a5d6a7",
+        border: "1px solid rgba(0,230,118,0.25)",
+        fontSize: 20, fontWeight: 700,
+        cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>×</button>
 
-        {/* En-tête : avatar + identifiant uniquement (sobre) */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
+      <div style={{ maxWidth: 420, margin: "0 auto", padding: "32px 20px 80px", textAlign: "center" }}>
+
+        {/* ── AVATAR centré — cliquable pour changer la photo ── */}
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
+
+        <div
+          onClick={handlePickPhoto}
+          title={t("profile.changePhoto")}
+          style={{ position: "relative", width: 110, height: 110, margin: "0 auto 6px", cursor: "pointer" }}
+        >
+          {/* Anneau rotatif */}
           <div style={{
-            position: "relative", width: 78, height: 78, flexShrink: 0,
-          }}>
-            <div style={{
-              position: "absolute", inset: -3, borderRadius: "50%",
-              background: "conic-gradient(from 0deg,#00e676,#00c853,#69f0ae,#00e676)",
-              animation: "spinProf 6s linear infinite",
-            }} />
+            position: "absolute", inset: -4, borderRadius: "50%",
+            background: "conic-gradient(from 0deg,#00e676,#00c853,#69f0ae,#00e676)",
+            animation: "spinProf 5s linear infinite",
+          }} />
+          {/* Photo */}
+          <div style={{
+            position: "absolute", inset: 0, borderRadius: "50%",
+            backgroundImage: `url(${avatarSrc})`,
+            backgroundSize: "cover", backgroundPosition: "center",
+            border: "3px solid #000e06",
+            boxShadow: "0 0 24px rgba(0,230,118,0.45)",
+          }} />
+          {/* Badge appareil photo */}
+          <div style={{
+            position: "absolute", bottom: 2, right: 2,
+            width: 28, height: 28, borderRadius: "50%",
+            background: "#00c853",
+            border: "2px solid #000e06",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14,
+          }}>📷</div>
+          {/* Indicateur upload */}
+          {uploadingPhoto && (
             <div style={{
               position: "absolute", inset: 0, borderRadius: "50%",
-              border: "2px solid rgba(0,230,118,0.85)",
-              background: `url(${avatar && avatar.length > 0 ? avatar : "/assets/player-avatar.jpeg"}) center/cover`,
-              boxShadow: "0 0 22px rgba(0,230,118,0.5)",
-            }} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: 22, color: "#fff", fontWeight: 900, lineHeight: 1.15,
-              textShadow: "0 0 12px rgba(0,230,118,0.4)",
-              fontFamily: "'Fredoka', monospace",
-              letterSpacing: 1,
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }} dir="ltr">
-              {shortId(profile?.id)}
-            </div>
-          </div>
-        </div>
-
-        {/* Boutons photo de profil */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            style={{ display: "none" }}
-          />
-          <button
-            onClick={handlePickPhoto}
-            disabled={uploadingPhoto}
-            style={{
-              flex: 1, minWidth: 140,
-              background: photoFlash === "saved"
-                ? "linear-gradient(135deg,#00c853,#00e676)"
-                : "linear-gradient(135deg,rgba(0,200,83,0.85),rgba(0,230,118,0.85))",
-              color: "#003311", border: "none", borderRadius: 12,
-              padding: "11px 14px", fontSize: 13, fontWeight: 900,
-              letterSpacing: 0.5, cursor: uploadingPhoto ? "wait" : "pointer",
-              opacity: uploadingPhoto ? 0.6 : 1,
-              fontFamily: "'Segoe UI', sans-serif",
-            }}
-          >
-            {photoFlash === "saved" ? t("profile.photoSaved") : t("profile.changePhoto")}
-          </button>
-          {avatar && avatar.length > 0 && (
-            <button
-              onClick={handleRemovePhoto}
-              disabled={uploadingPhoto}
-              style={{
-                background: "rgba(0,0,0,0.55)", color: "#a5d6a7",
-                border: "1px solid rgba(0,230,118,0.35)", borderRadius: 12,
-                padding: "11px 14px", fontSize: 12, fontWeight: 800,
-                letterSpacing: 0.5, cursor: uploadingPhoto ? "wait" : "pointer",
-                opacity: uploadingPhoto ? 0.6 : 1,
-                fontFamily: "'Segoe UI', sans-serif",
-              }}
-            >
-              {t("profile.removePhoto")}
-            </button>
+              background: "rgba(0,0,0,0.55)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 22,
+            }}>⏳</div>
           )}
         </div>
+
+        {/* Flash photo */}
+        {photoFlash === "saved" && (
+          <div style={{ fontSize: 12, color: "#00e676", fontWeight: 700, marginBottom: 4 }}>
+            {t("profile.photoSaved")}
+          </div>
+        )}
         {photoFlash === "tooLarge" && (
-          <div style={{
-            background: "rgba(239,83,80,0.15)",
-            border: "1px solid rgba(239,83,80,0.45)",
-            color: "#ff8a80", borderRadius: 10,
-            padding: "8px 12px", fontSize: 12, fontWeight: 700,
-            marginBottom: 12, textAlign: "center",
-          }}>
+          <div style={{ fontSize: 12, color: "#ff8a80", fontWeight: 700, marginBottom: 4 }}>
             {t("profile.photoTooLarge")}
           </div>
         )}
 
-        {/* Section IDENTITÉ */}
-        <SectionCard title={t("profile.identityTitle")}>
-          <Field label={t("profile.idLabel")} value={shortId(profile?.id)} mono />
-          <Field label={t("profile.phoneLabel")}
-                 value={phone ?? t("profile.phoneNone")}
-                 muted={!phone} />
+        {/* Label "Bridge Game" comme sur photo 2 */}
+        <div style={{
+          display: "inline-block",
+          background: "rgba(0,200,83,0.15)",
+          border: "1px solid rgba(0,230,118,0.3)",
+          color: "#69f0ae", fontSize: 11, fontWeight: 800,
+          letterSpacing: 1.2, padding: "3px 12px", borderRadius: 999,
+          marginBottom: 8, textTransform: "uppercase",
+        }}>🦈 SAFI RUNNER</div>
 
-          {/* Edition username */}
-          <div style={{ marginTop: 10 }}>
-            <div style={{
-              fontSize: 10, color: "#69f0ae", fontWeight: 700,
-              letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 6,
-            }}>{t("profile.usernameLabel")}</div>
+        {/* ID joueur */}
+        <div style={{
+          fontSize: 26, color: "#fff", fontWeight: 900, letterSpacing: 2,
+          fontFamily: "'Fredoka', monospace",
+          textShadow: "0 0 16px rgba(0,230,118,0.4)",
+          marginBottom: 14,
+        }} dir="ltr">{shortId(profile?.id)}</div>
+
+        {/* ── Badge diamants (comme le badge doré de Bridge Eats) ── */}
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          background: "linear-gradient(135deg,#f9a825,#ffd54f,#f9a825)",
+          backgroundSize: "200% auto",
+          animation: "shimmer 3s linear infinite",
+          color: "#1a0a00", fontWeight: 900,
+          fontFamily: "'Bangers', sans-serif",
+          fontSize: 22, letterSpacing: 1,
+          padding: "10px 24px", borderRadius: 999,
+          boxShadow: "0 6px 22px rgba(249,168,37,0.45)",
+          marginBottom: 28,
+        }}>
+          <span style={{ fontSize: 26 }}>💎</span>
+          <span dir="ltr">{formatNum(totalDiamonds)}</span>
+          <span style={{ fontSize: 13, fontFamily: "'Segoe UI',sans-serif", fontWeight: 800 }}>
+            {t("hud.diamonds")}
+          </span>
+        </div>
+
+        {/* ── Infos rapides : cycle + rang ── */}
+        <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
+          <InfoPill
+            label={t("profile.cycleDiamonds")}
+            value={`${formatNum(periodDiamonds)} 💎`}
+            accent="#90caf9"
+          />
+          <InfoPill
+            label={t("profile.rank")}
+            value={rank ? `#${rank}` : t("profile.rankNone")}
+            accent="#69f0ae"
+          />
+        </div>
+
+        {/* ── Nom d'affichage ── */}
+        <div style={{
+          background: "rgba(0,40,20,0.9)",
+          border: "1.5px solid rgba(0,230,118,0.22)",
+          borderRadius: 16, padding: "14px 16px",
+          marginBottom: 14, textAlign: "left",
+        }}>
+          <div style={{
+            fontSize: 10, color: "#69f0ae", fontWeight: 700,
+            letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8,
+          }}>{t("profile.usernameLabel")}</div>
+
+          {editingName ? (
             <div style={{ display: "flex", gap: 8 }}>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 maxLength={24}
+                autoFocus
                 placeholder={t("profile.usernamePlaceholder")}
                 style={{
-                  flex: 1, minWidth: 0,
-                  background: "rgba(0,0,0,0.45)",
-                  border: "1px solid rgba(0,230,118,0.3)",
-                  borderRadius: 10, padding: "9px 12px",
-                  color: "#fff", fontSize: 14, fontWeight: 700,
-                  outline: "none", fontFamily: "'Segoe UI', sans-serif",
+                  flex: 1, background: "rgba(0,0,0,0.45)",
+                  border: "1px solid rgba(0,230,118,0.3)", borderRadius: 10,
+                  padding: "9px 12px", color: "#fff", fontSize: 14, fontWeight: 700,
+                  outline: "none",
                 }}
               />
               <button
@@ -266,96 +283,101 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
                 style={{
                   background: savedFlash
                     ? "linear-gradient(135deg,#00c853,#00e676)"
-                    : "linear-gradient(135deg,rgba(0,200,83,0.85),rgba(0,230,118,0.85))",
+                    : "linear-gradient(135deg,rgba(0,200,83,0.9),rgba(0,230,118,0.9))",
                   color: "#003311", border: "none", borderRadius: 10,
                   padding: "9px 14px", fontSize: 12, fontWeight: 900,
-                  letterSpacing: 0.5, cursor: "pointer",
+                  cursor: "pointer", whiteSpace: "nowrap",
                   opacity: (saving || !name.trim() || name.trim() === (profile?.username ?? "")) ? 0.55 : 1,
-                  whiteSpace: "nowrap",
-                }}>
-                {savedFlash ? t("profile.usernameSaved") : t("profile.usernameSave")}
+                }}
+              >
+                {savedFlash ? "✓" : t("profile.usernameSave")}
               </button>
             </div>
-          </div>
-        </SectionCard>
+          ) : (
+            <div
+              onClick={() => setEditingName(true)}
+              style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                cursor: "pointer",
+              }}
+            >
+              <span style={{ fontSize: 16, color: "#fff", fontWeight: 700 }}>
+                {displayName}
+              </span>
+              <span style={{ fontSize: 12, color: "#69f0ae", fontWeight: 700 }}>✏️</span>
+            </div>
+          )}
+        </div>
 
-        {/* Section STATISTIQUES */}
-        <SectionCard title={t("profile.statsTitle")}>
-          <BigStat label={t("profile.totalDiamonds")} value={`${formatNum(totalDiamonds)} 💎`} color="#ffd54f" />
-          <BigStat label={t("profile.cycleDiamonds")} value={`${formatNum(periodDiamonds)} 💎`} color="#90caf9" />
-          <BigStat label={t("profile.rank")}
-                   value={rank ? `#${rank}` : t("profile.rankNone")}
-                   color={rank ? "#69f0ae" : "#9ec9b3"} />
-        </SectionCard>
+        {/* ── Engagement Bridge ── */}
+        <div style={{
+          background: "rgba(0,40,20,0.9)",
+          border: "1.5px solid rgba(0,230,118,0.22)",
+          borderRadius: 16, padding: "14px 16px",
+          marginBottom: 14,
+        }}>
+          <div style={{
+            fontSize: 10, color: "#69f0ae", fontWeight: 700,
+            letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 10,
+            textAlign: "left",
+          }}>{t("profile.engagementTitle")}</div>
+          <Row label={t("profile.streak")} value={`${eligibility.qualifyingDays} / 3`} />
+          <Row label={t("profile.menusEarned")} value={String(eligibility.menusEarned)} />
+          <Row label={t("profile.menusClaimed")} value={String(eligibility.menusClaimed)} />
+        </div>
 
-        {/* Section ENGAGEMENT BRIDGE */}
-        <SectionCard title={t("profile.engagementTitle")}>
-          <Field label={t("profile.streak")} value={`${eligibility.qualifyingDays} / 3`} />
-          <Field label={t("profile.firstPlay")} value={firstPlay ?? "—"} />
-          <Field label={t("profile.menusEarned")} value={String(eligibility.menusEarned)} />
-          <Field label={t("profile.menusClaimed")} value={String(eligibility.menusClaimed)} />
-        </SectionCard>
+        {/* ── Retirer photo (secondaire, discret) ── */}
+        {avatar && avatar.length > 0 && (
+          <button
+            onClick={async () => {
+              setUploadingPhoto(true);
+              const ok = await updateAvatar(null);
+              if (ok) setAvatar(null);
+              setUploadingPhoto(false);
+            }}
+            disabled={uploadingPhoto}
+            style={{
+              background: "transparent", color: "#5e7a6c",
+              border: "1px solid rgba(0,230,118,0.12)", borderRadius: 10,
+              padding: "8px 18px", fontSize: 12, cursor: "pointer",
+              fontFamily: "'Segoe UI', sans-serif",
+            }}
+          >{t("profile.removePhoto")}</button>
+        )}
 
       </div>
-
-      <style>{`@keyframes spinProf{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }
 
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+/* ── Sous-composants ── */
+function InfoPill({ label, value, accent }: { label: string; value: string; accent: string }) {
   return (
     <div style={{
-      background: "linear-gradient(135deg,rgba(0,40,20,0.92),rgba(0,22,10,0.88))",
-      border: "1.5px solid rgba(0,230,118,0.32)",
-      borderRadius: 16, padding: "12px 14px 14px",
-      marginBottom: 14,
-      boxShadow: "0 6px 22px rgba(0,80,40,0.3)",
+      flex: 1,
+      background: "rgba(0,40,20,0.9)",
+      border: `1.5px solid ${accent}33`,
+      borderRadius: 14, padding: "10px 10px",
+      textAlign: "center",
     }}>
-      <div style={{
-        fontSize: 12, color: "#00e676", fontWeight: 800, letterSpacing: 1.4,
-        textTransform: "uppercase", marginBottom: 10,
-      }}>{title}</div>
-      {children}
+      <div style={{ fontSize: 9, color: accent, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 15, color: "#fff", fontWeight: 900, fontFamily: "'Bangers', sans-serif", letterSpacing: 0.5 }} dir="ltr">
+        {value}
+      </div>
     </div>
   );
 }
 
-function Field({ label, value, mono, muted }: { label: string; value: string; mono?: boolean; muted?: boolean }) {
-  return (
-    <div style={{
-      display: "flex", justifyContent: "space-between", alignItems: "center",
-      gap: 12, padding: "7px 0",
-      borderBottom: "1px dashed rgba(0,230,118,0.12)",
-    }}>
-      <div style={{
-        fontSize: 11, color: "#9ec9b3", fontWeight: 600, letterSpacing: 0.4,
-      }}>{label}</div>
-      <div dir="ltr" style={{
-        fontSize: 13, color: muted ? "#5e7a6c" : "#fff", fontWeight: 800,
-        fontFamily: mono ? "'Fredoka', monospace" : "'Segoe UI', sans-serif",
-        textAlign: "end", maxWidth: "60%",
-        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-      }}>{value}</div>
-    </div>
-  );
-}
-
-function BigStat({ label, value, color }: { label: string; value: string; color: string }) {
+function Row({ label, value }: { label: string; value: string }) {
   return (
     <div style={{
       display: "flex", justifyContent: "space-between", alignItems: "center",
-      gap: 12, padding: "9px 0",
-      borderBottom: "1px dashed rgba(0,230,118,0.12)",
+      padding: "6px 0", borderBottom: "1px dashed rgba(0,230,118,0.1)",
     }}>
-      <div style={{
-        fontSize: 11, color: "#9ec9b3", fontWeight: 600, letterSpacing: 0.4,
-      }}>{label}</div>
-      <div dir="ltr" style={{
-        fontSize: 18, color, fontWeight: 900, lineHeight: 1.1,
-        textShadow: `0 0 10px ${color}55`,
-        fontFamily: "'Bangers', sans-serif", letterSpacing: 0.6,
-      }}>{value}</div>
+      <span style={{ fontSize: 11, color: "#9ec9b3", fontWeight: 600 }}>{label}</span>
+      <span style={{ fontSize: 13, color: "#fff", fontWeight: 800 }} dir="ltr">{value}</span>
     </div>
   );
 }
