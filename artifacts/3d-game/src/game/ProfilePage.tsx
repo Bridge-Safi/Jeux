@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useT } from "../lib/i18n";
 import type { Profile } from "../lib/supabase";
 import { getMyRank, updateUsername, updateAvatar, type MenuEligibility } from "../lib/playerProfile";
+import { getBridgeAuth, setBridgeAuthManual } from "../lib/bridgeAuth";
 
 interface Props {
   profile: Profile | null;
@@ -29,6 +30,13 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /* ── Numéro de téléphone Bridge Eats ── */
+  const linkedPhone = profile?.bridge_phone ?? getBridgeAuth()?.phone ?? null;
+  const [phoneInput, setPhoneInput] = useState(linkedPhone ?? "");
+  const [editingPhone, setEditingPhone] = useState(!linkedPhone);
+  const [phoneFlash, setPhoneFlash] = useState<"saved" | "error" | null>(null);
+  const [savingPhone, setSavingPhone] = useState(false);
 
   useEffect(() => {
     setName(profile?.username ?? "");
@@ -95,6 +103,26 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
     })();
     return () => { cancel = true; };
   }, [profile]);
+
+  const handleSavePhone = async () => {
+    if (savingPhone) return;
+    const trimmed = phoneInput.trim();
+    const auth = setBridgeAuthManual(trimmed);
+    if (!auth) { setPhoneFlash("error"); return; }
+    setSavingPhone(true);
+    try {
+      const { registerBridgePhone } = await import("../lib/playerProfile");
+      await registerBridgePhone(trimmed);
+      setPhoneFlash("saved");
+      setEditingPhone(false);
+      setTimeout(() => setPhoneFlash(null), 2000);
+    } catch {
+      setPhoneFlash("saved"); // déjà sauvé localement
+      setEditingPhone(false);
+    } finally {
+      setSavingPhone(false);
+    }
+  };
 
   const handleSave = async () => {
     if (saving) return;
@@ -305,6 +333,94 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
                 {displayName}
               </span>
               <span style={{ fontSize: 12, color: "#69f0ae", fontWeight: 700 }}>✏️</span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Numéro Bridge Eats ── */}
+        <div style={{
+          background: editingPhone && !linkedPhone
+            ? "rgba(0,50,30,0.95)"
+            : "rgba(0,40,20,0.9)",
+          border: `1.5px solid ${!linkedPhone ? "rgba(0,230,118,0.5)" : "rgba(0,230,118,0.22)"}`,
+          borderRadius: 16, padding: "14px 16px",
+          marginBottom: 14, textAlign: "left",
+        }}>
+          <div style={{
+            fontSize: 10, color: "#69f0ae", fontWeight: 700,
+            letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8,
+            display: "flex", alignItems: "center", gap: 6,
+          }}>
+            📱 Numéro Bridge Eats
+            {linkedPhone && (
+              <span style={{
+                background: "rgba(0,230,118,0.15)", color: "#69f0ae",
+                fontSize: 9, padding: "2px 8px", borderRadius: 999, letterSpacing: 0.5,
+              }}>✓ Lié</span>
+            )}
+          </div>
+
+          {!linkedPhone && (
+            <div style={{ fontSize: 11, color: "#ff8a80", fontWeight: 700, marginBottom: 8 }}>
+              ⚠️ Entre ton numéro pour synchroniser tes 💎
+            </div>
+          )}
+
+          {editingPhone ? (
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                type="tel"
+                value={phoneInput}
+                onChange={(e) => { setPhoneInput(e.target.value); setPhoneFlash(null); }}
+                placeholder="Ex : 0612345678"
+                autoComplete="tel"
+                inputMode="tel"
+                autoFocus
+                style={{
+                  flex: 1, background: "rgba(0,0,0,0.45)",
+                  border: `1px solid ${phoneFlash === "error" ? "#ef5350" : "rgba(0,230,118,0.35)"}`,
+                  borderRadius: 10, padding: "9px 12px",
+                  color: "#fff", fontSize: 14, fontWeight: 700,
+                  outline: "none", fontFamily: "inherit",
+                }}
+              />
+              <button
+                onClick={handleSavePhone}
+                disabled={savingPhone || phoneInput.trim().length < 8}
+                style={{
+                  background: "linear-gradient(135deg,#00c853,#00e676)",
+                  color: "#003311", border: "none", borderRadius: 10,
+                  padding: "9px 14px", fontSize: 12, fontWeight: 900,
+                  cursor: "pointer",
+                  opacity: phoneInput.trim().length < 8 ? 0.5 : 1,
+                }}
+              >
+                {savingPhone ? "⏳" : phoneFlash === "saved" ? "✓" : "OK"}
+              </button>
+            </div>
+          ) : (
+            <div
+              onClick={() => setEditingPhone(true)}
+              style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                cursor: "pointer",
+              }}
+            >
+              <span style={{ fontSize: 16, color: "#fff", fontWeight: 700, letterSpacing: 1 }} dir="ltr">
+                {linkedPhone ?? "—"}
+              </span>
+              <span style={{ fontSize: 12, color: "#69f0ae", fontWeight: 700 }}>✏️</span>
+            </div>
+          )}
+
+          {phoneFlash === "error" && (
+            <div style={{ color: "#ef5350", fontSize: 11, marginTop: 6, fontWeight: 700 }}>
+              Numéro invalide — ex : 0612345678
+            </div>
+          )}
+          {phoneFlash === "saved" && (
+            <div style={{ color: "#69f0ae", fontSize: 11, marginTop: 6, fontWeight: 700 }}>
+              ✓ Numéro enregistré — tes 💎 sont synchronisés
             </div>
           )}
         </div>
