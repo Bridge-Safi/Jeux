@@ -1,0 +1,26 @@
+{
+  "name": "Safi Runner",
+  "short_name": "Safi Runner",
+  "description": "Le jeu de course 3D Bridge Eats — collecte des diamants et gagne des livraisons gratuites !",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000d1a",
+  "theme_color": "#00c853",
+  "icons": [
+    {
+      "src": "/assets/logo.jpeg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/logo.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "lang": "fr"
+}
