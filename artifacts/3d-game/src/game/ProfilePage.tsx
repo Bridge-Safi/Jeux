@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useT } from "../lib/i18n";
 import type { Profile } from "../lib/supabase";
-import { getMyRank, updateUsername, updateAvatar, type MenuEligibility } from "../lib/playerProfile";
+import { getMyRank, updateUsername, updateAvatar, registerBridgePhone, type MenuEligibility } from "../lib/playerProfile";
+import { setBridgeAuthManual } from "../lib/bridgeAuth";
 
 interface Props {
   profile: Profile | null;
@@ -13,7 +14,12 @@ function formatNum(n: number): string {
   return new Intl.NumberFormat("fr-FR").format(Math.max(0, Math.floor(n)));
 }
 
-function shortId(id: string | undefined): string {
+/* ID basé sur le numéro de téléphone (6 premiers chiffres) ou UUID en fallback */
+function shortId(phone: string | null | undefined, id: string | undefined): string {
+  if (phone) {
+    const digits = phone.replace(/[^\d]/g, "").slice(0, 6).toUpperCase();
+    if (digits.length >= 6) return `BR-${digits}`;
+  }
   const code = (id ?? "XXXXXX").toString().replace(/-/g, "").slice(0, 6).toUpperCase();
   return `BR-${code}`;
 }
@@ -29,6 +35,12 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /* ── Liaison numéro de téléphone ── */
+  const linkedPhone = (profile as (Profile & { bridge_phone?: string }) | null)?.bridge_phone ?? null;
+  const [phoneOpen, setPhoneOpen] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [phoneState, setPhoneState] = useState<"idle"|"saving"|"ok"|"err">("idle");
 
 
   useEffect(() => {
@@ -97,6 +109,16 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
     return () => { cancel = true; };
   }, [profile]);
 
+  const handleSavePhone = async () => {
+    const trimmed = phoneInput.trim();
+    const auth = setBridgeAuthManual(trimmed);
+    if (!auth) { setPhoneState("err"); return; }
+    setPhoneState("saving");
+    await registerBridgePhone(trimmed);
+    setPhoneState("ok");
+    setTimeout(() => { setPhoneOpen(false); setPhoneState("idle"); }, 1500);
+  };
+
   const handleSave = async () => {
     if (saving) return;
     setSaving(true);
@@ -112,7 +134,7 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
   const periodDiamonds = (profile as (Profile & { period_diamonds?: number }) | null)?.period_diamonds ?? 0;
   const totalDiamonds = profile?.diamonds_collected ?? 0;
   const avatarSrc = avatar && avatar.length > 0 ? avatar : "/assets/player-avatar.jpeg";
-  const displayName = profile?.username ?? shortId(profile?.id);
+  const displayName = profile?.username ?? shortId(linkedPhone, profile?.id);
 
   return (
     <div style={{
@@ -210,12 +232,81 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
         }}>🦈 SAFI RUNNER</div>
 
         {/* ID joueur */}
-        <div style={{
-          fontSize: 26, color: "#fff", fontWeight: 900, letterSpacing: 2,
-          fontFamily: "'Fredoka', monospace",
-          textShadow: "0 0 16px rgba(0,230,118,0.4)",
-          marginBottom: 14,
-        }} dir="ltr">{shortId(profile?.id)}</div>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{
+            fontSize: 26, color: "#fff", fontWeight: 900, letterSpacing: 2,
+            fontFamily: "'Fredoka', monospace",
+            textShadow: "0 0 16px rgba(0,230,118,0.4)",
+            marginBottom: 6,
+          }} dir="ltr">{shortId(linkedPhone, profile?.id)}</div>
+
+          {/* Liaison numéro — intégrée sous l'ID */}
+          {!linkedPhone && !phoneOpen && (
+            <button
+              onClick={() => setPhoneOpen(true)}
+              style={{
+                background: "rgba(0,230,118,0.12)",
+                border: "1px solid rgba(0,230,118,0.4)",
+                color: "#69f0ae", borderRadius: 999,
+                padding: "5px 14px", fontSize: 11, fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.5,
+              }}
+            >📱 Lier mon numéro Bridge Eats</button>
+          )}
+
+          {linkedPhone && (
+            <div style={{ fontSize: 11, color: "#69f0ae", opacity: 0.7 }}>
+              📱 {linkedPhone} <span
+                onClick={() => { setPhoneInput(linkedPhone); setPhoneOpen(true); }}
+                style={{ cursor: "pointer", textDecoration: "underline", marginLeft: 6 }}
+              >modifier</span>
+            </div>
+          )}
+
+          {phoneOpen && (
+            <div style={{ display: "flex", gap: 8, marginTop: 8, justifyContent: "center" }}>
+              <input
+                type="tel"
+                value={phoneInput}
+                onChange={(e) => { setPhoneInput(e.target.value); setPhoneState("idle"); }}
+                placeholder="Ex : 0612345678"
+                inputMode="tel"
+                autoFocus
+                style={{
+                  width: 160, background: "rgba(0,0,0,0.5)", color: "#fff",
+                  border: `1px solid ${phoneState === "err" ? "#ef5350" : "rgba(0,230,118,0.4)"}`,
+                  borderRadius: 10, padding: "8px 10px", fontSize: 14,
+                  fontFamily: "inherit", outline: "none",
+                }}
+              />
+              <button
+                onClick={handleSavePhone}
+                disabled={phoneInput.trim().length < 8 || phoneState === "saving"}
+                style={{
+                  background: "linear-gradient(135deg,#00c853,#00e676)",
+                  color: "#003311", border: "none", borderRadius: 10,
+                  padding: "8px 14px", fontSize: 13, fontWeight: 900,
+                  cursor: "pointer", opacity: phoneInput.trim().length < 8 ? 0.5 : 1,
+                }}
+              >
+                {phoneState === "saving" ? "⏳" : phoneState === "ok" ? "✓" : "OK"}
+              </button>
+              <button
+                onClick={() => { setPhoneOpen(false); setPhoneState("idle"); }}
+                style={{
+                  background: "transparent", border: "1px solid rgba(255,255,255,0.15)",
+                  color: "#888", borderRadius: 10, padding: "8px 10px",
+                  fontSize: 13, cursor: "pointer",
+                }}
+              >✕</button>
+            </div>
+          )}
+          {phoneState === "err" && phoneOpen && (
+            <div style={{ fontSize: 11, color: "#ef5350", marginTop: 4 }}>
+              Numéro invalide — ex : 0612345678
+            </div>
+          )}
+        </div>
 
         {/* ── Badge diamants (comme le badge doré de Bridge Eats) ── */}
         <div style={{
