@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "7gr3TwHoRQZ0tzXpS6FHJ"
@@ -18,3 +17,15 @@ id = "Ge38m6rR5cBTK2ITP7vLG"
 uri = "file://artifacts/3d-game/public/shark-warrior-jump.png"
 type = "image"
 title = "generated_image"
+
+[[outputs]]
+id = "9Iw9Rq_rMulXywZFtIxut"
+uri = "file://artifacts/3d-game/public/assets/icon-512.png"
+type = "image"
+title = "Icône Google Play — 512×512 PNG"
+
+[[outputs]]
+id = "rYWjCaTc3NJRpNLZwEIGw"
+uri = "file://artifacts/3d-game/public/assets/icon-1024.png"
+type = "image"
+title = "Icône App Store — 1024×1024 PNG"
