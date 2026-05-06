@@ -15,6 +15,13 @@ export interface Diamond {
   z: number;
 }
 
+export interface PowerUp {
+  id: number;
+  lane: number;
+  z: number;
+  type: "shield" | "magnet";
+}
+
 export interface GameState {
   phase: GamePhase;
   lane: number;
@@ -24,52 +31,92 @@ export interface GameState {
   playerY: number;
   obstacles: Obstacle[];
   diamonds: Diamond[];
+  powerUps: PowerUp[];
   speed: number;
   distance: number;
   playTime: number;
   checkpointNumber: number;
   nextCheckpointAt: number;
-  boostMeter: number;        // 0-100 : se remplit avec les diamants
-  boostActive: boolean;      // true pendant les ~3s de turbo
-  boostTimeLeft: number;     // secondes restantes de boost
+  boostMeter: number;
+  boostActive: boolean;
+  boostTimeLeft: number;
+  difficultyLevel: 1 | 2 | 3;
+  shieldActive: boolean;
+  magnetActive: boolean;
+  magnetTimeLeft: number;
 }
 
-/* ── Paramètres de difficulté progressive ──────────────────────
-   Le jeu démarre TRÈS facile (échauffement 15s) puis monte
-   progressivement. Pour atteindre 1000 il faudra ~80s à fond.
-   ─────────────────────────────────────────────────────────────── */
-const CHECKPOINT_INTERVAL = 40;   // checkpoint toutes les 40s
+/* ── Checkpoints ───────────────────────────────────────────── */
+const CHECKPOINT_INTERVAL = 40;
 
-/* Vitesse — progression douce */
-const SPEED_START = 8;            // démarrage zen
-const SPEED_MAX   = 30;           // intense après ~90s
-const SPEED_RAMP_TIME = 90;       // 90s pour atteindre le max
+/* ── Niveaux de difficulté progressive ─────────────────────
+   Niveau 1 DÉBUTANT  : 0-20 min   (0-1200s)
+   Niveau 2 NORMAL    : 20-60 min  (1200-3600s)
+   Niveau 3 HARD      : 60+ min    (3600s+)
+   ─────────────────────────────────────────────────────────── */
+const LEVEL_2_TIME = 1200;  // 20 min
+const LEVEL_3_TIME = 3600;  // 60 min
 
-/* Spawn obstacles — quasi vide au début, dense à la fin */
-const OBSTACLE_RATE_MIN = 0.6;    // 0-15s : 1 obstacle / 1.7s (très facile)
-const OBSTACLE_RATE_MAX = 3.2;    // 90s+ : 1 obstacle toutes ~0.3s (intense)
+/* Vitesse de départ et plafonds par niveau */
+const SPEED_START   = 8;
+const SPEED_CAP     = [18, 24, 30] as const;   // plafond par niveau (1,2,3)
 
-/* Double obstacle (bloque 2 voies) — apparaît seulement après 30s */
-const DOUBLE_OBS_START_TIME = 30; // pas de double avant 30s
-const DOUBLE_OBS_MAX_CHANCE = 0.45;
+/* Taux d'obstacles maximum par niveau */
+const OBS_RATE_START = 0.6;
+const OBS_RATE_CAP   = [1.6, 2.4, 3.2] as const;
 
-/* Triple obstacle (force le saut) — apparaît seulement après 60s */
-const TRIPLE_OBS_START_TIME = 60;
-const TRIPLE_OBS_MAX_CHANCE = 0.15;
+/* Double / triple obstacles — déblocages temporels */
+const DOUBLE_OBS_START_TIME  = 30;
+const DOUBLE_OBS_MAX_CHANCE  = 0.45;
+const TRIPLE_OBS_START_TIME  = 60;
+const TRIPLE_OBS_MAX_CHANCE  = 0.15;
 
-/* Pièces d'or — généreuses au début pour la satisfaction */
-const DIAMOND_RATE_MIN = 1.4;     // au début beaucoup de pièces
-const DIAMOND_RATE_MAX = 0.7;     // à la fin moins de pièces (plus risquées)
-const CLUSTER_CHANCE   = 0.35;    // 35% de chance de cluster
+/* Pièces */
+const DIAMOND_RATE_MIN = 1.4;
+const DIAMOND_RATE_MAX = 0.7;
+const CLUSTER_CHANCE   = 0.35;
 
-/* Nitro / Boost — addictif : rempli aux diamants, déchaîné 3s */
-const BOOST_PER_DIAMOND = 6;     // 100 / 6 ≈ 17 diamants pour remplir
-const BOOST_DURATION    = 3.0;   // 3s de pure folie
-const BOOST_SPEED_MULT  = 1.85;  // ×1.85 vitesse pendant le turbo
-const BOOST_SCORE_MULT  = 2;     // ×2 score sur diamants ramassés en boost
+/* Nitro */
+const BOOST_PER_DIAMOND = 6;
+const BOOST_DURATION    = 3.0;
+const BOOST_SPEED_MULT  = 1.85;
+const BOOST_SCORE_MULT  = 2;
 
-/* Helper : interpolation linéaire bornée */
+/* Power-ups */
+const POWERUP_SPAWN_RATE = 0.028;   // chance/s d'apparition d'un power-up
+const MAGNET_DURATION    = 5.0;     // secondes d'aimant
+const MAGNET_RANGE_Z     = 1.4;     // capture diamants dans ce rayon Z (toutes voies)
+
+/* Helper */
 const lerp = (a: number, b: number, t: number) => a + (b - a) * Math.max(0, Math.min(1, t));
+
+function getDifficultyLevel(playTime: number): 1 | 2 | 3 {
+  if (playTime >= LEVEL_3_TIME) return 3;
+  if (playTime >= LEVEL_2_TIME) return 2;
+  return 1;
+}
+
+/* Vitesse cible en fonction du temps de jeu — progression par paliers */
+function getTargetSpeed(playTime: number): number {
+  if (playTime < LEVEL_2_TIME) {
+    const t = playTime / LEVEL_2_TIME;
+    return lerp(SPEED_START, SPEED_CAP[0], t * t);
+  }
+  if (playTime < LEVEL_3_TIME) {
+    const t = (playTime - LEVEL_2_TIME) / (LEVEL_3_TIME - LEVEL_2_TIME);
+    return lerp(SPEED_CAP[0], SPEED_CAP[1], t);
+  }
+  const t = Math.min(1, (playTime - LEVEL_3_TIME) / 1800);
+  return lerp(SPEED_CAP[1], SPEED_CAP[2], t);
+}
+
+/* Taux d'obstacles en fonction du temps */
+function getObstacleRate(playTime: number): number {
+  const lvl = getDifficultyLevel(playTime);
+  const cap = OBS_RATE_CAP[lvl - 1];
+  const dt15 = Math.max(0, (playTime - 15) / (LEVEL_2_TIME));
+  return lerp(OBS_RATE_START, cap, dt15 * dt15);
+}
 
 export function useGameState() {
   const idRef = useRef(0);
@@ -85,6 +132,7 @@ export function useGameState() {
     playerY: 0,
     obstacles: [],
     diamonds: [],
+    powerUps: [],
     speed: SPEED_START,
     distance: 0,
     playTime: 0,
@@ -93,6 +141,10 @@ export function useGameState() {
     boostMeter: 0,
     boostActive: false,
     boostTimeLeft: 0,
+    difficultyLevel: 1,
+    shieldActive: false,
+    magnetActive: false,
+    magnetTimeLeft: 0,
   });
 
   const [state, setState] = useState<GameState>(initialState);
@@ -102,21 +154,17 @@ export function useGameState() {
     lastDiamondLane.current = null;
     clusterCount.current = 0;
 
-    /* Démarrage doux : peu d'obstacles, beaucoup de pièces visibles */
     const preObstacles: Obstacle[] = [];
     const preDiamonds: Diamond[] = [];
 
-    // Seulement 2 obstacles loin pour ne pas effrayer le débutant
     [-95, -150].forEach((z) => {
       const lane = Math.floor(Math.random() * 3) - 1;
       preObstacles.push({ id: idRef.current++, lane, z });
     });
 
-    // Beaucoup de pièces tentantes au démarrage
     [-12, -22, -32, -42, -55, -68, -82, -100, -120, -140, -165].forEach((z) => {
       const lane = Math.floor(Math.random() * 3) - 1;
       preDiamonds.push({ id: idRef.current++, lane, z });
-      // Clusters généreux au début
       if (Math.random() < 0.5) {
         preDiamonds.push({ id: idRef.current++, lane, z: z - 5 });
       }
@@ -125,16 +173,13 @@ export function useGameState() {
     setState({ ...initialState(), phase: "playing", obstacles: preObstacles, diamonds: preDiamonds });
   }, []);
 
-  /* Reprend la partie au même endroit (utilisé après checkpoint
-     ET après game over). Préserve score, playTime, distance,
-     checkpointNumber, boostMeter. Nettoie l'écran (obstacles,
-     diamants visibles, état de saut) pour repartir proprement. */
   const resumeGame = useCallback(() => {
     setState((s) => ({
       ...s,
       phase: "playing",
       obstacles: [],
       diamonds: [],
+      powerUps: [],
       isJumping: false,
       jumpVelocity: 0,
       playerY: 0,
@@ -159,8 +204,6 @@ export function useGameState() {
     });
   }, []);
 
-  /* NITRO : ne se déclenche que si la jauge est pleine et qu'on
-     n'est pas déjà en boost. Vide la jauge et active 3s de folie. */
   const activateBoost = useCallback((): boolean => {
     let triggered = false;
     setState((s) => {
@@ -177,44 +220,44 @@ export function useGameState() {
     setState((s) => {
       if (s.phase !== "playing") return s;
 
-      const GRAVITY  = 32;          // gravité plus forte = saut plus nerveux
+      const GRAVITY  = 32;
       const LANE_X   = [-2, 0, 2];
       const SPAWN_Z  = -65;
       const DESPAWN_Z = 8;
       const PLAYER_Z  = 0;
 
+      let phase: GamePhase = s.phase;
       let {
         score, isJumping, jumpVelocity, playerY,
-        obstacles, diamonds, speed, distance, phase,
+        obstacles, diamonds, powerUps, speed, distance,
         playTime, checkpointNumber, nextCheckpointAt,
         boostMeter, boostActive, boostTimeLeft,
+        shieldActive, magnetActive, magnetTimeLeft,
       } = s;
 
       playTime += dt;
+      const difficultyLevel = getDifficultyLevel(playTime);
 
-      /* ── Décompte du boost ─────────────────────────────────── */
+      /* ── Boost ──────────────────────────────────────────────── */
       if (boostActive) {
         boostTimeLeft -= dt;
-        if (boostTimeLeft <= 0) {
-          boostActive = false;
-          boostTimeLeft = 0;
-        }
+        if (boostTimeLeft <= 0) { boostActive = false; boostTimeLeft = 0; }
       }
 
-      /* ── Progression de difficulté basée sur le temps de jeu ─ */
-      const t = playTime / SPEED_RAMP_TIME;             // 0 → 1 sur 90s
-      speed = lerp(SPEED_START, SPEED_MAX, t);
+      /* ── Aimant (Magnet) ────────────────────────────────────── */
+      if (magnetActive) {
+        magnetTimeLeft -= dt;
+        if (magnetTimeLeft <= 0) { magnetActive = false; magnetTimeLeft = 0; }
+      }
+
+      /* ── Vitesse — progression par niveaux ──────────────────── */
+      speed = getTargetSpeed(playTime);
       if (boostActive) speed *= BOOST_SPEED_MULT;
       distance += dt * speed;
 
-      // Easing : facile au début, plus intense après 30s (courbe quadratique)
-      const dt15 = Math.max(0, (playTime - 15) / 75);   // démarre à 15s
-      const obstacleRate = lerp(OBSTACLE_RATE_MIN, OBSTACLE_RATE_MAX, dt15 * dt15);
+      const obstacleRate = getObstacleRate(playTime);
+      const diamondRate  = lerp(DIAMOND_RATE_MIN, DIAMOND_RATE_MAX, playTime / LEVEL_3_TIME);
 
-      // Pièces : décroissent légèrement (forcent le risque pour les coins)
-      const diamondRate = lerp(DIAMOND_RATE_MIN, DIAMOND_RATE_MAX, t);
-
-      // Double / triple obstacles : déblocages temporels
       const doubleChance = playTime < DOUBLE_OBS_START_TIME
         ? 0
         : lerp(0, DOUBLE_OBS_MAX_CHANCE, (playTime - DOUBLE_OBS_START_TIME) / 60);
@@ -222,12 +265,13 @@ export function useGameState() {
         ? 0
         : lerp(0, TRIPLE_OBS_MAX_CHANCE, (playTime - TRIPLE_OBS_START_TIME) / 60);
 
-      // Checkpoint → pub (interrompt aussi le boost en cours)
+      /* ── Checkpoint ─────────────────────────────────────────── */
       if (playTime >= nextCheckpointAt) {
         return {
           ...s,
           phase: "checkpoint",
           playTime,
+          difficultyLevel,
           checkpointNumber: checkpointNumber + 1,
           speed: 0,
           isJumping: false,
@@ -238,18 +282,14 @@ export function useGameState() {
         };
       }
 
-      // Physique du saut
+      /* ── Saut ───────────────────────────────────────────────── */
       if (isJumping) {
         jumpVelocity -= GRAVITY * dt;
         playerY += jumpVelocity * dt;
-        if (playerY <= 0) {
-          playerY = 0;
-          isJumping = false;
-          jumpVelocity = 0;
-        }
+        if (playerY <= 0) { playerY = 0; isJumping = false; jumpVelocity = 0; }
       }
 
-      // Déplacement obstacles & diamants
+      /* ── Déplacement obstacles & diamants ───────────────────── */
       obstacles = obstacles
         .map((o) => ({ ...o, z: o.z + speed * dt }))
         .filter((o) => o.z < DESPAWN_Z);
@@ -258,18 +298,20 @@ export function useGameState() {
         .map((d) => ({ ...d, z: d.z + speed * dt }))
         .filter((d) => d.z < DESPAWN_Z);
 
-      /* ── Spawn obstacles (rate progressif) ─────────────────── */
+      powerUps = powerUps
+        .map((p) => ({ ...p, z: p.z + speed * dt }))
+        .filter((p) => p.z < DESPAWN_Z);
+
+      /* ── Spawn obstacles ────────────────────────────────────── */
       if (Math.random() < dt * obstacleRate) {
         const lane = Math.floor(Math.random() * 3) - 1;
         obstacles.push({ id: idRef.current++, lane, z: SPAWN_Z });
 
-        // Double obstacle (après 30s) — bloque 2 voies
         if (Math.random() < doubleChance) {
           let lane2: number;
           do { lane2 = Math.floor(Math.random() * 3) - 1; } while (lane2 === lane);
           obstacles.push({ id: idRef.current++, lane: lane2, z: SPAWN_Z - 4 });
 
-          // Triple (après 60s) — bloque les 3 voies → FORCE le saut
           if (Math.random() < tripleChance) {
             const lane3 = [-1, 0, 1].find((l) => l !== lane && l !== lane2)!;
             obstacles.push({ id: idRef.current++, lane: lane3, z: SPAWN_Z - 8 });
@@ -277,7 +319,7 @@ export function useGameState() {
         }
       }
 
-      /* ── Spawn pièces (généreuses au début, plus risquées après) ── */
+      /* ── Spawn diamants ─────────────────────────────────────── */
       if (Math.random() < dt * diamondRate) {
         const lane = Math.floor(Math.random() * 3) - 1;
         diamonds.push({ id: idRef.current++, lane, z: SPAWN_Z });
@@ -290,25 +332,35 @@ export function useGameState() {
         }
       }
 
-      /* ── Détection collision obstacles ─────────────────────── */
+      /* ── Spawn power-ups ────────────────────────────────────── */
+      if (Math.random() < dt * POWERUP_SPAWN_RATE) {
+        const puLane = Math.floor(Math.random() * 3) - 1;
+        const puType: "shield" | "magnet" = Math.random() < 0.5 ? "shield" : "magnet";
+        powerUps.push({ id: idRef.current++, lane: puLane, z: SPAWN_Z - 10, type: puType });
+      }
+
+      /* ── Collisions obstacles ───────────────────────────────── */
       const playerX = LANE_X[s.lane + 1];
       const COLL_XR = 0.7;
       const COLL_ZR = 1.4;
 
-      /* En NITRO : on traverse les obstacles sans crasher (mode rage).
-         Sinon : collision normale = game over. */
       if (!boostActive) {
         for (const o of obstacles) {
           const ox = LANE_X[o.lane + 1];
           const dx = Math.abs(playerX - ox);
           const dz = Math.abs(PLAYER_Z - o.z);
           if (dx < COLL_XR && dz < COLL_ZR && playerY < 1.5) {
-            phase = "gameover";
+            if (shieldActive) {
+              shieldActive = false;  // bouclier absorbe le choc
+              obstacles = obstacles.filter((ob) => ob.id !== o.id);
+              score += 25;           // bonus d'absorption
+            } else {
+              phase = "gameover";
+            }
+            break;
           }
         }
       } else {
-        /* Pendant le boost : on PULVÉRISE les obstacles (visuel : ils
-           disparaissent comme s'ils étaient enfoncés). */
         const survivors: Obstacle[] = [];
         for (const o of obstacles) {
           const ox = LANE_X[o.lane + 1];
@@ -317,7 +369,7 @@ export function useGameState() {
           if (!(dx < COLL_XR + 0.3 && dz < COLL_ZR && playerY < 1.5)) {
             survivors.push(o);
           } else {
-            score += 5; // bonus pour chaque obstacle pulvérisé
+            score += 5;
           }
         }
         obstacles = survivors;
@@ -325,20 +377,40 @@ export function useGameState() {
 
       /* ── Collecte diamants ──────────────────────────────────── */
       const newDiamonds: Diamond[] = [];
-      const happyMult = getCurrentMultiplier();
+      const happyMult    = getCurrentMultiplier();
       const diamondPoints = (boostActive ? 10 * BOOST_SCORE_MULT : 10) * happyMult;
+
       for (const d of diamonds) {
-        const dx2 = Math.abs(playerX - LANE_X[d.lane + 1]);
-        const dz2 = Math.abs(PLAYER_Z - d.z);
-        if (dx2 < 1.0 && dz2 < 1.2) {
+        const ddx = Math.abs(playerX - LANE_X[d.lane + 1]);
+        const ddz = Math.abs(PLAYER_Z - d.z);
+        /* Aimant : capture TOUS les diamants proches quelle que soit la voie */
+        const magnetCapture = magnetActive && ddz < MAGNET_RANGE_Z;
+        const directCapture = ddx < 1.0 && ddz < 1.2;
+
+        if (directCapture || magnetCapture) {
           score += diamondPoints;
-          /* Ramasser un diamant remplit la jauge nitro (sauf si on est
-             déjà en plein boost — pour éviter d'enchaîner sans pause). */
           if (!boostActive) {
             boostMeter = Math.min(100, boostMeter + BOOST_PER_DIAMOND);
           }
         } else {
           newDiamonds.push(d);
+        }
+      }
+
+      /* ── Collecte power-ups ─────────────────────────────────── */
+      const newPowerUps: PowerUp[] = [];
+      for (const p of powerUps) {
+        const pdx = Math.abs(playerX - LANE_X[p.lane + 1]);
+        const pdz = Math.abs(PLAYER_Z - p.z);
+        if (pdx < 1.0 && pdz < 1.2) {
+          if (p.type === "shield") {
+            shieldActive = true;
+          } else {
+            magnetActive    = true;
+            magnetTimeLeft  = MAGNET_DURATION;
+          }
+        } else {
+          newPowerUps.push(p);
         }
       }
 
@@ -351,6 +423,7 @@ export function useGameState() {
         playerY,
         obstacles,
         diamonds: newDiamonds,
+        powerUps: newPowerUps,
         speed,
         distance,
         playTime,
@@ -359,6 +432,10 @@ export function useGameState() {
         boostMeter,
         boostActive,
         boostTimeLeft,
+        difficultyLevel,
+        shieldActive,
+        magnetActive,
+        magnetTimeLeft,
       };
     });
   }, []);

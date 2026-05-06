@@ -34,9 +34,14 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 ### Game features
 - 3-lane infinite runner through the medina of Safi, Morocco (night atmosphere)
 - Player: Shark Warrior with zellige armor (Bridge brand)
-- Collect diamonds, avoid wooden crate obstacles
-- Checkpoint every 50s → interactive overlay (quiz, form, video ad, sponsor quiz)
-- Score = diamonds × 10; sardines = score ÷ 50
+- Collect diamonds, avoid tajine obstacles
+- **3 difficulty levels** (DÉBUTANT / NORMAL / HARD) based on session play time: L1=0-20min, L2=20-60min, L3=60+min
+- **Power-ups on track**: 🛡️ Bouclier (absorbs 1 collision), 🧲 Aimant (auto-collects all diamonds 5s)
+- **Nitro boost** (Shift/B): fills with diamonds, 3s turbo mode, destroys obstacles
+- Checkpoint every 40s → mandatory activity (video ad, reel, quiz, form, social) — no skip
+- Badge de niveau affiché dans le HUD (coin haut-droit)
+- Score = diamonds × 10; target 6,000 💎/h = 60,000 over 3 days × 3h
+- Level badge shows in checkpoint screen with "NOUVEAU !" on level change
 
 ### Bridge Shark engagement program (free menu unlock) — NEW RULES 2026
 - **15 000 💎** total to collect (DIAMONDS_PER_MENU = 15_000), pace 1 000 💎/h

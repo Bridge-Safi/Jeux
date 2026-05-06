@@ -21,6 +21,7 @@ function openSocialLink(url: string) {
 interface CheckpointUIProps {
   checkpointNumber: number;
   score: number;
+  difficultyLevel: 1 | 2 | 3;
   onResume: () => void;
 }
 
@@ -863,7 +864,13 @@ const venueNames = [
 // ──────────────────────────────────────────────────────────────────
 // CHECKPOINT UI PRINCIPAL
 // ──────────────────────────────────────────────────────────────────
-export function CheckpointUI({ checkpointNumber, score, onResume }: CheckpointUIProps) {
+const LEVEL_CFG = [
+  { icon: "🟢", label: "NIVEAU 1 — DÉBUTANT", bg: "#e8f5e9", border: "#43a047", color: "#1b5e20" },
+  { icon: "🟠", label: "NIVEAU 2 — NORMAL",   bg: "#fff3e0", border: "#ff8f00", color: "#e65100" },
+  { icon: "🔴", label: "NIVEAU 3 — HARD",     bg: "#ffebee", border: "#f44336", color: "#b71c1c" },
+];
+
+export function CheckpointUI({ checkpointNumber, score, difficultyLevel, onResume }: CheckpointUIProps) {
   const { t } = useT();
   const [started, setStarted] = useState(false);
   const [activityDone, setActivityDone] = useState(false);
@@ -871,13 +878,35 @@ export function CheckpointUI({ checkpointNumber, score, onResume }: CheckpointUI
   const activity    = useMemo<ActivityType>(() => pickNextActivity(checkpointNumber), [checkpointNumber]);
   const venue       = useMemo(() => venueNames[(checkpointNumber - 1) % venueNames.length], [checkpointNumber]);
 
-  /* Une seule pub mandatoire = l'activité sociale est aussi la bulle.
-     Plus de double étape (activity + bubble). */
   const showComplete = activityDone;
+  const lvl = LEVEL_CFG[difficultyLevel - 1];
+
+  /* Détecte si le niveau vient de changer à ce checkpoint */
+  const levelJustChanged = (difficultyLevel === 2 && checkpointNumber === 30) ||
+                           (difficultyLevel === 3 && checkpointNumber === 90);
 
   return (
     <div style={OVERLAY}>
       <div style={CARD}>
+        {/* ── Badge de niveau ── */}
+        <div style={{
+          background: lvl.bg,
+          border: `2px solid ${lvl.border}`,
+          borderRadius: 12, padding: "6px 14px",
+          textAlign: "center", marginBottom: 12,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+        }}>
+          <span style={{ fontSize: 16 }}>{lvl.icon}</span>
+          <span style={{ fontSize: 12, fontWeight: 900, color: lvl.color, letterSpacing: 1, fontFamily: "'Bangers', sans-serif" }}>
+            {lvl.label}
+          </span>
+          {levelJustChanged && (
+            <span style={{ background: lvl.border, color: "#fff", fontSize: 9, fontWeight: 800, borderRadius: 8, padding: "2px 7px", marginLeft: 4 }}>
+              NOUVEAU !
+            </span>
+          )}
+        </div>
+
         {/* ── En-tête ── */}
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 36 }}>🛑</div>

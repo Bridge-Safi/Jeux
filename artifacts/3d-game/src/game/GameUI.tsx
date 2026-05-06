@@ -55,10 +55,14 @@ interface GameUIProps {
   checkpointNumber: number;
   nextCheckpointAt: number;
   playTime: number;
-  profile: Profile | null;        // profil Supabase complet (peut être null en hors-ligne)
-  boostMeter: number;             // 0-100 — jauge nitro
-  boostActive: boolean;           // turbo en cours ?
-  boostTimeLeft: number;          // secondes restantes du turbo
+  profile: Profile | null;
+  boostMeter: number;
+  boostActive: boolean;
+  boostTimeLeft: number;
+  difficultyLevel: 1 | 2 | 3;
+  shieldActive: boolean;
+  magnetActive: boolean;
+  magnetTimeLeft: number;
   onStart: () => void;
   onRestart: () => void;
   onChangeLane: (dir: 1 | -1) => void;
@@ -423,10 +427,33 @@ function NitroMeter({ meter, active, timeLeft }: { meter: number; active: boolea
 }
 
 /* ─── HUD en jeu ─────────────────────────────────────────────── */
-function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility, boostMeter, boostActive, boostTimeLeft }: {
+function LevelBadge({ level }: { level: 1 | 2 | 3 }) {
+  const cfg = [
+    { label: "DÉBUTANT", bg: "linear-gradient(135deg,#1b5e20,#43a047)", glow: "rgba(67,160,71,0.6)" },
+    { label: "NORMAL",   bg: "linear-gradient(135deg,#e65100,#ff8f00)", glow: "rgba(255,143,0,0.6)" },
+    { label: "HARD",     bg: "linear-gradient(135deg,#b71c1c,#f44336)", glow: "rgba(244,67,54,0.7)" },
+  ][level - 1];
+  return (
+    <div style={{
+      background: cfg.bg,
+      borderRadius: 10, padding: "3px 9px",
+      fontSize: 9, fontWeight: 900, letterSpacing: 1.2,
+      color: "#fff", textTransform: "uppercase" as const,
+      fontFamily: "'Bangers', sans-serif",
+      boxShadow: `0 2px 10px ${cfg.glow}`,
+      marginTop: 4,
+    }}>
+      N{level} {cfg.label}
+    </div>
+  );
+}
+
+function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility, boostMeter, boostActive, boostTimeLeft, difficultyLevel, shieldActive, magnetActive, magnetTimeLeft }: {
   score: number; checkpointNumber: number; playTime: number;
   nextCheckpointAt: number; eligibility: MenuEligibility;
   boostMeter: number; boostActive: boolean; boostTimeLeft: number;
+  difficultyLevel: 1 | 2 | 3;
+  shieldActive: boolean; magnetActive: boolean; magnetTimeLeft: number;
 }) {
   const { t } = useT();
   const timeToNext = Math.max(0, Math.ceil(nextCheckpointAt - playTime));
@@ -504,7 +531,7 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
         </div>
       </div>
 
-      {/* Score */}
+      {/* Score + niveau */}
       <div style={{
         background: "linear-gradient(135deg,rgba(0,0,0,0.8),rgba(20,30,5,0.85))",
         backdropFilter: "blur(10px)",
@@ -517,7 +544,51 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
         {checkpointNumber > 0 && (
           <div style={{ color: "#ffd54f", fontSize: 10, marginTop: 2 }}>🏁 ×{checkpointNumber}</div>
         )}
+        <LevelBadge level={difficultyLevel} />
       </div>
+
+      {/* Power-ups actifs — bouclier & aimant */}
+      {(shieldActive || magnetActive) && (
+        <div style={{
+          position: "absolute",
+          top: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
+          gap: 8,
+          paddingTop: 14,
+          pointerEvents: "none",
+        }}>
+          {shieldActive && (
+            <div style={{
+              background: "linear-gradient(135deg,rgba(2,136,209,0.9),rgba(79,195,247,0.85))",
+              border: "2px solid #4fc3f7",
+              borderRadius: 12, padding: "5px 12px",
+              display: "flex", alignItems: "center", gap: 6,
+              boxShadow: "0 0 18px rgba(79,195,247,0.7)",
+              backdropFilter: "blur(8px)",
+            }}>
+              <span style={{ fontSize: 18 }}>🛡️</span>
+              <span style={{ color: "#fff", fontSize: 11, fontWeight: 800, fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>BOUCLIER</span>
+            </div>
+          )}
+          {magnetActive && (
+            <div style={{
+              background: "linear-gradient(135deg,rgba(130,119,23,0.9),rgba(255,238,88,0.85))",
+              border: "2px solid #ffee58",
+              borderRadius: 12, padding: "5px 12px",
+              display: "flex", alignItems: "center", gap: 6,
+              boxShadow: "0 0 18px rgba(255,238,88,0.7)",
+              backdropFilter: "blur(8px)",
+            }}>
+              <span style={{ fontSize: 18 }}>🧲</span>
+              <span style={{ color: "#1a1a1a", fontSize: 11, fontWeight: 800, fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>
+                AIMANT {Math.ceil(magnetTimeLeft)}s
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Carte engagement Bridge — en bas à gauche pendant le jeu */}
       {eligibility.diamondsCollected > 0 && (
@@ -1796,6 +1867,7 @@ function AdminPanel() {
 export function GameUI({
   phase, score, checkpointNumber, nextCheckpointAt, playTime,
   profile, boostMeter, boostActive, boostTimeLeft,
+  difficultyLevel, shieldActive, magnetActive, magnetTimeLeft,
   onStart, onRestart, onChangeLane, onJump, onBoost,
 }: GameUIProps) {
   const [showReward, setShowReward] = useState(false);
@@ -1906,6 +1978,10 @@ export function GameUI({
             boostMeter={boostMeter}
             boostActive={boostActive}
             boostTimeLeft={boostTimeLeft}
+            difficultyLevel={difficultyLevel}
+            shieldActive={shieldActive}
+            magnetActive={magnetActive}
+            magnetTimeLeft={magnetTimeLeft}
           />
           {/* Touch controls visibles sur tactile (mobile/tablette).
               Sur PC/TV avec souris ou manette : masqués via media query

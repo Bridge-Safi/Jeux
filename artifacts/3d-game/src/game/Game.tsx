@@ -7,6 +7,7 @@ import { SharkPlayer } from "./components/SharkPlayer";
 import { Track } from "./components/Track";
 import { Obstacles } from "./components/Obstacles";
 import { Diamonds } from "./components/Diamonds";
+import { PowerUps } from "./components/PowerUps";
 import { Scene } from "./components/Scene";
 import { GameUI } from "./GameUI";
 import { CheckpointUI } from "./CheckpointUI";
@@ -125,6 +126,7 @@ function GameScene({ state, tick, changeLane, jump, boost }: ReturnType<typeof u
       <Track speed={trackSpeed} />
       <Obstacles obstacles={state.phase !== "start" ? state.obstacles : []} />
       <Diamonds diamonds={state.phase !== "start" ? state.diamonds : []} />
+      <PowerUps powerUps={state.phase !== "start" ? state.powerUps : []} />
       <SharkPlayer lane={state.lane} playerY={state.playerY} isJumping={state.isJumping} />
     </>
   );
@@ -264,6 +266,10 @@ export function Game() {
         boostMeter={state.boostMeter}
         boostActive={state.boostActive}
         boostTimeLeft={state.boostTimeLeft}
+        difficultyLevel={state.difficultyLevel}
+        shieldActive={state.shieldActive}
+        magnetActive={state.magnetActive}
+        magnetTimeLeft={state.magnetTimeLeft}
         onStart={handleStart}
         onRestart={handleResumeAfterDeath}
         onChangeLane={changeLaneWithSfx}
@@ -276,6 +282,7 @@ export function Game() {
         <CheckpointUI
           checkpointNumber={state.checkpointNumber}
           score={state.score}
+          difficultyLevel={state.difficultyLevel}
           onResume={resumeGame}
         />
       )}
