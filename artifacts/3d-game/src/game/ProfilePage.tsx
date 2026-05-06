@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useT } from "../lib/i18n";
 import type { Profile } from "../lib/supabase";
 import { getMyRank, updateUsername, updateAvatar, registerBridgePhone, type MenuEligibility } from "../lib/playerProfile";
-import { setBridgeAuthManual } from "../lib/bridgeAuth";
+import { getBridgeAuth, setBridgeAuthManual } from "../lib/bridgeAuth";
 
 interface Props {
   profile: Profile | null;
@@ -14,10 +14,11 @@ function formatNum(n: number): string {
   return new Intl.NumberFormat("fr-FR").format(Math.max(0, Math.floor(n)));
 }
 
-/* ID basé sur le numéro de téléphone (6 premiers chiffres) ou UUID en fallback */
-function shortId(phone: string | null | undefined, id: string | undefined): string {
+/* ID joueur — priorité : gameId Bridge Eats > 6 chiffres du tel > UUID */
+function buildPlayerId(gameId: string | undefined, phone: string | null | undefined, id: string | undefined): string {
+  if (gameId) return gameId;
   if (phone) {
-    const digits = phone.replace(/[^\d]/g, "").slice(0, 6).toUpperCase();
+    const digits = phone.replace(/[^\d]/g, "").slice(0, 6);
     if (digits.length >= 6) return `BR-${digits}`;
   }
   const code = (id ?? "XXXXXX").toString().replace(/-/g, "").slice(0, 6).toUpperCase();
@@ -36,8 +37,11 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
   const [editingName, setEditingName] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  /* ── Liaison numéro de téléphone ── */
-  const linkedPhone = (profile as (Profile & { bridge_phone?: string }) | null)?.bridge_phone ?? null;
+  /* ── Liaison numéro de téléphone + gameId Bridge Eats ── */
+  const bridgeAuth = getBridgeAuth();
+  const linkedPhone = (profile as (Profile & { bridge_phone?: string }) | null)?.bridge_phone
+    ?? bridgeAuth?.phone ?? null;
+  const gameId = bridgeAuth?.gameId;
   const [phoneOpen, setPhoneOpen] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
   const [phoneState, setPhoneState] = useState<"idle"|"saving"|"ok"|"err">("idle");
@@ -134,7 +138,8 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
   const periodDiamonds = (profile as (Profile & { period_diamonds?: number }) | null)?.period_diamonds ?? 0;
   const totalDiamonds = profile?.diamonds_collected ?? 0;
   const avatarSrc = avatar && avatar.length > 0 ? avatar : "/assets/player-avatar.jpeg";
-  const displayName = profile?.username ?? shortId(linkedPhone, profile?.id);
+  const playerId = buildPlayerId(gameId, linkedPhone, profile?.id);
+  const displayName = profile?.username ?? playerId;
 
   return (
     <div style={{
@@ -238,7 +243,7 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
             fontFamily: "'Fredoka', monospace",
             textShadow: "0 0 16px rgba(0,230,118,0.4)",
             marginBottom: 6,
-          }} dir="ltr">{shortId(linkedPhone, profile?.id)}</div>
+          }} dir="ltr">{playerId}</div>
 
           {/* Liaison numéro — intégrée sous l'ID */}
           {!linkedPhone && !phoneOpen && (

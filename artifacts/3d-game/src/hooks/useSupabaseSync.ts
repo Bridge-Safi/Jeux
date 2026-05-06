@@ -100,6 +100,12 @@ export function useSupabaseSync(score: number, phase: string, playTime: number) 
       /* Enregistre uniquement le temps de jeu non-encore-comptabilisé */
       await recordPlaySession(deltaPlayTime);
 
+      /* Synchronise les 💎 vers Bridge Eats (saveUrl + postMessage) */
+      if (diamondsToSave > 0) {
+        const { sendDiamondsToParent } = await import("../lib/bridgeAuth");
+        sendDiamondsToParent(diamondsToSave).catch(() => { /* silencieux */ });
+      }
+
       /* Met à jour les marqueurs cumulés pour la prochaine sauvegarde */
       savedScoreSoFar.current = totalScore;
       savedPlayTimeSoFar.current = totalPlayTime;

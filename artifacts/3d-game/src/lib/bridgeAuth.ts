@@ -1,17 +1,14 @@
 /* ──────────────────────────────────────────────────────────────────
    AUTHENTIFICATION VIA BRIDGE EATS — single sign-on
    ─────────────────────────────────────────────────────────────────
-   Le joueur DOIT être connecté sur Bridge Eats avec son email + n°.
-   Bridge Eats ouvre le jeu en embarquant ces identifiants en query
-   params : `?email=foo@bar.com&phone=212600000000` (ou via postMessage
-   si embarqué en iframe). Le jeu :
-     1. Lit les params à l'ouverture, les valide, les persiste en
-        localStorage et nettoie l'URL (pour ne pas les exposer dans
-        l'historique navigateur).
-     2. Sans identifiants → écran de blocage avec bouton "Se connecter
-        sur Bridge Eats" (rester dans la même appli, voir inAppNav).
-     3. Avec identifiants → la session reste persistée tant que le
-        joueur n'efface pas son storage navigateur.
+   Bridge Eats ouvre le jeu avec ces paramètres URL :
+     ?phone=0764794856&gameId=BR-076479K&userId=clerk_xxx
+       &token=xxx&saveUrl=https://...
+   Le jeu :
+     1. Lit les params, les valide, les persiste en localStorage
+        et nettoie l'URL.
+     2. Après chaque partie → POST à saveUrl + postMessage au parent.
+     3. Persist tant que le joueur n'efface pas son storage.
    ────────────────────────────────────────────────────────────── */
 
 const STORAGE_KEY = "safi_runner_bridge_auth";
@@ -20,6 +17,11 @@ export const EVENT_NAME = "safi:bridge-auth";
 export type BridgeAuth = {
   email: string;
   phone: string;
+  /* Nouveaux champs Bridge Eats v2 */
+  gameId?: string;   // BR-076479K — affiché dans le jeu
+  userId?: string;   // ID Clerk du joueur
+  token?: string;    // token de vérification
+  saveUrl?: string;  // endpoint POST pour sauvegarder les 💎
 };
 
 /* Format MA : +212XXXXXXXXX, 212XXXXXXXXX ou 0XXXXXXXXX (9-15 chiffres). */
@@ -33,22 +35,33 @@ function isValidEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
-/* Lit les query params éventuels et persiste l'auth. À appeler une
-   fois au tout début (avant le rendu de l'application). */
+/* Lit les query params et persiste l'auth. Supporte l'ancien format
+   (email + phone) et le nouveau (phone + gameId + token + saveUrl). */
 export function consumeUrlAuth(): BridgeAuth | null {
   try {
     const url = new URL(window.location.href);
-    const email = (url.searchParams.get("email") || "").trim().toLowerCase();
+
     const phoneRaw = (url.searchParams.get("phone") || "").trim();
     const phone = normalizePhone(phoneRaw);
-    if (!email || !isValidEmail(email) || !phone) return null;
+    if (!phone) return null;
 
-    const auth: BridgeAuth = { email, phone };
+    const emailRaw = (url.searchParams.get("email") || "").trim().toLowerCase();
+    const email = emailRaw && isValidEmail(emailRaw)
+      ? emailRaw
+      : `${phone}@bridge.local`;
+
+    const gameId  = url.searchParams.get("gameId")  || undefined;
+    const userId  = url.searchParams.get("userId")  || undefined;
+    const token   = url.searchParams.get("token")   || undefined;
+    const saveUrl = url.searchParams.get("saveUrl") || undefined;
+
+    const auth: BridgeAuth = { email, phone, gameId, userId, token, saveUrl };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
 
-    /* Nettoie l'URL — on ne veut pas l'email dans l'historique. */
-    url.searchParams.delete("email");
-    url.searchParams.delete("phone");
+    /* Nettoie l'URL — on ne veut pas exposer le token dans l'historique. */
+    ["email", "phone", "gameId", "userId", "token", "saveUrl"].forEach(
+      (p) => url.searchParams.delete(p)
+    );
     window.history.replaceState({}, "", url.toString());
 
     window.dispatchEvent(new Event(EVENT_NAME));
@@ -61,30 +74,49 @@ export function consumeUrlAuth(): BridgeAuth | null {
 /* Récupère l'auth en cours (URL > localStorage). */
 export function getBridgeAuth(): BridgeAuth | null {
   try {
-    /* Tentative URL d'abord — pour les liens directs avec params. */
     const fromUrl = consumeUrlAuth();
     if (fromUrl) return fromUrl;
 
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<BridgeAuth>;
-    if (!parsed?.email || !parsed?.phone) return null;
-    return { email: parsed.email, phone: parsed.phone };
+    if (!parsed?.phone) return null;
+    const email = parsed.email ?? `${parsed.phone}@bridge.local`;
+    return {
+      email,
+      phone: parsed.phone,
+      gameId:  parsed.gameId,
+      userId:  parsed.userId,
+      token:   parsed.token,
+      saveUrl: parsed.saveUrl,
+    };
   } catch {
     return null;
   }
 }
 
-/* Saisie manuelle (plan B) — quand Bridge Eats parent ne pousse
-   pas l'auth. Le joueur tape uniquement son n° de téléphone : c'est
-   l'identifiant principal pour les commandes Bridge Eats. L'email est
-   optionnel et synthétisé si absent (clé unique : le téléphone). */
+/* Saisie manuelle — le joueur tape son numéro directement dans le jeu. */
 export function setBridgeAuthManual(phoneRaw: string, email?: string): BridgeAuth | null {
   const phone = normalizePhone(phoneRaw.trim());
   if (!phone) return null;
   const e = (email ?? "").trim().toLowerCase();
   const finalEmail = e && isValidEmail(e) ? e : `${phone}@bridge.local`;
-  const auth: BridgeAuth = { email: finalEmail, phone };
+
+  /* Préserver saveUrl/token existants si déjà stockés */
+  let existing: Partial<BridgeAuth> = {};
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw) existing = JSON.parse(raw);
+  } catch { /* ignore */ }
+
+  const auth: BridgeAuth = {
+    email: finalEmail,
+    phone,
+    gameId:  existing.gameId,
+    userId:  existing.userId,
+    token:   existing.token,
+    saveUrl: existing.saveUrl,
+  };
   try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(auth)); } catch { /* ignore */ }
   window.dispatchEvent(new Event(EVENT_NAME));
   return auth;
@@ -94,25 +126,70 @@ export function clearBridgeAuth(): void {
   try {
     window.localStorage.removeItem(STORAGE_KEY);
     window.dispatchEvent(new Event(EVENT_NAME));
-  } catch {
-    /* ignore */
-  }
+  } catch { /* ignore */ }
 }
 
 /* Permet à Bridge Eats parent d'envoyer l'auth via postMessage
-   (utile quand le jeu est embarqué en iframe). Format attendu :
-   `{ type: "bridge-auth", email, phone }`. */
+   (utile quand le jeu est embarqué en iframe).
+   Format v1 : { type: "bridge-auth", email, phone }
+   Format v2 : { type: "bridge-auth", phone, gameId, userId, token, saveUrl } */
 export function listenForParentAuth(onUpdate: (auth: BridgeAuth) => void): () => void {
   const handler = (e: MessageEvent) => {
-    const d = e.data as { type?: string; email?: string; phone?: string };
-    if (d?.type !== "bridge-auth" || !d.email || !d.phone) return;
+    const d = e.data as {
+      type?: string; email?: string; phone?: string;
+      gameId?: string; userId?: string; token?: string; saveUrl?: string;
+    };
+    if (d?.type !== "bridge-auth" || !d.phone) return;
     const phone = normalizePhone(d.phone);
-    if (!isValidEmail(d.email) || !phone) return;
-    const auth: BridgeAuth = { email: d.email.toLowerCase(), phone };
+    if (!phone) return;
+    const email = d.email && isValidEmail(d.email)
+      ? d.email.toLowerCase()
+      : `${phone}@bridge.local`;
+    const auth: BridgeAuth = {
+      email, phone,
+      gameId:  d.gameId,
+      userId:  d.userId,
+      token:   d.token,
+      saveUrl: d.saveUrl,
+    };
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(auth)); } catch { /* ignore */ }
     window.dispatchEvent(new Event(EVENT_NAME));
     onUpdate(auth);
   };
   window.addEventListener("message", handler);
   return () => window.removeEventListener("message", handler);
+}
+
+/* ── Envoi des 💎 vers Bridge Eats ────────────────────────────────
+   Appelé après chaque game over.
+   1. POST à saveUrl si disponible
+   2. postMessage({ type:"safi-diamonds", diamonds }) au parent (iframe)
+   Les deux sont tentés indépendamment (l'un n'empêche pas l'autre). */
+export async function sendDiamondsToParent(diamonds: number): Promise<void> {
+  if (diamonds <= 0) return;
+  const auth = getBridgeAuth();
+
+  /* 1. POST à saveUrl */
+  if (auth?.saveUrl) {
+    try {
+      await fetch(auth.saveUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ diamonds }),
+      });
+    } catch (err) {
+      console.warn("sendDiamondsToParent POST failed:", err);
+    }
+  }
+
+  /* 2. postMessage au parent (iframe ou opener) */
+  const msg = { type: "safi-diamonds", diamonds, gameId: auth?.gameId };
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage(msg, "*");
+    }
+    if (window.opener) {
+      (window.opener as Window).postMessage(msg, "*");
+    }
+  } catch { /* ignore */ }
 }
