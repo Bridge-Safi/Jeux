@@ -1,8 +1,54 @@
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, Component } from "react";
+import type { ErrorInfo, ReactNode } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { KeyboardControls, useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useGameState } from "./useGameState";
+
+/* ── ErrorBoundary — isole les crashs WebGL/R3F du reste de l'appli ── */
+class CanvasErrorBoundary extends Component<
+  { children: ReactNode; onError?: (err: Error) => void },
+  { error: Error | null }
+> {
+  state = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("[CanvasErrorBoundary]", error, info);
+    this.props.onError?.(error);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{
+          position: "absolute", inset: 0, display: "flex",
+          flexDirection: "column", alignItems: "center", justifyContent: "center",
+          background: "#0a0822", color: "#fff", padding: 32, textAlign: "center",
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+          <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+            Erreur de rendu 3D
+          </div>
+          <div style={{ fontSize: 13, color: "#aaa", marginBottom: 24, maxWidth: 340 }}>
+            WebGL non disponible ou ressources insuffisantes.<br />
+            Essaie de recharger la page ou libère des onglets.
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: "12px 28px", borderRadius: 30,
+              background: "linear-gradient(135deg,#1565c0,#42a5f5)",
+              color: "#fff", border: "none", fontWeight: 700,
+              fontSize: 15, cursor: "pointer",
+            }}
+          >
+            🔄 Recharger
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { SharkPlayer } from "./components/SharkPlayer";
 import { Track } from "./components/Track";
 import { Obstacles } from "./components/Obstacles";
@@ -243,17 +289,19 @@ export function Game() {
           pointerEvents: "none",
         }} />
       )}
-      <KeyboardControls map={keyMap}>
-        <Canvas
-          flat
-          camera={{ fov: 68, near: 0.1, far: 200, position: [0, 3.8, 7] }}
-          style={{ width: "100%", height: "100%" }}
-          dpr={[1, 2]}
-          gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}
-        >
-          <GameScene state={state} tick={tick} changeLane={changeLaneWithSfx} jump={jumpWithSfx} boost={boostWithSfx} startGame={startGame} resumeGame={resumeGame} activateBoost={activateBoost} />
-        </Canvas>
-      </KeyboardControls>
+      <CanvasErrorBoundary>
+        <KeyboardControls map={keyMap}>
+          <Canvas
+            flat
+            camera={{ fov: 68, near: 0.1, far: 200, position: [0, 3.8, 7] }}
+            style={{ width: "100%", height: "100%" }}
+            dpr={[1, 1.5]}
+            gl={{ antialias: false, alpha: false, powerPreference: "high-performance", failIfMajorPerformanceCaveat: false }}
+          >
+            <GameScene state={state} tick={tick} changeLane={changeLaneWithSfx} jump={jumpWithSfx} boost={boostWithSfx} startGame={startGame} resumeGame={resumeGame} activateBoost={activateBoost} />
+          </Canvas>
+        </KeyboardControls>
+      </CanvasErrorBoundary>
 
       {/* HUD + Contrôles tactiles */}
       <GameUI
