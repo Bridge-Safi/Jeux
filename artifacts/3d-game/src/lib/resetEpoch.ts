@@ -5,7 +5,7 @@
    prochain chargement. Combiné avec un TRUNCATE de la table
    `profiles` côté Supabase, on repart de zéro pour tout le monde.
    ──────────────────────────────────────────────────────────────── */
-const RESET_EPOCH = "2026-05-03-v1";
+const RESET_EPOCH = "2026-05-08-v2";
 const EPOCH_KEY   = "safi_runner_reset_epoch";
 
 export function applyResetEpoch(): void {
