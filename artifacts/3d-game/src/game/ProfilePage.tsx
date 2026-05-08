@@ -136,8 +136,12 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
   };
 
   const periodDiamonds = (profile as (Profile & { period_diamonds?: number }) | null)?.period_diamonds ?? 0;
-  const totalDiamonds = profile?.diamonds_collected ?? 0;
-  const avatarSrc = avatar && avatar.length > 0 ? avatar : "/assets/player-avatar.jpeg";
+  /* Priorité 💎 : Bridge Eats (URL param) > Supabase local */
+  const totalDiamonds = bridgeAuth?.diamonds ?? profile?.diamonds_collected ?? 0;
+  /* Priorité avatar : Bridge Eats profile pic > photo uploadée > défaut */
+  const avatarSrc = (bridgeAuth?.avatarUrl && bridgeAuth.avatarUrl.length > 0)
+    ? bridgeAuth.avatarUrl
+    : (avatar && avatar.length > 0 ? avatar : "/assets/player-avatar.jpeg");
   const playerId = buildPlayerId(gameId, linkedPhone, profile?.id);
   const displayName = profile?.username ?? playerId;
 

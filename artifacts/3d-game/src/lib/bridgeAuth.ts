@@ -18,10 +18,13 @@ export type BridgeAuth = {
   email: string;
   phone: string;
   /* Nouveaux champs Bridge Eats v2 */
-  gameId?: string;   // BR-076479K — affiché dans le jeu
-  userId?: string;   // ID Clerk du joueur
-  token?: string;    // token de vérification
-  saveUrl?: string;  // endpoint POST pour sauvegarder les 💎
+  gameId?: string;    // BR-076479K — affiché dans le jeu
+  userId?: string;    // ID Clerk du joueur
+  token?: string;     // token de vérification
+  saveUrl?: string;   // endpoint POST pour sauvegarder les 💎
+  avatarUrl?: string; // URL photo de profil Bridge Eats
+  displayName?: string; // Nom d'affichage Bridge Eats
+  diamonds?: number;  // Total 💎 actuel dans le compte Bridge Eats
 };
 
 /* Format MA : +212XXXXXXXXX, 212XXXXXXXXX ou 0XXXXXXXXX (9-15 chiffres). */
@@ -50,16 +53,20 @@ export function consumeUrlAuth(): BridgeAuth | null {
       ? emailRaw
       : `${phone}@bridge.local`;
 
-    const gameId  = url.searchParams.get("gameId")  || undefined;
-    const userId  = url.searchParams.get("userId")  || undefined;
-    const token   = url.searchParams.get("token")   || undefined;
-    const saveUrl = url.searchParams.get("saveUrl") || undefined;
+    const gameId      = url.searchParams.get("gameId")      || undefined;
+    const userId      = url.searchParams.get("userId")      || undefined;
+    const token       = url.searchParams.get("token")       || undefined;
+    const saveUrl     = url.searchParams.get("saveUrl")     || undefined;
+    const avatarUrl   = url.searchParams.get("avatarUrl")   || undefined;
+    const displayName = url.searchParams.get("displayName") || undefined;
+    const diamondsRaw = url.searchParams.get("diamonds");
+    const diamonds    = diamondsRaw !== null ? Math.max(0, parseInt(diamondsRaw, 10) || 0) : undefined;
 
-    const auth: BridgeAuth = { email, phone, gameId, userId, token, saveUrl };
+    const auth: BridgeAuth = { email, phone, gameId, userId, token, saveUrl, avatarUrl, displayName, diamonds };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
 
     /* Nettoie l'URL — on ne veut pas exposer le token dans l'historique. */
-    ["email", "phone", "gameId", "userId", "token", "saveUrl"].forEach(
+    ["email", "phone", "gameId", "userId", "token", "saveUrl", "avatarUrl", "displayName", "diamonds"].forEach(
       (p) => url.searchParams.delete(p)
     );
     window.history.replaceState({}, "", url.toString());
@@ -84,11 +91,14 @@ export function getBridgeAuth(): BridgeAuth | null {
     const email = parsed.email ?? `${parsed.phone}@bridge.local`;
     return {
       email,
-      phone: parsed.phone,
-      gameId:  parsed.gameId,
-      userId:  parsed.userId,
-      token:   parsed.token,
-      saveUrl: parsed.saveUrl,
+      phone:       parsed.phone,
+      gameId:      parsed.gameId,
+      userId:      parsed.userId,
+      token:       parsed.token,
+      saveUrl:     parsed.saveUrl,
+      avatarUrl:   parsed.avatarUrl,
+      displayName: parsed.displayName,
+      diamonds:    parsed.diamonds,
     };
   } catch {
     return null;
@@ -110,12 +120,15 @@ export function setBridgeAuthManual(phoneRaw: string, email?: string): BridgeAut
   } catch { /* ignore */ }
 
   const auth: BridgeAuth = {
-    email: finalEmail,
+    email:       finalEmail,
     phone,
-    gameId:  existing.gameId,
-    userId:  existing.userId,
-    token:   existing.token,
-    saveUrl: existing.saveUrl,
+    gameId:      existing.gameId,
+    userId:      existing.userId,
+    token:       existing.token,
+    saveUrl:     existing.saveUrl,
+    avatarUrl:   existing.avatarUrl,
+    displayName: existing.displayName,
+    diamonds:    existing.diamonds,
   };
   try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(auth)); } catch { /* ignore */ }
   window.dispatchEvent(new Event(EVENT_NAME));
@@ -138,6 +151,7 @@ export function listenForParentAuth(onUpdate: (auth: BridgeAuth) => void): () =>
     const d = e.data as {
       type?: string; email?: string; phone?: string;
       gameId?: string; userId?: string; token?: string; saveUrl?: string;
+      avatarUrl?: string; displayName?: string; diamonds?: number;
     };
     if (d?.type !== "bridge-auth" || !d.phone) return;
     const phone = normalizePhone(d.phone);
@@ -147,10 +161,13 @@ export function listenForParentAuth(onUpdate: (auth: BridgeAuth) => void): () =>
       : `${phone}@bridge.local`;
     const auth: BridgeAuth = {
       email, phone,
-      gameId:  d.gameId,
-      userId:  d.userId,
-      token:   d.token,
-      saveUrl: d.saveUrl,
+      gameId:      d.gameId,
+      userId:      d.userId,
+      token:       d.token,
+      saveUrl:     d.saveUrl,
+      avatarUrl:   d.avatarUrl,
+      displayName: d.displayName,
+      diamonds:    typeof d.diamonds === "number" ? Math.max(0, d.diamonds) : undefined,
     };
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(auth)); } catch { /* ignore */ }
     window.dispatchEvent(new Event(EVENT_NAME));

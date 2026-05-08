@@ -20,6 +20,7 @@ import { ProfilePage } from "./ProfilePage";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { useMusic } from "../hooks/useMusic";
 import { navigateInApp } from "../lib/inAppNav";
+import { getBridgeAuth } from "../lib/bridgeAuth";
 import {
   useHappyHour,
   isAdminMode,
@@ -459,11 +460,10 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
   const timeToNext = Math.max(0, Math.ceil(nextCheckpointAt - playTime));
   const progress = Math.min(1, (40 - timeToNext) / 40);
   const sessionDiamonds = Math.floor(score / 10);
-  /* Total = diamants persistés (depuis Bridge Eats / Supabase) + ceux gagnés
-     en live cette session. Ce nombre est IDENTIQUE à celui affiché dans la
-     carte "MES DIAMANTS" sur l'écran d'accueil Bridge Eats (voir StartScreen
-     `eligibility.diamondsCollected`). */
-  const totalDiamonds = (eligibility.diamondsCollected ?? 0) + sessionDiamonds;
+  /* Total = base Bridge Eats (compte réel) > local Supabase + session live */
+  const bridgeAuth = getBridgeAuth();
+  const baseDiamonds = bridgeAuth?.diamonds ?? eligibility.diamondsCollected ?? 0;
+  const totalDiamonds = baseDiamonds + sessionDiamonds;
 
   return (
     <div style={{
@@ -1323,12 +1323,18 @@ function LeaderboardCard() {
 function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: {
   onStart: () => void; eligibility: MenuEligibility; profile: Profile | null; onClaim: () => void; onShowProfile: () => void;
 }) {
-  const avatarSrc = (profile?.avatar_url && profile.avatar_url.length > 0)
-    ? profile.avatar_url
-    : "/assets/player-avatar.jpeg";
+  const bridgeAuth = getBridgeAuth();
+  /* Priorité avatar : photo Bridge Eats > photo uploadée > défaut */
+  const avatarSrc = (bridgeAuth?.avatarUrl && bridgeAuth.avatarUrl.length > 0)
+    ? bridgeAuth.avatarUrl
+    : (profile?.avatar_url && profile.avatar_url.length > 0)
+      ? profile.avatar_url
+      : "/assets/player-avatar.jpeg";
+  /* Priorité diamants : Bridge Eats (compte réel) > local Supabase */
+  const displayDiamonds = bridgeAuth?.diamonds ?? eligibility.diamondsCollected;
   const { t } = useT();
   const hasMenu = eligibility.menusAvailable > 0;
-  const diamondPct = Math.min(100, ((eligibility.diamondsCollected % DIAMONDS_PER_MENU) / DIAMONDS_PER_MENU) * 100);
+  const diamondPct = Math.min(100, ((displayDiamonds % DIAMONDS_PER_MENU) / DIAMONDS_PER_MENU) * 100);
 
   return (
     <div style={{
@@ -1461,7 +1467,7 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
               <div>
                 <div style={{ fontSize: 9, color: "#69f0ae", letterSpacing: 1.5, fontWeight: 700 }}>{t("bridge.myDiamonds").toUpperCase()}</div>
                 <div style={{ fontSize: 24, color: "#ffd54f", fontWeight: 900, lineHeight: 1, textShadow: "0 0 12px rgba(255,213,79,0.5)" }} dir="ltr">
-                  {formatNum(eligibility.diamondsCollected)} 💎
+                  {formatNum(displayDiamonds)} 💎
                 </div>
               </div>
               <div style={{ textAlign: "end" }}>
