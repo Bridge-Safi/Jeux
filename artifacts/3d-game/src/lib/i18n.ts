@@ -49,9 +49,9 @@ const DICT: Record<Lang, Record<string, string>> = {
     /* Catégorie 3 — DIAMANTS MANQUANTS */
     "rules.shortfall.title": "DIAMANTS MANQUANTS",
     "rules.shortfall.l1": "Si vous atteignez votre objectif → tout est offert ! 🎉",
-    "rules.shortfall.l2": "S'il manque 1 000 💎 → vous payez 5 DH",
-    "rules.shortfall.l3": "S'il manque 3 000 💎 → vous payez 15 DH",
-    "rules.shortfall.l4": "Calcul : diamants manquants ÷ 1 000 × 5 DH",
+    "rules.shortfall.l2": "S'il manque 10 000 💎 → vous payez 5 DH",
+    "rules.shortfall.l3": "S'il manque 30 000 💎 → vous payez 15 DH",
+    "rules.shortfall.l4": "Calcul : diamants manquants ÷ 10 000 × 5 DH",
 
     /* Catégorie 4 — BONUS — LIVRAISON GRATUITE */
     "rules.bonus.title": "BONUS — LIVRAISON GRATUITE",
@@ -62,7 +62,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     /* (anciennes lignes courtes — conservées pour autres écrans) */
     "bridge.how.duration": "⏱️ Joue 3h/jour × 3 jours consécutifs (+ 1h bonus = 4h/jour)",
     "bridge.how.rate": "💎 6 000 💎/h — objectif 60 000 💎 en 3 jours",
-    "bridge.how.shortfall": "💰 Manque de 💎 ? 1 000 💎 = 5 DH (idem pour les 12 DH livraison 2h)",
+    "bridge.how.shortfall": "💰 Manque de 💎 ? 10 000 💎 = 5 DH (idem pour les 12 DH livraison 2h)",
     "bridge.how.bonus": "🎁 1h en plus / jour → +2 000 💎/jour → 60 000 💎 = livraison 100% GRATUITE",
     "bridge.how.social": "📱 À chaque checkpoint : suis les 4 réseaux Bridge Eats (FB · YT · Insta · TikTok) pour reprendre",
     "bridge.how.obstacles": "🍲 Évite les obstacles marocains : tajine · couscous · barbecue de sardines",
@@ -187,9 +187,9 @@ const DICT: Record<Lang, Record<string, string>> = {
     "instr.responsive": "📱💻📺 Smartphone · Tablette · PC · TV — toutes tailles d'écran",
     "instr.launch": "▶ LANCER LE JEU",
 
-    /* Complément payant : 1 000 💎 = 5 DH */
+    /* Complément payant : 10 000 💎 = 5 DH */
     "shortfall.title": "💸 Compléter avec un petit paiement",
-    "shortfall.body": "Il vous manque {miss} 💎 — payez {dh} DH pour débloquer maintenant (1 000 💎 = 5 DH).",
+    "shortfall.body": "Il vous manque {miss} 💎 — payez {dh} DH pour débloquer maintenant (10 000 💎 = 5 DH).",
     "shortfall.cta": "💳 PAYER {dh} DH POUR COMPLÉTER",
     "shortfall.help": "Le paiement se fait depuis la page Bridge Eats. Le complément est ajouté à votre solde 💎.",
 
@@ -352,9 +352,9 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     "rules.shortfall.title": "MISSING DIAMONDS",
     "rules.shortfall.l1": "If you reach your goal → everything is free! 🎉",
-    "rules.shortfall.l2": "If you're 1,000 💎 short → you pay 5 DH",
-    "rules.shortfall.l3": "If you're 3,000 💎 short → you pay 15 DH",
-    "rules.shortfall.l4": "Formula: missing diamonds ÷ 1,000 × 5 DH",
+    "rules.shortfall.l2": "If you're 10,000 💎 short → you pay 5 DH",
+    "rules.shortfall.l3": "If you're 30,000 💎 short → you pay 15 DH",
+    "rules.shortfall.l4": "Formula: missing diamonds ÷ 10,000 × 5 DH",
 
     "rules.bonus.title": "BONUS — FREE DELIVERY",
     "rules.bonus.l1": "Play 1h MORE every day (4h instead of 3h)",
@@ -475,7 +475,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "instr.how.play": "Play 3h per day for {d} CONSECUTIVE days (4h with bonus)",
     "instr.how.day4": "On day 6: enter your Bridge Eats phone to claim the meal",
     "instr.how.ads": "📱 Break every 40s: follow all 4 Bridge Eats socials (FB · YT · Insta · TikTok)",
-    "instr.how.shortfall": "💸 Not enough 💎? Top up: 1,000 missing 💎 = 5 DH (same for 12 DH 2h delivery)",
+    "instr.how.shortfall": "💸 Not enough 💎? Top up: 10,000 missing 💎 = 5 DH (same for 12 DH 2h delivery)",
     "instr.how.bonus": "🎁 Bonus: 1h extra/day → +2,000 💎/day → 60,000 💎 = 100% FREE delivery",
     "instr.row.gamepad.label": "🎮 PS4 / PS5 Controller",
     "instr.row.gamepad.desc": "Left stick or D-pad to switch lanes, ✕ to jump",
@@ -483,7 +483,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "instr.launch": "▶ START THE GAME",
 
     "shortfall.title": "💸 Top up with a small payment",
-    "shortfall.body": "You're {miss} 💎 short — pay {dh} DH to unlock now (1,000 💎 = 5 DH).",
+    "shortfall.body": "You're {miss} 💎 short — pay {dh} DH to unlock now (10,000 💎 = 5 DH).",
     "shortfall.cta": "💳 PAY {dh} DH TO COMPLETE",
     "shortfall.help": "Payment happens on the Bridge Eats page. The top-up is added to your 💎 balance.",
 
@@ -636,9 +636,9 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     "rules.shortfall.title": "الألماس الناقص",
     "rules.shortfall.l1": "إذا حققت هدفك → كل شيء مجاني! 🎉",
-    "rules.shortfall.l2": "إذا نقص 1000 💎 → تدفع 5 دراهم",
-    "rules.shortfall.l3": "إذا نقص 3000 💎 → تدفع 15 درهم",
-    "rules.shortfall.l4": "الحساب: الألماس الناقص ÷ 1000 × 5 دراهم",
+    "rules.shortfall.l2": "إذا نقص 10000 💎 → تدفع 5 دراهم",
+    "rules.shortfall.l3": "إذا نقص 30000 💎 → تدفع 15 درهم",
+    "rules.shortfall.l4": "الحساب: الألماس الناقص ÷ 10000 × 5 دراهم",
 
     "rules.bonus.title": "مكافأة — توصيل مجاني",
     "rules.bonus.l1": "العب ساعة إضافية كل يوم (4 ساعات بدلاً من 3)",
@@ -647,7 +647,7 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     "bridge.how.duration": "⏱️ العب 3 ساعات/يوم × 3 أيام متتالية (+ ساعة مكافأة = 4 ساعات/يوم)",
     "bridge.how.rate": "💎 6000 💎/ساعة — الهدف 60000 💎 في 3 أيام",
-    "bridge.how.shortfall": "💰 ينقصك ألماس؟ 1000 💎 = 5 دراهم (نفس النظام لتوصيل 12 درهم في ساعتين)",
+    "bridge.how.shortfall": "💰 ينقصك ألماس؟ 10000 💎 = 5 دراهم (نفس النظام لتوصيل 12 درهم في ساعتين)",
     "bridge.how.bonus": "🎁 ساعة إضافية/يوم ← ‎+2000 💎/يوم ← 60000 💎 = توصيل مجاني 100%",
     "bridge.how.social": "📱 عند كل توقف: تابع 4 صفحات Bridge Eats (FB · YT · إنستا · تيك توك) لمواصلة اللعب",
     "bridge.how.obstacles": "🍲 تجنب العقبات المغربية: طاجين · كسكس · شواء السردين",
@@ -767,7 +767,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "instr.how.play": "العب 3 ساعات يومياً لمدة {d} أيام متتالية (4 ساعات مع المكافأة)",
     "instr.how.day4": "في اليوم السادس: أدخل رقمك في Bridge Eats للمطالبة بالوجبة",
     "instr.how.ads": "📱 توقف كل 40 ثانية: تابع 4 صفحات Bridge Eats (FB · YT · إنستا · تيك توك)",
-    "instr.how.shortfall": "💸 لا تكفي 💎؟ أكمل: 1000 💎 ناقصة = 5 درهم (نفس النظام لتوصيل 12 درهم في ساعتين)",
+    "instr.how.shortfall": "💸 لا تكفي 💎؟ أكمل: 10000 💎 ناقصة = 5 درهم (نفس النظام لتوصيل 12 درهم في ساعتين)",
     "instr.how.bonus": "🎁 مكافأة: ساعة إضافية/يوم ← ‎+2000 💎/يوم ← 60000 💎 = توصيل مجاني 100%",
     "instr.row.gamepad.label": "🎮 يد تحكم PS4 / PS5",
     "instr.row.gamepad.desc": "العصا اليسرى أو D-pad لتغيير المسار، ✕ للقفز",
@@ -775,7 +775,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "instr.launch": "▶ بدء اللعبة",
 
     "shortfall.title": "💸 أكمل بدفع صغير",
-    "shortfall.body": "ينقصك {miss} 💎 — ادفع {dh} درهم لفتح القفل الآن (1000 💎 = 5 درهم).",
+    "shortfall.body": "ينقصك {miss} 💎 — ادفع {dh} درهم لفتح القفل الآن (10000 💎 = 5 درهم).",
     "shortfall.cta": "💳 ادفع {dh} درهم لإكمال",
     "shortfall.help": "يتم الدفع من صفحة Bridge Eats. تُضاف 💎 المكمّلة إلى رصيدك.",
 

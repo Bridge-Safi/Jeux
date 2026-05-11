@@ -5,7 +5,7 @@
    prochain chargement. Combiné avec un TRUNCATE de la table
    `profiles` côté Supabase, on repart de zéro pour tout le monde.
    ──────────────────────────────────────────────────────────────── */
-const RESET_EPOCH = "2026-05-08-v2";
+const RESET_EPOCH = "2026-05-11-v3";
 const EPOCH_KEY   = "safi_runner_reset_epoch";
 
 export function applyResetEpoch(): void {
@@ -14,11 +14,13 @@ export function applyResetEpoch(): void {
     const current = window.localStorage.getItem(EPOCH_KEY);
     if (current === RESET_EPOCH) return;
 
-    /* Efface toutes les clés "safi_*" — auth, device id, nom, instructions… */
+    /* Efface les clés "safi_*" SAUF bridge_auth (téléphone = identité du joueur).
+       Sans ce numéro, le jeu ne peut plus retrouver le profil Supabase du joueur. */
+    const KEEP = new Set(["safi_runner_bridge_auth"]);
     const toRemove: string[] = [];
     for (let i = 0; i < window.localStorage.length; i++) {
       const k = window.localStorage.key(i);
-      if (k && k.startsWith("safi_")) toRemove.push(k);
+      if (k && k.startsWith("safi_") && !KEEP.has(k)) toRemove.push(k);
     }
     toRemove.forEach((k) => window.localStorage.removeItem(k));
 

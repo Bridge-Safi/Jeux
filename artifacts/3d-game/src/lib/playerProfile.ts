@@ -59,14 +59,14 @@ export const BONUS_EXTRA_SECONDS    = 3_600;          // 1h en plus / jour
 export const BONUS_DIAMONDS         = 2_000;          // bonus / jour
 export const BONUS_TRIGGER_SECONDS  = REQUIRED_SECONDS_PER_DAY + BONUS_EXTRA_SECONDS; // 4h
 
-/* Complément payant : 1 000 💎 manquants = 5 DH (arrondi au millier sup.). */
-export const DIAMONDS_PER_PACK     = 1_000;
+/* Complément payant : 10 000 💎 manquants = 5 DH (arrondi au palier sup.). */
+export const DIAMONDS_PER_PACK     = 10_000;
 export const DH_PER_PACK           = 5;
-/* Rétrocompat : 1 DH = 200 💎. */
+/* 1 DH = 2 000 💎. */
 export const DIAMONDS_PER_DIRHAM   = DIAMONDS_PER_PACK / DH_PER_PACK;
 
 /* Convertit un nombre de 💎 manquants en DH à payer.
-   Tarif : par paliers de 1 000 💎 = 5 DH (arrondi au millier supérieur). */
+   Tarif : par paliers de 10 000 💎 = 5 DH (arrondi au palier supérieur). */
 export function shortfallDh(missingDiamonds: number): number {
   if (missingDiamonds <= 0) return 0;
   return Math.ceil(missingDiamonds / DIAMONDS_PER_PACK) * DH_PER_PACK;

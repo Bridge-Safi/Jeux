@@ -1282,14 +1282,34 @@ function LeaderboardCard() {
                   {e.rank === 1 ? "👑" : e.rank}
                 </div>
 
-                {/* Photo de profil du joueur (ou avatar par défaut) */}
-                <div style={{
-                  flexShrink: 0,
-                  width: 26, height: 26, borderRadius: "50%",
-                  background: `url(${e.avatarUrl && e.avatarUrl.length > 0 ? e.avatarUrl : "/assets/player-avatar.jpeg"}) center/cover, #0d1f12`,
-                  border: "1.5px solid rgba(0,230,118,0.55)",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.5)",
-                }} />
+                {/* Photo de profil du joueur (ou avatar initiales coloré) */}
+                {e.avatarUrl && e.avatarUrl.length > 0 ? (
+                  <div style={{
+                    flexShrink: 0,
+                    width: 26, height: 26, borderRadius: "50%",
+                    background: `url(${e.avatarUrl}) center/cover, #0d1f12`,
+                    border: "1.5px solid rgba(0,230,118,0.55)",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.5)",
+                  }} />
+                ) : (
+                  <div style={{
+                    flexShrink: 0,
+                    width: 26, height: 26, borderRadius: "50%",
+                    background: (() => {
+                      const colors = ["#e53935","#8e24aa","#1e88e5","#00897b","#f4511e","#6d4c41","#039be5","#43a047"];
+                      let h = 0; for (let ci = 0; ci < e.name.length; ci++) h = (h * 31 + e.name.charCodeAt(ci)) & 0xffff;
+                      return colors[h % colors.length];
+                    })(),
+                    border: "1.5px solid rgba(255,255,255,0.45)",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.5)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#fff", fontWeight: 900, fontSize: 10,
+                    fontFamily: "'Fredoka','Segoe UI',sans-serif",
+                    letterSpacing: 0,
+                  }}>
+                    {e.name.replace(/^BR-/,"").slice(0,2).toUpperCase()}
+                  </div>
+                )}
 
                 {/* Nom du joueur */}
                 <div style={{
