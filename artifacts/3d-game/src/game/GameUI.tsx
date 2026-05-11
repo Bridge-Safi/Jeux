@@ -460,9 +460,9 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
   const timeToNext = Math.max(0, Math.ceil(nextCheckpointAt - playTime));
   const progress = Math.min(1, (40 - timeToNext) / 40);
   const sessionDiamonds = Math.floor(score / 10);
-  /* Total = base Bridge Eats (compte réel) > local Supabase + session live */
+  /* Total = max(Bridge Eats, Supabase) + session live en cours */
   const bridgeAuth = getBridgeAuth();
-  const baseDiamonds = bridgeAuth?.diamonds ?? eligibility.diamondsCollected ?? 0;
+  const baseDiamonds = Math.max(bridgeAuth?.diamonds ?? 0, eligibility.diamondsCollected ?? 0);
   const totalDiamonds = baseDiamonds + sessionDiamonds;
 
   return (
@@ -1368,8 +1368,54 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
         background: "linear-gradient(to bottom,rgba(0,30,15,0.45) 0%,rgba(0,20,10,0.7) 35%,rgba(0,15,8,0.94) 65%,rgba(0,10,5,0.99) 100%)",
       }} />
 
-      <div style={{ position: "absolute", top: 16, left: 16, zIndex: 20, pointerEvents: "auto" }}>
-        <BridgeEatsButton />
+      {/* ── Barre top professionnelle : Bridge ←→ Avatar joueur ── */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, zIndex: 25,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "10px 14px",
+        background: "linear-gradient(180deg,rgba(0,10,5,0.75) 0%,transparent 100%)",
+        pointerEvents: "none",
+      }}>
+        <div style={{ pointerEvents: "auto" }}>
+          <BridgeEatsButton />
+        </div>
+
+        {/* Avatar joueur LIVE — cliquable → Profil */}
+        <div
+          onClick={onShowProfile}
+          role="button"
+          aria-label={t("profile.button")}
+          style={{ pointerEvents: "auto", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+        >
+          {/* Nom du joueur (affiché si bridgeAuth) */}
+          {bridgeAuth?.displayName && (
+            <div style={{
+              color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: 0.5,
+              textShadow: "0 1px 6px rgba(0,0,0,0.8)",
+              maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>{bridgeAuth.displayName}</div>
+          )}
+          <div style={{ position: "relative", width: 52, height: 52 }}>
+            <div style={{
+              position: "absolute", inset: -3, borderRadius: "50%",
+              background: "conic-gradient(from 0deg,#00e676,#00c853,#69f0ae,#00e676)",
+              animation: "spin 6s linear infinite", opacity: 0.9,
+            }} />
+            <div style={{
+              position: "absolute", inset: 0, borderRadius: "50%",
+              border: "2px solid rgba(0,230,118,0.9)",
+              background: `url(${avatarSrc}) center/cover`,
+              boxShadow: "0 0 18px rgba(0,230,118,0.5)",
+            }} />
+            <div style={{
+              position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)",
+              background: "linear-gradient(135deg,#00c853,#00e676)",
+              color: "#003311", fontWeight: 900, fontSize: 7, letterSpacing: 1,
+              padding: "2px 6px", borderRadius: 6, whiteSpace: "nowrap",
+              boxShadow: "0 2px 6px rgba(0,200,80,0.5)",
+            }}>● LIVE</div>
+          </div>
+        </div>
       </div>
 
       <div style={{
@@ -1380,38 +1426,6 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
         alignItems: "center",
       }}>
         <div style={{ flex: 1, minHeight: 130 }} />
-
-        {/* Mini logo flottant en haut à droite — avatar joueur + LIVE.
-            CLIQUABLE : ouvre la page Profil dédiée. */}
-        <div
-          onClick={onShowProfile}
-          role="button"
-          aria-label={t("profile.button")}
-          style={{
-            position: "absolute", top: 14, right: 14, zIndex: 25,
-            width: 60, height: 60, pointerEvents: "auto", cursor: "pointer",
-          }}>
-          <div style={{
-            position: "absolute", inset: -3, borderRadius: "50%",
-            background: "conic-gradient(from 0deg,#00e676,#00c853,#69f0ae,#00e676)",
-            animation: "spin 6s linear infinite",
-            opacity: 0.9,
-          }} />
-          <div style={{
-            position: "absolute", inset: 0, borderRadius: "50%",
-            border: "2px solid rgba(0,230,118,0.9)",
-            background: `url(${avatarSrc}) center/cover`,
-            boxShadow: "0 0 18px rgba(0,230,118,0.5), 0 0 0 3px rgba(0,30,15,0.85) inset",
-          }} />
-          <div style={{
-            position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)",
-            background: "linear-gradient(135deg,#00c853,#00e676)",
-            color: "#003311", fontWeight: 900, fontSize: 8, letterSpacing: 1,
-            padding: "2px 7px", borderRadius: 8,
-            boxShadow: "0 2px 8px rgba(0,200,80,0.6)",
-            whiteSpace: "nowrap",
-          }}>● LIVE</div>
-        </div>
 
         <div style={{ width: "100%", maxWidth: 500, padding: "0 20px 32px", textAlign: "center" }}>
 

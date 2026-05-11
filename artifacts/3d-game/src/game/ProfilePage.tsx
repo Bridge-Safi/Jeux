@@ -136,8 +136,8 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
   };
 
   const periodDiamonds = (profile as (Profile & { period_diamonds?: number }) | null)?.period_diamonds ?? 0;
-  /* Priorité 💎 : Bridge Eats (URL param) > Supabase local */
-  const totalDiamonds = bridgeAuth?.diamonds ?? profile?.diamonds_collected ?? 0;
+  /* 💎 : max(Bridge Eats, Supabase) pour ne jamais afficher moins que réel */
+  const totalDiamonds = Math.max(bridgeAuth?.diamonds ?? 0, profile?.diamonds_collected ?? 0);
   /* Priorité avatar : Bridge Eats profile pic > photo uploadée > défaut */
   const avatarSrc = (bridgeAuth?.avatarUrl && bridgeAuth.avatarUrl.length > 0)
     ? bridgeAuth.avatarUrl
@@ -163,57 +163,57 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
         }
       `}</style>
 
-      {/* Bouton × */}
-      <button onClick={onClose} style={{
-        position: "absolute", top: 14, right: 14, zIndex: 10,
-        width: 36, height: 36, borderRadius: "50%",
-        background: "rgba(255,255,255,0.08)", color: "#a5d6a7",
-        border: "1px solid rgba(0,230,118,0.25)",
-        fontSize: 20, fontWeight: 700,
-        cursor: "pointer",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>×</button>
+      {/* ── HERO HEADER — avatar grand format en haut ── */}
+      <div style={{
+        position: "relative",
+        width: "100%",
+        background: "linear-gradient(180deg,#003d1a 0%,#001f0d 60%,#00170a 100%)",
+        paddingTop: 56, paddingBottom: 24,
+        textAlign: "center",
+        borderBottom: "1px solid rgba(0,230,118,0.18)",
+        flexShrink: 0,
+      }}>
+        {/* Bouton × en haut à droite dans le hero */}
+        <button onClick={onClose} style={{
+          position: "absolute", top: 12, right: 12, zIndex: 10,
+          width: 36, height: 36, borderRadius: "50%",
+          background: "rgba(255,255,255,0.08)", color: "#a5d6a7",
+          border: "1px solid rgba(0,230,118,0.25)",
+          fontSize: 20, fontWeight: 700,
+          cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>×</button>
 
-      <div style={{ maxWidth: 420, margin: "0 auto", padding: "32px 20px 80px", textAlign: "center" }}>
-
-        {/* ── AVATAR centré — cliquable pour changer la photo ── */}
+        {/* Avatar large cliquable */}
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
-
         <div
           onClick={handlePickPhoto}
           title={t("profile.changePhoto")}
-          style={{ position: "relative", width: 110, height: 110, margin: "0 auto 6px", cursor: "pointer" }}
+          style={{ position: "relative", width: 130, height: 130, margin: "0 auto 10px", cursor: "pointer" }}
         >
-          {/* Anneau rotatif */}
           <div style={{
             position: "absolute", inset: -4, borderRadius: "50%",
             background: "conic-gradient(from 0deg,#00e676,#00c853,#69f0ae,#00e676)",
             animation: "spinProf 5s linear infinite",
           }} />
-          {/* Photo */}
           <div style={{
             position: "absolute", inset: 0, borderRadius: "50%",
             backgroundImage: `url(${avatarSrc})`,
             backgroundSize: "cover", backgroundPosition: "center",
-            border: "3px solid #000e06",
-            boxShadow: "0 0 24px rgba(0,230,118,0.45)",
+            border: "3px solid #001a0a",
+            boxShadow: "0 0 32px rgba(0,230,118,0.6)",
           }} />
-          {/* Badge appareil photo */}
           <div style={{
-            position: "absolute", bottom: 2, right: 2,
-            width: 28, height: 28, borderRadius: "50%",
-            background: "#00c853",
-            border: "2px solid #000e06",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 14,
+            position: "absolute", bottom: 4, right: 4,
+            width: 32, height: 32, borderRadius: "50%",
+            background: "#00c853", border: "2px solid #001a0a",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15,
           }}>📷</div>
-          {/* Indicateur upload */}
           {uploadingPhoto && (
             <div style={{
               position: "absolute", inset: 0, borderRadius: "50%",
               background: "rgba(0,0,0,0.55)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 22,
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
             }}>⏳</div>
           )}
         </div>
@@ -316,6 +316,11 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
             </div>
           )}
         </div>
+
+      </div>{/* fin hero */}
+
+      {/* ── CONTENU SCROLLABLE sous le hero ── */}
+      <div style={{ maxWidth: 420, margin: "0 auto", padding: "20px 20px 80px", textAlign: "center" }}>
 
         {/* ── Badge diamants (comme le badge doré de Bridge Eats) ── */}
         <div style={{

@@ -42,14 +42,14 @@ const OVERLAY: React.CSSProperties = {
 const CARD: React.CSSProperties = {
   background: "linear-gradient(145deg, #fff8f0, #fff)",
   borderRadius: 24,
-  padding: "32px 36px",
-  maxWidth: 520,
+  padding: "24px 20px",
+  maxWidth: 600,
   width: "100%",
   boxShadow: "0 12px 48px rgba(0,0,0,0.35)",
   border: "3px solid #ffd700",
   color: "#1a1a1a",
   overflowY: "auto",
-  maxHeight: "88vh",
+  maxHeight: "92vh",
 };
 
 const BTN_PRIMARY: React.CSSProperties = {
@@ -312,29 +312,45 @@ const sponsors = [
   },
 ];
 
+/* Vidéos YouTube sponsors — vraies vidéos publicitaires Maroc */
+const sponsorVideos = [
+  { youtubeId: "JrSTsRNmTkM", sponsor: "🏺 Poterie de Safi",        color: "#4caf50", offer: "Visite atelier gratuite — mention Safi Runner" },
+  { youtubeId: "HvBp4Y8HaMY", sponsor: "🐟 Sardines de Safi",        color: "#ff7043", offer: "Dégustation offerte au port de Safi" },
+  { youtubeId: "kDmBP8E-FwI", sponsor: "🕌 Médina de Safi",          color: "#9c27b0", offer: "Visite guidée -20% — code SAFIRUNNER" },
+  { youtubeId: "OZgQFQlP4kI", sponsor: "🏦 Attijariwafa Bank Safi",  color: "#b71c1c", offer: "Compte gratuit 6 mois — code SAFIRUNNER" },
+  { youtubeId: "jNQXAC9IVRw", sponsor: "🚗 Dacia Safi",              color: "#0d47a1", offer: "Essai gratuit sur RDV — code SAFIRUNNER" },
+  { youtubeId: "6JYIGclVQdw", sponsor: "📱 Maroc Telecom Safi",     color: "#1b5e20", offer: "2 mois fibre offerts — code SAFIRUNNER" },
+];
+
 function VideoActivity({ onComplete }: { onComplete: () => void }) {
   const { t } = useT();
   const [timeLeft, setTimeLeft] = useState(15);
   const [canSkip, setCanSkip] = useState(false);
   const [finished, setFinished] = useState(false);
-  const sponsor = useMemo(() => sponsors[Math.floor(Math.random() * sponsors.length)], []);
+  const [playing, setPlaying] = useState(false);
+  const vid = useMemo(() => sponsorVideos[Math.floor(Math.random() * sponsorVideos.length)], []);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
+  const startTimer = () => {
+    if (playing) return;
+    setPlaying(true);
     intervalRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) { clearInterval(intervalRef.current!); setCanSkip(true); return 0; }
         return prev - 1;
       });
     }, 1000);
-    return () => clearInterval(intervalRef.current!);
-  }, []);
+  };
+
+  useEffect(() => () => clearInterval(intervalRef.current!), []);
 
   if (finished) return (
     <div style={{ textAlign: "center" }}>
-      <div style={{ fontSize: 48 }}>✅</div>
+      <div style={{ fontSize: 52 }}>✅</div>
       <div style={{ fontSize: 19, fontWeight: 800, color: "#e65100", marginTop: 8 }}>{t("ad.thanks")}</div>
-      <div style={{ color: "#555", fontSize: 14, marginTop: 6, marginBottom: 4 }}>{sponsor.offer}</div>
+      <div style={{ background: "#fff8e1", border: "2px dashed #ffd700", borderRadius: 12, padding: "12px 16px", fontSize: 14, color: "#e65100", fontWeight: 700, marginTop: 14, marginBottom: 6 }}>
+        🎁 {vid.offer}
+      </div>
       <button style={BTN_PRIMARY} onClick={onComplete}>{t("cp.resume")}</button>
     </div>
   );
@@ -342,30 +358,61 @@ function VideoActivity({ onComplete }: { onComplete: () => void }) {
   const progress = ((15 - timeLeft) / 15) * 100;
   return (
     <div>
-      <div style={{ background: sponsor.color, borderRadius: 16, padding: "24px", color: "white", marginBottom: 18, position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, opacity: 0.08, backgroundImage: "repeating-linear-gradient(45deg, white 0, white 1px, transparent 0, transparent 50%)", backgroundSize: "12px 12px" }} />
-        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>{t("ad.sponsored")}</div>
-        <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 4 }}>{sponsor.emoji} {sponsor.name}</div>
-        <div style={{ fontSize: 14, fontStyle: "italic", opacity: 0.9, marginBottom: 12 }}>"{sponsor.tagline}"</div>
-        <div style={{ fontSize: 14, lineHeight: 1.6, opacity: 0.95 }}>{sponsor.description}</div>
+      {/* Lecteur vidéo YouTube pleine largeur */}
+      <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", borderRadius: 16, overflow: "hidden", marginBottom: 14, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", background: "#000" }}>
+        {playing ? (
+          <iframe
+            src={`https://www.youtube.com/embed/${vid.youtubeId}?autoplay=1&mute=0&rel=0&modestbranding=1`}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+            allow="autoplay; encrypted-media"
+            allowFullScreen
+            title={vid.sponsor}
+          />
+        ) : (
+          /* Thumbnail cliquable avant lecture */
+          <div
+            onClick={startTimer}
+            style={{ position: "absolute", inset: 0, cursor: "pointer", background: `url(https://img.youtube.com/vi/${vid.youtubeId}/hqdefault.jpg) center/cover`, display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(230,81,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 24px rgba(0,0,0,0.6)" }}>
+              <span style={{ fontSize: 32, marginLeft: 4 }}>▶</span>
+            </div>
+            <div style={{ position: "absolute", top: 10, left: 12, background: "rgba(0,0,0,0.65)", color: "#ffd700", fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 8, letterSpacing: 0.5 }}>
+              📢 {vid.sponsor}
+            </div>
+          </div>
+        )}
       </div>
-      <div style={{ background: "#fff8e1", border: "2px dashed #ffd700", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "#e65100", fontWeight: 700, marginBottom: 16 }}>
-        🎁 {sponsor.offer}
+
+      {/* Offre sponsor */}
+      <div style={{ background: "#fff8e1", border: "2px dashed #ffd700", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "#e65100", fontWeight: 700, marginBottom: 14, textAlign: "center" }}>
+        🎁 {vid.offer}
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#777", marginBottom: 4 }}>
-          <span>{t("ad.playing")}</span>
-          <span>{timeLeft > 0 ? t("ad.timeLeft", { s: timeLeft }) : t("ad.done")}</span>
+
+      {/* Barre de progression */}
+      {playing && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#777", marginBottom: 4 }}>
+            <span>{t("ad.playing")}</span>
+            <span>{timeLeft > 0 ? t("ad.timeLeft", { s: timeLeft }) : t("ad.done")}</span>
+          </div>
+          <div style={{ height: 8, background: "#e0e0e0", borderRadius: 8, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #ffd700, #ff7043)", borderRadius: 8, transition: "width 1s linear" }} />
+          </div>
         </div>
-        <div style={{ height: 8, background: "#e0e0e0", borderRadius: 8, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #ffd700, #ff7043)", borderRadius: 8, transition: "width 1s linear" }} />
-        </div>
-      </div>
+      )}
+
+      {!playing && (
+        <p style={{ textAlign: "center", fontSize: 13, color: "#888", marginBottom: 12 }}>
+          ▶ Appuie sur la vidéo pour lancer la pub et débloquer la suite
+        </p>
+      )}
+
       {canSkip ? (
         <button style={BTN_PRIMARY} onClick={() => setFinished(true)}>{t("ad.continue")}</button>
-      ) : (
+      ) : playing ? (
         <button style={{ ...BTN_PRIMARY, opacity: 0.4, cursor: "not-allowed" }} disabled>{t("ad.wait", { s: timeLeft })}</button>
-      )}
+      ) : null}
     </div>
   );
 }
