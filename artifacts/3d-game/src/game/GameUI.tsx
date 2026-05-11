@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import type { GamePhase } from "./useGameState";
 import {
   registerBridgePhone,
@@ -18,6 +18,14 @@ import type { Profile } from "../lib/supabase";
 import { useT, formatNum, t as tStatic } from "../lib/i18n";
 import { ProfilePage } from "./ProfilePage";
 import { useDarkMode } from "../hooks/useDarkMode";
+import {
+  startChallengeIfNew,
+  getChallengeSecondsLeft,
+  getChallengeDay,
+  getChallengeStartMs,
+  formatCountdown,
+  isChallengeOver,
+} from "../lib/challengeTimer";
 import { useMusic } from "../hooks/useMusic";
 import { navigateInApp } from "../lib/inAppNav";
 import { getBridgeAuth } from "../lib/bridgeAuth";
@@ -1344,17 +1352,32 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
   onStart: () => void; eligibility: MenuEligibility; profile: Profile | null; onClaim: () => void; onShowProfile: () => void;
 }) {
   const bridgeAuth = getBridgeAuth();
-  /* Priorité avatar : photo Bridge Eats > photo uploadée > défaut */
   const avatarSrc = (bridgeAuth?.avatarUrl && bridgeAuth.avatarUrl.length > 0)
     ? bridgeAuth.avatarUrl
     : (profile?.avatar_url && profile.avatar_url.length > 0)
       ? profile.avatar_url
       : "/assets/player-avatar.jpeg";
-  /* Priorité diamants : Bridge Eats (compte réel) > local Supabase */
-  const displayDiamonds = bridgeAuth?.diamonds ?? eligibility.diamondsCollected;
+  /* 💎 : max(Bridge Eats, Supabase) */
+  const displayDiamonds = Math.max(bridgeAuth?.diamonds ?? 0, eligibility.diamondsCollected ?? 0);
   const { t } = useT();
   const hasMenu = eligibility.menusAvailable > 0;
   const diamondPct = Math.min(100, ((displayDiamonds % DIAMONDS_PER_MENU) / DIAMONDS_PER_MENU) * 100);
+
+  /* ── Compte à rebours du défi personnel 3 jours ── */
+  const [challengeSecsLeft, setChallengeSecsLeft] = useState(() => getChallengeSecondsLeft());
+  const challengeStarted = useMemo(() => getChallengeStartMs() !== null, [challengeSecsLeft]);
+  const challengeOver    = useMemo(() => isChallengeOver(), [challengeSecsLeft]);
+  const challengeDay     = useMemo(() => getChallengeDay(), [challengeSecsLeft]);
+  useEffect(() => {
+    const id = setInterval(() => setChallengeSecsLeft(getChallengeSecondsLeft()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const handlePlay = useCallback(() => {
+    startChallengeIfNew();          /* démarre le chrono perso au 1er clic */
+    setChallengeSecsLeft(getChallengeSecondsLeft());
+    onStart();
+  }, [onStart]);
 
   return (
     <div style={{
@@ -1477,15 +1500,47 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
                 BR-{(eligibility.diamondsCollected.toString(36).toUpperCase() + "XXXXXX").slice(0, 6)}
               </div>
             </button>
+            {/* ── Compte à rebours DÉFI 3 jours ── */}
             <div style={{
-              background: "linear-gradient(135deg,rgba(40,30,0,0.9),rgba(25,18,0,0.85))",
-              border: "1px solid rgba(255,193,7,0.3)", borderRadius: 14,
-              padding: "10px 12px", boxShadow: "0 4px 16px rgba(80,60,0,0.3)",
+              background: challengeOver
+                ? "linear-gradient(135deg,rgba(80,0,0,0.92),rgba(50,0,0,0.88))"
+                : challengeStarted
+                  ? "linear-gradient(135deg,rgba(0,25,50,0.92),rgba(0,15,35,0.88))"
+                  : "linear-gradient(135deg,rgba(40,30,0,0.9),rgba(25,18,0,0.85))",
+              border: challengeOver
+                ? "1px solid rgba(255,80,80,0.4)"
+                : challengeStarted
+                  ? "1px solid rgba(100,200,255,0.4)"
+                  : "1px solid rgba(255,193,7,0.3)",
+              borderRadius: 14, padding: "10px 12px",
+              boxShadow: challengeStarted && !challengeOver
+                ? "0 4px 16px rgba(0,80,160,0.3)"
+                : "0 4px 16px rgba(80,60,0,0.3)",
             }}>
-              <div style={{ fontSize: 9, color: "#ffd54f", letterSpacing: 1.5, fontWeight: 700, marginBottom: 4 }}>⏱ SESSION</div>
-              <div style={{ fontSize: 13, color: "#fff", fontWeight: 800 }}>
-                {t("bridge.session")}
-              </div>
+              {challengeOver ? (
+                <>
+                  <div style={{ fontSize: 9, color: "#ff5252", letterSpacing: 1.5, fontWeight: 700, marginBottom: 4 }}>⏱ DÉFI</div>
+                  <div style={{ fontSize: 12, color: "#ff8a80", fontWeight: 800 }}>Terminé</div>
+                </>
+              ) : challengeStarted ? (
+                <>
+                  <div style={{ fontSize: 9, color: "#64b5f6", letterSpacing: 1.5, fontWeight: 700, marginBottom: 2 }}>
+                    ⏳ JOUR {challengeDay} / 3
+                  </div>
+                  <div style={{ fontSize: 15, color: "#fff", fontWeight: 900, fontFamily: "'Fredoka', monospace", letterSpacing: 1 }} dir="ltr">
+                    {formatCountdown(challengeSecsLeft)}
+                  </div>
+                  <div style={{ fontSize: 9, color: "#90caf9", marginTop: 2, opacity: 0.8 }}>restants dans ton défi</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 9, color: "#ffd54f", letterSpacing: 1.5, fontWeight: 700, marginBottom: 4 }}>⏱ DÉFI</div>
+                  <div style={{ fontSize: 12, color: "#fff", fontWeight: 800, lineHeight: 1.3 }}>
+                    3 jours · 3h/jour
+                  </div>
+                  <div style={{ fontSize: 9, color: "#ffd54f", marginTop: 2, opacity: 0.75 }}>lance ta 1ère partie ▶</div>
+                </>
+              )}
             </div>
           </div>
 
@@ -1540,7 +1595,7 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
 
           {/* GROS BOUTON JOUER MAINTENANT (style Bridge Shark) */}
           <button
-            onClick={onStart}
+            onClick={handlePlay}
             style={{
               background: "linear-gradient(135deg,#00c853 0%,#00e676 50%,#00c853 100%)",
               color: "#003311", border: "none", borderRadius: 50,

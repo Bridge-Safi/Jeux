@@ -16,7 +16,9 @@ export function applyResetEpoch(): void {
 
     /* Efface les clés "safi_*" SAUF bridge_auth (téléphone = identité du joueur).
        Sans ce numéro, le jeu ne peut plus retrouver le profil Supabase du joueur. */
-    const KEEP = new Set(["safi_runner_bridge_auth"]);
+    /* On garde aussi challenge_start pour ne pas remettre le chrono à zéro
+       si le joueur a déjà lancé son défi de 3 jours. */
+    const KEEP = new Set(["safi_runner_bridge_auth", "safi_runner_challenge_start"]);
     const toRemove: string[] = [];
     for (let i = 0; i < window.localStorage.length; i++) {
       const k = window.localStorage.key(i);
