@@ -1391,56 +1391,6 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
         background: "linear-gradient(to bottom,rgba(0,30,15,0.45) 0%,rgba(0,20,10,0.7) 35%,rgba(0,15,8,0.94) 65%,rgba(0,10,5,0.99) 100%)",
       }} />
 
-      {/* ── Barre top professionnelle : Bridge ←→ Avatar joueur ── */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, zIndex: 25,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "10px 14px",
-        background: "linear-gradient(180deg,rgba(0,10,5,0.75) 0%,transparent 100%)",
-        pointerEvents: "none",
-      }}>
-        <div style={{ pointerEvents: "auto" }}>
-          <BridgeEatsButton />
-        </div>
-
-        {/* Avatar joueur LIVE — cliquable → Profil */}
-        <div
-          onClick={onShowProfile}
-          role="button"
-          aria-label={t("profile.button")}
-          style={{ pointerEvents: "auto", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
-        >
-          {/* Nom du joueur (affiché si bridgeAuth) */}
-          {bridgeAuth?.displayName && (
-            <div style={{
-              color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: 0.5,
-              textShadow: "0 1px 6px rgba(0,0,0,0.8)",
-              maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>{bridgeAuth.displayName}</div>
-          )}
-          <div style={{ position: "relative", width: 52, height: 52 }}>
-            <div style={{
-              position: "absolute", inset: -3, borderRadius: "50%",
-              background: "conic-gradient(from 0deg,#00e676,#00c853,#69f0ae,#00e676)",
-              animation: "spin 6s linear infinite", opacity: 0.9,
-            }} />
-            <div style={{
-              position: "absolute", inset: 0, borderRadius: "50%",
-              border: "2px solid rgba(0,230,118,0.9)",
-              background: `url(${avatarSrc}) center/cover`,
-              boxShadow: "0 0 18px rgba(0,230,118,0.5)",
-            }} />
-            <div style={{
-              position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)",
-              background: "linear-gradient(135deg,#00c853,#00e676)",
-              color: "#003311", fontWeight: 900, fontSize: 7, letterSpacing: 1,
-              padding: "2px 6px", borderRadius: 6, whiteSpace: "nowrap",
-              boxShadow: "0 2px 6px rgba(0,200,80,0.5)",
-            }}>● LIVE</div>
-          </div>
-        </div>
-      </div>
-
       <div style={{
         position: "absolute", inset: 0, zIndex: 10,
         overflowY: "auto", overflowX: "hidden",
@@ -1482,25 +1432,8 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
             <span style={{ display: "inline-block", width: 18, height: 1, background: "linear-gradient(90deg,#69f0ae,transparent)" }} />
           </div>
 
-          {/* Cartes ID JOUEUR + SESSION (style Bridge Shark) */}
-          <div style={{
-            display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12, textAlign: "start",
-          }}>
-            <button
-              onClick={onShowProfile}
-              style={{
-                background: "linear-gradient(135deg,rgba(0,40,20,0.9),rgba(0,25,12,0.85))",
-                border: "1px solid rgba(0,230,118,0.3)", borderRadius: 14,
-                padding: "10px 12px", boxShadow: "0 4px 16px rgba(0,80,40,0.3)",
-                textAlign: "start", cursor: "pointer",
-                color: "inherit", font: "inherit",
-              }}>
-              <div style={{ fontSize: 9, color: "#69f0ae", letterSpacing: 1.5, fontWeight: 700, marginBottom: 4 }}>{t("profile.button")}</div>
-              <div style={{ fontSize: 14, color: "#fff", fontWeight: 800, letterSpacing: 1, fontFamily: "'Fredoka', monospace" }} dir="ltr">
-                BR-{(eligibility.diamondsCollected.toString(36).toUpperCase() + "XXXXXX").slice(0, 6)}
-              </div>
-            </button>
-            {/* ── Compte à rebours DÉFI 3 jours ── */}
+          {/* Compte à rebours DÉFI 3 jours — pleine largeur */}
+          <div style={{ marginBottom: 12 }}>
             <div style={{
               background: challengeOver
                 ? "linear-gradient(135deg,rgba(80,0,0,0.92),rgba(50,0,0,0.88))"
@@ -1655,6 +1588,51 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
                 ))}
               </div>
             ))}
+          </div>
+
+          {/* ── MON PROFIL — juste au-dessus du bouton Bridge/WhatsApp ── */}
+          <button
+            onClick={onShowProfile}
+            style={{
+              display: "flex", alignItems: "center", gap: 12,
+              width: "100%", background: "linear-gradient(135deg,rgba(0,40,20,0.92),rgba(0,25,12,0.88))",
+              border: "1.5px solid rgba(0,230,118,0.35)", borderRadius: 16,
+              padding: "12px 14px", marginBottom: 10,
+              boxShadow: "0 4px 18px rgba(0,80,40,0.3)",
+              cursor: "pointer", color: "inherit", font: "inherit", textAlign: "start",
+            }}
+          >
+            {/* Avatar */}
+            <div style={{ position: "relative", flexShrink: 0, width: 48, height: 48 }}>
+              <div style={{
+                position: "absolute", inset: -3, borderRadius: "50%",
+                background: "conic-gradient(from 0deg,#00e676,#00c853,#69f0ae,#00e676)",
+                animation: "spin 6s linear infinite", opacity: 0.85,
+              }} />
+              <div style={{
+                position: "absolute", inset: 0, borderRadius: "50%",
+                background: `url(${avatarSrc}) center/cover`,
+                border: "2px solid #000e06",
+              }} />
+            </div>
+            {/* Texte */}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 9, color: "#69f0ae", letterSpacing: 1.5, fontWeight: 700, marginBottom: 2 }}>
+                {t("profile.button")}
+              </div>
+              <div style={{ fontSize: 15, color: "#fff", fontWeight: 900, letterSpacing: 1, fontFamily: "'Fredoka', monospace" }} dir="ltr">
+                BR-{(eligibility.diamondsCollected.toString(36).toUpperCase() + "XXXXXX").slice(0, 6)}
+              </div>
+              <div style={{ fontSize: 11, color: "#ffd54f", fontWeight: 700, marginTop: 1 }} dir="ltr">
+                {formatNum(displayDiamonds)} 💎
+              </div>
+            </div>
+            <div style={{ color: "#69f0ae", fontSize: 18 }}>›</div>
+          </button>
+
+          {/* ── Bouton Bridge Eats (WhatsApp) ── */}
+          <div style={{ marginBottom: 14, display: "flex", justifyContent: "center" }}>
+            <BridgeEatsButton />
           </div>
 
           {/* Contrôles (footer discret) */}
