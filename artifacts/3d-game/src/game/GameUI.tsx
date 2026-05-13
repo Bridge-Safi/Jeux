@@ -151,11 +151,11 @@ function FloatingActions() {
   const [dark, toggleDark] = useDarkMode();
   const { enabled: musicOn, toggle: toggleMusic } = useMusic();
   const baseBtn: React.CSSProperties = {
-    width: 48, height: 48, borderRadius: "50%",
-    border: "2px solid rgba(255,255,255,0.3)",
+    width: 44, height: 44, borderRadius: "50%",
+    border: "1.5px solid rgba(255,255,255,0.25)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 22, cursor: "pointer", textDecoration: "none",
-    boxShadow: "0 6px 18px rgba(0,0,0,0.45)",
+    fontSize: 20, cursor: "pointer", textDecoration: "none",
+    boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
     transition: "transform 0.15s, box-shadow 0.15s",
     backdropFilter: "blur(8px)",
   };
@@ -164,9 +164,9 @@ function FloatingActions() {
       style={{
         position: "fixed",
         top: "50%",
-        right: "max(10px, env(safe-area-inset-right, 10px))",
+        left: "max(10px, env(safe-area-inset-left, 10px))",
         transform: "translateY(-50%)",
-        display: "flex", flexDirection: "column", gap: 10,
+        display: "flex", flexDirection: "column", gap: 8,
         zIndex: 30,
         pointerEvents: "auto",
       }}
@@ -205,17 +205,18 @@ function FloatingActions() {
       >
         <span aria-hidden>{dark ? "☀️" : "🌙"}</span>
       </button>
-      <button
-        onClick={() => navigateInApp(BRIDGE_EATS_URL, "bridge-eats")}
-        title="Bridge Eats"
-        aria-label="Ouvrir Bridge Eats"
-        type="button"
-        style={{ ...baseBtn, background: "linear-gradient(135deg,#b71c1c,#e53935)", color: "#fff" }}
+      <a
+        href={WHATSAPP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="WhatsApp Bridge Eats"
+        aria-label="Contacter sur WhatsApp"
+        style={{ ...baseBtn, background: "linear-gradient(135deg,#e53935,#b71c1c)", color: "#fff" }}
         onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
         onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
       >
-        <span aria-hidden>🛵</span>
-      </button>
+        <span aria-hidden>🛵🚬</span>
+      </a>
       <a
         href={WHATSAPP_URL}
         target="_blank"
