@@ -175,13 +175,14 @@ export function ProfilePage({ profile, eligibility, onClose }: Props) {
       }}>
         {/* Bouton × en haut à droite dans le hero */}
         <button onClick={onClose} style={{
-          position: "absolute", top: 12, right: 12, zIndex: 10,
-          width: 36, height: 36, borderRadius: "50%",
-          background: "rgba(255,255,255,0.08)", color: "#a5d6a7",
-          border: "1px solid rgba(0,230,118,0.25)",
-          fontSize: 20, fontWeight: 700,
+          position: "fixed", top: 12, right: 12, zIndex: 9999,
+          width: 44, height: 44, borderRadius: "50%",
+          background: "rgba(0,0,0,0.7)", color: "#a5d6a7",
+          border: "1.5px solid rgba(0,230,118,0.4)",
+          fontSize: 22, fontWeight: 700,
           cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(8px)",
         }}>×</button>
 
         {/* Avatar large cliquable */}

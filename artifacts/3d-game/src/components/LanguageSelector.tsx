@@ -34,7 +34,7 @@ export function LanguageSelector({ position = "bottomRight" }: Props) {
       ? { position: "absolute", bottom: 14, right: 14, zIndex: 100 }
       : { position: "absolute", bottom: 14, left: 14, zIndex: 100 }
     : isRight
-      ? { position: "absolute", top: 14, right: 14, zIndex: 100 }
+      ? { position: "absolute", top: 14, right: 14, zIndex: 40 }
       : { position: "absolute", top: 14, left: 14, zIndex: 100 };
 
   return (
