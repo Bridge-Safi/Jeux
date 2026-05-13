@@ -139,14 +139,15 @@ async function findByDevice(): Promise<Profile | null> {
     const byPhone = await findByBridgePhone(auth.phone);
     if (byPhone) return byPhone;
   }
-  /* 2. Fallback : empreinte appareil (avant que bridge_phone soit posé). */
+  /* 2. Fallback : empreinte appareil uniquement par device_fingerprint
+     (localStorage). On n'utilise PLUS hardware_prefix seul pour éviter
+     qu'un autre utilisateur sur le même téléphone hérite du profil. */
   try {
     const deviceId = getDeviceId();
-    const hwPrefix = getHardwarePrefix();
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .or(`device_fingerprint.eq.${deviceId},hardware_prefix.eq.${hwPrefix}`)
+      .eq("device_fingerprint", deviceId)
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -238,22 +239,35 @@ export async function ensureProfile(): Promise<Profile | null> {
     /* 2. Sinon, on cherche par empreinte appareil (cas anonyme). */
     const byDevice = await findByDevice();
     if (byDevice) {
-      /* Le joueur vient juste de se connecter avec Bridge auth →
-         on attache son téléphone au profil de l'appareil. */
-      if (auth?.phone && !byDevice.bridge_phone) {
-        try {
-          await supabase
-            .from("profiles")
-            .update({
-              bridge_phone: auth.phone,
-              player_email: auth.email,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", byDevice.id);
-          return { ...byDevice, bridge_phone: auth.phone, player_email: auth.email };
-        } catch { /* colonnes absentes ou conflit unicité — on garde le profil */ }
+      /* PROTECTION MULTI-UTILISATEUR : si ce profil appartient à un
+         autre numéro Bridge Eats, on ne le rend PAS au nouvel utilisateur.
+         On laisse tomber et on crée un nouveau profil plus bas.
+         Cela évite que deux comptes partagent le même téléphone physique
+         et héritent des 💎 de l'autre. */
+      if (
+        auth?.phone &&
+        byDevice.bridge_phone &&
+        (byDevice as Profile & { bridge_phone?: string }).bridge_phone !== auth.phone
+      ) {
+        /* Profil d'un autre utilisateur Bridge — on ignore complètement. */
+      } else {
+        /* Le joueur vient juste de se connecter avec Bridge auth →
+           on attache son téléphone au profil de l'appareil. */
+        if (auth?.phone && !byDevice.bridge_phone) {
+          try {
+            await supabase
+              .from("profiles")
+              .update({
+                bridge_phone: auth.phone,
+                player_email: auth.email,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", byDevice.id);
+            return { ...byDevice, bridge_phone: auth.phone, player_email: auth.email };
+          } catch { /* colonnes absentes ou conflit unicité — on garde le profil */ }
+        }
+        return byDevice;
       }
-      return byDevice;
     }
 
     /* 3. Aucun profil existant → on en crée un et on y attache
