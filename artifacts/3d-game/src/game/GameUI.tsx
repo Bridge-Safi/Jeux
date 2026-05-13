@@ -236,34 +236,35 @@ function FloatingActions() {
 function BridgeEatsButton({ variant = "light" }: { variant?: "light" | "dark" }) {
   const isDark = variant === "dark";
   return (
-    <button
-      type="button"
-      onClick={() => navigateInApp(BRIDGE_EATS_URL, "bridge-eats")}
+    <a
+      href={WHATSAPP_URL}
+      target="_blank"
+      rel="noopener noreferrer"
       style={{
         display: "inline-flex",
         alignItems: "center",
         gap: 8,
         background: isDark
-          ? "linear-gradient(135deg,#b71c1c,#e53935)"
+          ? "linear-gradient(135deg,#1b5e20,#2e7d32)"
           : "linear-gradient(135deg,rgba(0,0,0,0.6),rgba(20,20,40,0.8))",
         backdropFilter: "blur(8px)",
         border: "1px solid rgba(255,255,255,0.2)",
         color: "#fff",
         borderRadius: 30,
         padding: "10px 20px",
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: 700,
         cursor: "pointer",
         letterSpacing: 0.5,
         boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
         transition: "transform 0.1s",
+        textDecoration: "none",
       }}
       onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
       onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
     >
-      <span style={{ fontSize: 16 }}>🛵🚕</span>
-      <span>Bridge</span>
-    </button>
+      <span>🌸🌺🌻</span>
+    </a>
   );
 }
 
