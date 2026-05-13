@@ -263,7 +263,7 @@ function BridgeEatsButton({ variant = "light" }: { variant?: "light" | "dark" })
       onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
       onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
     >
-      <span>🌸🌺🌻</span>
+      <span>🛵🚕🌸🚬</span>
     </a>
   );
 }
