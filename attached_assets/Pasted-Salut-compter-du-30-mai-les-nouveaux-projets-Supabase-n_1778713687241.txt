@@ -1,0 +1,49 @@
+Salut,
+
+À compter du 30 mai , les nouveaux projets Supabase n'exposeront plus par défaut les tables du schéma « public » à l'API de données. Toute table créée dans « public » après cette date nécessitera une autorisation explicite (GRANT) pour que supabase-js, PostgREST ou GraphQL puissent y accéder.
+
+Comment savoir si vous êtes concerné
+Nous avons détecté 1 projet dans votre compte qui utilise l'API de données.
+Vous êtes concerné si :
+Votre application utilise l'API de données (supabase-js, bibliothèques clientes ou HTTP direct vers "/rest/v1/" ou "/graphql/v1/")
+Vos scripts de migration ou de provisionnement créent des tables dans « public » sans autorisation explicite.
+
+Vous n'êtes pas concerné si :
+Votre application se connecte à Postgres uniquement via une chaîne de connexion directe (psql, ORM ou serveur d'applications).
+Les tables existantes conservent leurs subventions actuelles. Ce changement s'applique aux nouvelles tables des nouveaux projets à compter du 30 mai et à tous les projets existants à compter du 30 octobre.
+
+Ce qu'il faut faire
+Pour les nouvelles tables que vous souhaitez exposer via l'API de données, veillez à inclure des autorisations explicites dans votre processus de création. Sans autorisation explicite, un rôle n'aura pas accès à la table créée.
+-- Accorder l'accès par rôle
+sélectionner l'octroi
+sur public.votre_table
+à anonyme ;
+
+accorder les droits de sélection, d'insertion, de mise à jour et de suppression
+sur public.votre_table
+authentifié ;
+
+accorder les droits de sélection, d'insertion, de mise à jour et de suppression
+sur public.votre_table
+au rôle de service ;
+
+-- Activer RLS
+modifier la table publique.votre_table
+activer la sécurité au niveau des lignes ;
+
+-- Ajouter des politiques
+créer une politique « les utilisateurs peuvent lire leurs propres lignes »
+sur public.votre_table
+pour sélectionner authentifié
+en utilisant ( auth.uid () = user_id);
+Si une autorisation est manquante, PostgREST renvoie une erreur « 42501 » avec l’instruction GRANT exacte pour la corriger.
+
+Dates de déploiement
+30 mai 2026 : Valeur par défaut pour tous les nouveaux projets
+30 octobre 2026 : Application à tous les projets existants
+Apprenez-en davantage sur ce changement
+Utilisez l'outil Conseiller de sécurité de votre tableau de bord pour examiner les tables existantes.
+
+Si vous avez des questions, veuillez nous contacter via notre portail d'assistance .
+L'équipe de Supabase
+X	Custom	Custom	Custom
