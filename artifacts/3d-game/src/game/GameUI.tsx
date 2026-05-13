@@ -17,7 +17,6 @@ import {
 import type { Profile } from "../lib/supabase";
 import { useT, formatNum, t as tStatic } from "../lib/i18n";
 import { ProfilePage } from "./ProfilePage";
-import { useDarkMode } from "../hooks/useDarkMode";
 import {
   startChallengeIfNew,
   getChallengeSecondsLeft,
@@ -26,7 +25,6 @@ import {
   formatCountdown,
   isChallengeOver,
 } from "../lib/challengeTimer";
-import { useMusic } from "../hooks/useMusic";
 import { navigateInApp } from "../lib/inAppNav";
 import { getBridgeAuth } from "../lib/bridgeAuth";
 import {
@@ -147,14 +145,11 @@ export const WHATSAPP_URL = `https://wa.me/${BRIDGE_EATS_WHATSAPP}?text=${WA_PRE
    Volontairement masqués sur les écrans plein-contenu pour ne PAS
    recouvrir les boutons existants ("Démarrer", "Rejouer", etc.). */
 function FloatingActions() {
-  const { t } = useT();
-  const [dark, toggleDark] = useDarkMode();
-  const { enabled: musicOn, toggle: toggleMusic } = useMusic();
   const baseBtn: React.CSSProperties = {
     width: 44, height: 44, borderRadius: "50%",
     border: "1.5px solid rgba(255,255,255,0.25)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 20, cursor: "pointer", textDecoration: "none",
+    fontSize: 22, cursor: "pointer", textDecoration: "none",
     boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
     transition: "transform 0.15s, box-shadow 0.15s",
     backdropFilter: "blur(8px)",
@@ -163,59 +158,24 @@ function FloatingActions() {
     <div
       style={{
         position: "fixed",
-        top: "50%",
+        top: 72,
         left: "max(10px, env(safe-area-inset-left, 10px))",
-        transform: "translateY(-50%)",
-        display: "flex", flexDirection: "column", gap: 8,
+        display: "flex", flexDirection: "row", gap: 8,
         zIndex: 30,
         pointerEvents: "auto",
       }}
     >
-      <button
-        onClick={toggleMusic}
-        title={t("ui.music")}
-        aria-label={musicOn ? t("ui.musicOn") : t("ui.musicOff")}
-        type="button"
-        style={{
-          ...baseBtn,
-          background: musicOn
-            ? "linear-gradient(135deg,#ad1457,#d81b60)"
-            : "linear-gradient(135deg,#37474f,#546e7a)",
-          color: "#fff",
-        }}
-        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
-        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-      >
-        <span aria-hidden>{musicOn ? "🎵" : "🔇"}</span>
-      </button>
-      <button
-        onClick={toggleDark}
-        title={dark ? t("ui.light") : t("ui.dark")}
-        aria-label={dark ? t("ui.darkOn") : t("ui.darkOff")}
-        type="button"
-        style={{
-          ...baseBtn,
-          background: dark
-            ? "linear-gradient(135deg,#ffd54f,#ff9800)"
-            : "linear-gradient(135deg,#1a237e,#311b92)",
-          color: "#fff",
-        }}
-        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
-        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-      >
-        <span aria-hidden>{dark ? "☀️" : "🌙"}</span>
-      </button>
       <a
         href={WHATSAPP_URL}
         target="_blank"
         rel="noopener noreferrer"
-        title="WhatsApp Bridge Eats"
-        aria-label="Contacter sur WhatsApp"
-        style={{ ...baseBtn, background: "linear-gradient(135deg,#e53935,#b71c1c)", color: "#fff" }}
-        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+        title="Bridge Eats"
+        aria-label="Bridge Eats WhatsApp"
+        style={{ ...baseBtn, background: "linear-gradient(135deg,#880e4f,#c62828)", color: "#fff" }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
         onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
       >
-        <span aria-hidden>🛵🚬</span>
+        <span aria-hidden>🌹</span>
       </a>
       <a
         href={WHATSAPP_URL}
@@ -223,11 +183,11 @@ function FloatingActions() {
         rel="noopener noreferrer"
         title="WhatsApp Bridge Eats"
         aria-label="Contacter sur WhatsApp"
-        style={{ ...baseBtn, background: "linear-gradient(135deg,#25d366,#128c7e)", color: "#fff" }}
-        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+        style={{ ...baseBtn, background: "linear-gradient(135deg,#b71c1c,#e53935)", color: "#fff" }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
         onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
       >
-        <span aria-hidden>💬</span>
+        <span aria-hidden>🛵</span>
       </a>
     </div>
   );
@@ -264,7 +224,7 @@ function BridgeEatsButton({ variant = "light" }: { variant?: "light" | "dark" })
       onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
       onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
     >
-      <span>🛵🚕🌸🚬</span>
+      <span>🛵🚕🌹🚬</span>
     </a>
   );
 }
@@ -1367,6 +1327,34 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
         background: "linear-gradient(to bottom,rgba(0,30,15,0.45) 0%,rgba(0,20,10,0.7) 35%,rgba(0,15,8,0.94) 65%,rgba(0,10,5,0.99) 100%)",
       }} />
 
+      {/* ── Mini profil top-left — à côté du sélecteur de langue ── */}
+      <button
+        onClick={onShowProfile}
+        style={{
+          position: "absolute", top: 14, left: 14, zIndex: 100,
+          display: "flex", alignItems: "center", gap: 8,
+          background: "rgba(0,0,0,0.55)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          border: "1px solid rgba(0,230,118,0.35)",
+          borderRadius: 20, padding: "6px 12px",
+          cursor: "pointer", color: "inherit", font: "inherit",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.45)",
+        }}
+      >
+        <div style={{
+          width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
+          background: `url(${avatarSrc}) center/cover`,
+          border: "1.5px solid #00e676",
+        }} />
+        <span style={{ color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "'Fredoka', monospace", letterSpacing: 0.5 }} dir="ltr">
+          BR-{(eligibility.diamondsCollected.toString(36).toUpperCase() + "XXXXXX").slice(0, 6)}
+        </span>
+        <span style={{ color: "#ffd54f", fontSize: 12, fontWeight: 700 }} dir="ltr">
+          {formatNum(displayDiamonds)} 💎
+        </span>
+      </button>
+
       <div style={{
         position: "absolute", inset: 0, zIndex: 10,
         overflowY: "auto", overflowX: "hidden",
@@ -1603,7 +1591,6 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
                 {formatNum(displayDiamonds)} 💎
               </div>
             </div>
-            <div style={{ color: "#69f0ae", fontSize: 18 }}>›</div>
           </button>
 
           {/* ── Bouton Bridge Eats (WhatsApp) ── */}
