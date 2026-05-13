@@ -1339,7 +1339,10 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
   const [challengeSecsLeft, setChallengeSecsLeft] = useState(() => getChallengeSecondsLeft());
   const challengeStarted = useMemo(() => getChallengeStartMs() !== null, [challengeSecsLeft]);
   const challengeOver    = useMemo(() => isChallengeOver(), [challengeSecsLeft]);
-  const challengeDay     = useMemo(() => getChallengeDay(), [challengeSecsLeft]);
+  /* Jours RESTANTS (3→2→1), dérivés du temps restant pour un vrai compte à rebours */
+  const daysLeft = challengeStarted && !challengeOver
+    ? Math.max(1, Math.ceil(challengeSecsLeft / 86_400))
+    : 0;
   useEffect(() => {
     const id = setInterval(() => setChallengeSecsLeft(getChallengeSecondsLeft()), 1000);
     return () => clearInterval(id);
@@ -1347,6 +1350,7 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
 
   const handlePlay = useCallback(() => {
     startChallengeIfNew();          /* démarre le chrono perso au 1er clic */
+    /* Forcer la mise à jour immédiate du compteur */
     setChallengeSecsLeft(getChallengeSecondsLeft());
     onStart();
   }, [onStart]);
@@ -1430,12 +1434,12 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
               ) : challengeStarted ? (
                 <>
                   <div style={{ fontSize: 9, color: "#64b5f6", letterSpacing: 1.5, fontWeight: 700, marginBottom: 2 }}>
-                    ⏳ JOUR {challengeDay} / 3
+                    ⏳ {daysLeft} JOUR{daysLeft > 1 ? "S" : ""} RESTANT{daysLeft > 1 ? "S" : ""} / 3
                   </div>
                   <div style={{ fontSize: 15, color: "#fff", fontWeight: 900, fontFamily: "'Fredoka', monospace", letterSpacing: 1 }} dir="ltr">
                     {formatCountdown(challengeSecsLeft)}
                   </div>
-                  <div style={{ fontSize: 9, color: "#90caf9", marginTop: 2, opacity: 0.8 }}>restants dans ton défi</div>
+                  <div style={{ fontSize: 9, color: "#90caf9", marginTop: 2, opacity: 0.8 }}>dans ton défi</div>
                 </>
               ) : (
                 <>
