@@ -77,6 +77,7 @@ interface GameUIProps {
   onChangeLane: (dir: 1 | -1) => void;
   onJump: () => void;
   onBoost: () => void;
+  onRefreshProfile?: () => void;
 }
 
 /* ─── Bouton NFS Mobile — glass, glow néon, anti-double-tap ─── */
@@ -1941,7 +1942,7 @@ export function GameUI({
   phase, score, checkpointNumber, nextCheckpointAt, playTime,
   profile, boostMeter, boostActive, boostTimeLeft,
   difficultyLevel, shieldActive, magnetActive, magnetTimeLeft,
-  onStart, onRestart, onChangeLane, onJump, onBoost,
+  onStart, onRestart, onChangeLane, onJump, onBoost, onRefreshProfile,
 }: GameUIProps) {
   const [showReward, setShowReward] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -2020,7 +2021,10 @@ export function GameUI({
         <ProfilePage
           profile={profile}
           eligibility={eligibility}
-          onClose={() => setShowProfile(false)}
+          onClose={() => {
+            setShowProfile(false);
+            onRefreshProfile?.();
+          }}
         />
       )}
 

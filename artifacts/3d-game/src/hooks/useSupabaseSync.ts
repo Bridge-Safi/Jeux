@@ -11,6 +11,14 @@ export function useSupabaseSync(score: number, phase: string, playTime: number) 
     isSupabaseConfigured ? "connecting" : "offline",
   );
 
+  const refreshProfile = async () => {
+    if (!isSupabaseConfigured) return;
+    try {
+      const updated = await getProfile();
+      if (updated) setProfile(updated);
+    } catch { /* silencieux */ }
+  };
+
   const lastSyncedScore = useRef(0);
   const initialized = useRef(false);
   const lastScore = useRef(score);
@@ -115,5 +123,5 @@ export function useSupabaseSync(score: number, phase: string, playTime: number) 
     })();
   }, [phase]);
 
-  return { profile, status };
+  return { profile, status, refreshProfile };
 }

@@ -258,7 +258,7 @@ export function Game() {
     return () => { stopMusic(); };
   }, [stopMusic]);
 
-  const { profile, status } = useSupabaseSync(state.score, state.phase, state.playTime);
+  const { profile, status, refreshProfile } = useSupabaseSync(state.score, state.phase, state.playTime);
 
   /* Manette PS4/PS5 (Web Gamepad API). Inputs déclenchés en bord montant
      uniquement, et seulement quand la partie est en cours. */
@@ -323,6 +323,7 @@ export function Game() {
         onChangeLane={changeLaneWithSfx}
         onJump={jumpWithSfx}
         onBoost={boostWithSfx}
+        onRefreshProfile={refreshProfile}
       />
 
       {/* Overlay checkpoint */}
