@@ -36,20 +36,20 @@ const OVERLAY: React.CSSProperties = {
   backdropFilter: "blur(6px)",
   zIndex: 100,
   fontFamily: "'Segoe UI', sans-serif",
-  padding: 24,
+  padding: "8px 10px",
 };
 
 const CARD: React.CSSProperties = {
   background: "linear-gradient(145deg, #fff8f0, #fff)",
   borderRadius: 24,
-  padding: "24px 20px",
+  padding: "16px 14px",
   maxWidth: 600,
   width: "100%",
   boxShadow: "0 12px 48px rgba(0,0,0,0.35)",
   border: "3px solid #ffd700",
   color: "#1a1a1a",
   overflowY: "auto",
-  maxHeight: "92vh",
+  maxHeight: "97vh",
 };
 
 const BTN_PRIMARY: React.CSSProperties = {
@@ -776,8 +776,8 @@ function ReelActivity({ onComplete }: { onComplete: () => void }) {
 
   return (
     <div>
-      <div style={{ background: "#000", borderRadius: 24, padding: 6, margin: "0 auto 14px", maxWidth: 280, boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
-        <div style={{ background: reel.bg, borderRadius: 20, height: 360, position: "relative", overflow: "hidden", color: "white" }}>
+      <div style={{ background: "#000", borderRadius: 20, padding: 5, margin: "0 auto 12px", width: "100%", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
+        <div style={{ background: reel.bg, borderRadius: 16, height: "min(58vh, 480px)", position: "relative", overflow: "hidden", color: "white" }}>
           <div style={{ position: "absolute", top: 8, left: 10, right: 10, height: 3, background: "rgba(255,255,255,0.3)", borderRadius: 2 }}>
             <div style={{ height: "100%", width: `${progress}%`, background: "white", borderRadius: 2, transition: "width 0.1s linear" }} />
           </div>
@@ -955,12 +955,12 @@ export function CheckpointUI({ checkpointNumber, score, difficultyLevel, onResum
         </div>
 
         {/* ── En-tête ── */}
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 36 }}>🛑</div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: "#e65100", marginTop: 4 }}>
+        <div style={{ textAlign: "center", marginBottom: 10 }}>
+          <div style={{ fontSize: 26 }}>🛑</div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: "#e65100", marginTop: 2 }}>
             {t("cp.header.stop", { n: checkpointNumber, venue })}
           </div>
-          <div style={{ fontSize: 13, color: "#777", marginTop: 2 }}>{t("cp.currentScore", { n: score })}</div>
+          <div style={{ fontSize: 11, color: "#777", marginTop: 1 }}>{t("cp.currentScore", { n: score })} 💎</div>
         </div>
 
         {/* ── Écran d'intro (avant démarrage) ── */}
