@@ -476,123 +476,104 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
   const totalDiamonds = baseDiamonds + sessionDiamonds;
 
   return (
-    <div style={{
-      position: "absolute", top: 0, left: 0, right: 0,
-      padding: "12px 14px 0",
-      display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8,
-      pointerEvents: "none",
-    }}>
-      {/* Diamants TOTAL (cumul Bridge Eats + session live) — gros compteur visible */}
+    <div style={{ position: "absolute", top: 0, left: 0, right: 0, pointerEvents: "none" }}>
+
+      {/* ── Barre HUD compacte ── */}
       <div style={{
-        background: "linear-gradient(135deg,rgba(0,30,60,0.88),rgba(10,40,90,0.9))",
-        backdropFilter: "blur(10px)",
-        border: "2px solid rgba(100,180,255,0.55)",
-        borderRadius: 20, padding: "10px 18px",
-        display: "flex", alignItems: "center", gap: 12, minWidth: 150,
-        boxShadow: "0 6px 28px rgba(0,80,200,0.45), 0 0 0 1px rgba(255,255,255,0.06) inset",
-        animation: "diamondPulse 2.4s ease-in-out infinite",
+        display: "flex", alignItems: "center",
+        gap: 6, padding: "8px 10px 6px",
       }}>
-        <span style={{ fontSize: 38, filter: "drop-shadow(0 0 14px rgba(100,200,255,0.8))" }} aria-hidden>💎</span>
-        <div>
-          <div style={{
-            color: "#bbdefb", fontSize: 10, fontWeight: 700,
-            letterSpacing: 1.2, textTransform: "uppercase",
-            fontFamily: "'Fredoka', sans-serif",
-          }}>{t("hud.diamonds")}</div>
-          <div style={{
-            color: "#fff", fontSize: 44, fontWeight: 900, lineHeight: 1,
-            textShadow: "0 2px 0 #002040, 0 0 24px #4fc3f7, 0 0 40px rgba(100,200,255,0.5)",
-            fontFamily: "'Bangers', sans-serif", letterSpacing: 1,
-          }} dir="ltr">{formatNum(totalDiamonds)}</div>
-          {sessionDiamonds > 0 && (
+
+        {/* 💎 Diamants */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 6,
+          background: "rgba(0,20,50,0.82)",
+          backdropFilter: "blur(8px)",
+          border: "1.5px solid rgba(100,180,255,0.45)",
+          borderRadius: 12, padding: "5px 10px",
+          boxShadow: "0 2px 12px rgba(0,80,200,0.35)",
+          flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 18 }}>💎</span>
+          <div>
             <div style={{
-              color: "#80deea", fontSize: 11, fontWeight: 700,
-              fontFamily: "'Fredoka', sans-serif", letterSpacing: 0.5,
-              marginTop: 2, textShadow: "0 0 8px rgba(0,200,255,0.5)",
-            }} dir="ltr">+{formatNum(sessionDiamonds)} session</div>
-          )}
+              color: "#fff", fontSize: 18, fontWeight: 900, lineHeight: 1,
+              fontFamily: "'Bangers', sans-serif", letterSpacing: 1,
+              textShadow: "0 0 12px #4fc3f7",
+            }} dir="ltr">{formatNum(totalDiamonds)}</div>
+            {sessionDiamonds > 0 && (
+              <div style={{ color: "#80deea", fontSize: 9, fontWeight: 700, lineHeight: 1, fontFamily: "'Fredoka', sans-serif" }} dir="ltr">
+                +{formatNum(sessionDiamonds)}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Checkpoint barre — prend l'espace restant */}
+        <div style={{
+          flex: 1,
+          background: "rgba(0,0,0,0.72)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(255,140,0,0.3)",
+          borderRadius: 10, padding: "5px 10px",
+        }}>
+          <div style={{ color: "#ffa726", fontSize: 9, fontWeight: 700, letterSpacing: 0.6, marginBottom: 4 }}>
+            {t("hud.nextStop", { s: timeToNext })}
+          </div>
+          <div style={{ height: 5, background: "rgba(255,255,255,0.1)", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{
+              height: "100%", width: `${progress * 100}%`,
+              background: "linear-gradient(90deg,#ff6f00,#ffd54f)",
+              borderRadius: 4, transition: "width 0.4s", boxShadow: "0 0 6px #ff8f00",
+            }} />
+          </div>
+        </div>
+
+        {/* Score + niveau */}
+        <div style={{
+          background: "rgba(0,0,0,0.72)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(100,220,80,0.3)",
+          borderRadius: 10, padding: "5px 10px", textAlign: "center",
+          flexShrink: 0,
+        }}>
+          <div style={{ color: "#a5d6a7", fontSize: 8, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Fredoka', sans-serif" }}>{t("hud.score")}</div>
+          <div style={{ color: "#fff", fontSize: 18, fontWeight: 900, lineHeight: 1.1, textShadow: "0 0 10px #66bb6a", fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>{score}</div>
+          <LevelBadge level={difficultyLevel} />
         </div>
       </div>
-      <style>{`
-        @keyframes diamondPulse {
-          0%,100% { box-shadow: 0 6px 28px rgba(0,80,200,0.45), 0 0 0 1px rgba(255,255,255,0.06) inset; }
-          50%     { box-shadow: 0 6px 36px rgba(80,180,255,0.75), 0 0 0 1px rgba(255,255,255,0.1) inset; }
-        }
-      `}</style>
 
-      {/* Barre checkpoint */}
-      <div style={{
-        flex: 1, maxWidth: 220,
-        background: "linear-gradient(135deg,rgba(0,0,0,0.8),rgba(30,10,0,0.85))",
-        backdropFilter: "blur(10px)",
-        border: "1px solid rgba(255,140,0,0.35)",
-        borderRadius: 14, padding: "8px 14px", textAlign: "center",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.6)",
-      }}>
-        <div style={{ color: "#ffa726", fontSize: 10, fontWeight: 700, letterSpacing: 0.8, marginBottom: 5 }}>
-          {t("hud.nextStop", { s: timeToNext })}
-        </div>
-        <div style={{ height: 8, background: "rgba(255,255,255,0.1)", borderRadius: 6, overflow: "hidden", border: "1px solid rgba(255,140,0,0.2)" }}>
-          <div style={{
-            height: "100%", width: `${progress * 100}%`,
-            background: "linear-gradient(90deg,#ff6f00,#ffd54f)",
-            borderRadius: 6, transition: "width 0.4s", boxShadow: "0 0 8px #ff8f00",
-          }} />
-        </div>
-      </div>
-
-      {/* Score + niveau */}
-      <div style={{
-        background: "linear-gradient(135deg,rgba(0,0,0,0.8),rgba(20,30,5,0.85))",
-        backdropFilter: "blur(10px)",
-        border: "1px solid rgba(100,220,80,0.3)",
-        borderRadius: 16, padding: "8px 14px", textAlign: "center",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.6)",
-      }}>
-        <div style={{ color: "#a5d6a7", fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Fredoka', sans-serif" }}>{t("hud.score")}</div>
-        <div style={{ color: "#fff", fontSize: 26, fontWeight: 900, lineHeight: 1.1, textShadow: "0 2px 0 #1a1a1a, 0 0 12px #66bb6a", fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>{score}</div>
-        {checkpointNumber > 0 && (
-          <div style={{ color: "#ffd54f", fontSize: 10, marginTop: 2 }}>🏁 ×{checkpointNumber}</div>
-        )}
-        <LevelBadge level={difficultyLevel} />
-      </div>
-
-      {/* Power-ups actifs — bouclier & aimant */}
+      {/* Power-ups actifs — sous la barre, centrés */}
       {(shieldActive || magnetActive) && (
         <div style={{
-          position: "absolute",
-          top: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          display: "flex",
-          gap: 8,
-          paddingTop: 14,
+          display: "flex", justifyContent: "center", gap: 6,
+          paddingBottom: 4,
           pointerEvents: "none",
         }}>
           {shieldActive && (
             <div style={{
-              background: "linear-gradient(135deg,rgba(2,136,209,0.9),rgba(79,195,247,0.85))",
-              border: "2px solid #4fc3f7",
-              borderRadius: 12, padding: "5px 12px",
-              display: "flex", alignItems: "center", gap: 6,
-              boxShadow: "0 0 18px rgba(79,195,247,0.7)",
+              background: "rgba(2,136,209,0.85)",
+              border: "1.5px solid #4fc3f7",
+              borderRadius: 10, padding: "3px 10px",
+              display: "flex", alignItems: "center", gap: 5,
+              boxShadow: "0 0 14px rgba(79,195,247,0.6)",
               backdropFilter: "blur(8px)",
             }}>
-              <span style={{ fontSize: 18 }}>🛡️</span>
-              <span style={{ color: "#fff", fontSize: 11, fontWeight: 800, fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>BOUCLIER</span>
+              <span style={{ fontSize: 14 }}>🛡️</span>
+              <span style={{ color: "#fff", fontSize: 10, fontWeight: 800, fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>BOUCLIER</span>
             </div>
           )}
           {magnetActive && (
             <div style={{
-              background: "linear-gradient(135deg,rgba(130,119,23,0.9),rgba(255,238,88,0.85))",
-              border: "2px solid #ffee58",
-              borderRadius: 12, padding: "5px 12px",
-              display: "flex", alignItems: "center", gap: 6,
-              boxShadow: "0 0 18px rgba(255,238,88,0.7)",
+              background: "rgba(130,119,23,0.85)",
+              border: "1.5px solid #ffee58",
+              borderRadius: 10, padding: "3px 10px",
+              display: "flex", alignItems: "center", gap: 5,
+              boxShadow: "0 0 14px rgba(255,238,88,0.6)",
               backdropFilter: "blur(8px)",
             }}>
-              <span style={{ fontSize: 18 }}>🧲</span>
-              <span style={{ color: "#1a1a1a", fontSize: 11, fontWeight: 800, fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>
+              <span style={{ fontSize: 14 }}>🧲</span>
+              <span style={{ color: "#fff9c4", fontSize: 10, fontWeight: 800, fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>
                 AIMANT {Math.ceil(magnetTimeLeft)}s
               </span>
             </div>
@@ -600,19 +581,7 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
         </div>
       )}
 
-      {/* Carte engagement Bridge — en bas à gauche pendant le jeu */}
-      {eligibility.diamondsCollected > 0 && (
-        <div style={{
-          position: "absolute",
-          bottom: -110,
-          left: 14,
-          pointerEvents: "none",
-        }}>
-          <EngagementCard eligibility={eligibility} compact />
-        </div>
-      )}
-
-      {/* Voile rouge clignotant pendant le boost — sensation de vitesse */}
+      {/* Voile rouge clignotant pendant le boost */}
       {boostActive && (
         <div style={{
           position: "fixed", inset: 0, pointerEvents: "none", zIndex: 5,
