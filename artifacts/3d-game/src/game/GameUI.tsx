@@ -167,13 +167,13 @@ function FloatingActions() {
         pointerEvents: "auto",
       }}
     >
-      {/* 🚕 Taxi — lien Bridge Eats */}
+      {/* 🚕 Taxi — lien Bridge Eats (site) */}
       <a
-        href={WHATSAPP_URL}
+        href={BRIDGE_EATS_URL}
         target="_blank"
         rel="noopener noreferrer"
         title="Bridge Eats"
-        aria-label="Bridge Eats Taxi"
+        aria-label="Bridge Eats"
         style={{ ...baseBtn, background: "linear-gradient(135deg,#f9a825,#f57f17)", color: "#fff" }}
         onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
         onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
