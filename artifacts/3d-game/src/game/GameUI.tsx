@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useMusic } from "../hooks/useMusic";
+import { useDarkMode } from "../hooks/useDarkMode";
 import type { GamePhase } from "./useGameState";
 import {
   registerBridgePhone,
@@ -146,10 +148,10 @@ export const WHATSAPP_URL = `https://wa.me/${BRIDGE_EATS_WHATSAPP}?text=${WA_PRE
    recouvrir les boutons existants ("Démarrer", "Rejouer", etc.). */
 function FloatingActions() {
   const baseBtn: React.CSSProperties = {
-    width: 44, height: 44, borderRadius: "50%",
+    width: 38, height: 38, borderRadius: "50%",
     border: "1.5px solid rgba(255,255,255,0.25)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 22, cursor: "pointer", textDecoration: "none",
+    fontSize: 19, cursor: "pointer", textDecoration: "none",
     boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
     transition: "transform 0.15s, box-shadow 0.15s",
     backdropFilter: "blur(8px)",
@@ -160,23 +162,25 @@ function FloatingActions() {
         position: "fixed",
         top: 72,
         left: "max(10px, env(safe-area-inset-left, 10px))",
-        display: "flex", flexDirection: "row", gap: 8,
+        display: "flex", flexDirection: "row", gap: 6,
         zIndex: 30,
         pointerEvents: "auto",
       }}
     >
+      {/* 🚕 Taxi — lien Bridge Eats */}
       <a
         href={WHATSAPP_URL}
         target="_blank"
         rel="noopener noreferrer"
         title="Bridge Eats"
-        aria-label="Bridge Eats WhatsApp"
-        style={{ ...baseBtn, background: "linear-gradient(135deg,#880e4f,#c62828)", color: "#fff" }}
+        aria-label="Bridge Eats Taxi"
+        style={{ ...baseBtn, background: "linear-gradient(135deg,#f9a825,#f57f17)", color: "#fff" }}
         onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
         onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
       >
-        <span aria-hidden>🌹</span>
+        <span aria-hidden>🚕</span>
       </a>
+      {/* 🛵 Livraison — lien WhatsApp */}
       <a
         href={WHATSAPP_URL}
         target="_blank"
@@ -189,6 +193,67 @@ function FloatingActions() {
       >
         <span aria-hidden>🛵</span>
       </a>
+    </div>
+  );
+}
+
+/* ─── Boutons flottants DROITE — WhatsApp + Son + Mode nuit ─── */
+function FloatingActionsRight() {
+  const { enabled: musicOn, toggle: toggleMusic } = useMusic();
+  const [dark, toggleDark] = useDarkMode();
+
+  const baseBtn: React.CSSProperties = {
+    width: 38, height: 38, borderRadius: "50%",
+    border: "1.5px solid rgba(255,255,255,0.25)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 18, cursor: "pointer",
+    boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
+    transition: "transform 0.15s, box-shadow 0.15s",
+    backdropFilter: "blur(8px)",
+  };
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 72,
+        right: "max(10px, env(safe-area-inset-right, 10px))",
+        display: "flex", flexDirection: "row", gap: 6,
+        zIndex: 30,
+        pointerEvents: "auto",
+      }}
+    >
+      {/* WhatsApp */}
+      <a
+        href={WHATSAPP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="WhatsApp Bridge Eats"
+        style={{ ...baseBtn, background: "linear-gradient(135deg,#1b5e20,#2e7d32)", color: "#fff", textDecoration: "none" }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        <span aria-hidden>💬</span>
+      </a>
+      {/* Son */}
+      <button
+        onClick={toggleMusic}
+        title={musicOn ? "Couper la musique" : "Activer la musique"}
+        style={{ ...baseBtn, background: musicOn ? "linear-gradient(135deg,#0d47a1,#1565c0)" : "rgba(30,30,50,0.75)", color: "#fff", border: "none" }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        <span aria-hidden>{musicOn ? "🔊" : "🔇"}</span>
+      </button>
+      {/* Mode nuit */}
+      <button
+        onClick={toggleDark}
+        title={dark ? "Mode jour" : "Mode nuit"}
+        style={{ ...baseBtn, background: dark ? "linear-gradient(135deg,#311b92,#4527a0)" : "linear-gradient(135deg,#e65100,#bf360c)", color: "#fff", border: "none" }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        <span aria-hidden>{dark ? "🌙" : "☀️"}</span>
+      </button>
     </div>
   );
 }
@@ -445,25 +510,25 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
         gap: 6, padding: "8px 10px 6px",
       }}>
 
-        {/* 💎 Diamants */}
+        {/* 💎 Diamants (gros) */}
         <div style={{
-          display: "flex", alignItems: "center", gap: 6,
-          background: "rgba(0,20,50,0.82)",
+          display: "flex", alignItems: "center", gap: 8,
+          background: "rgba(0,20,50,0.88)",
           backdropFilter: "blur(8px)",
-          border: "1.5px solid rgba(100,180,255,0.45)",
-          borderRadius: 12, padding: "5px 10px",
-          boxShadow: "0 2px 12px rgba(0,80,200,0.35)",
+          border: "2px solid rgba(100,180,255,0.55)",
+          borderRadius: 14, padding: "6px 13px",
+          boxShadow: "0 2px 16px rgba(0,80,200,0.45)",
           flexShrink: 0,
         }}>
-          <span style={{ fontSize: 18 }}>💎</span>
+          <span style={{ fontSize: 24 }}>💎</span>
           <div>
             <div style={{
-              color: "#fff", fontSize: 18, fontWeight: 900, lineHeight: 1,
-              fontFamily: "'Bangers', sans-serif", letterSpacing: 1,
-              textShadow: "0 0 12px #4fc3f7",
+              color: "#fff", fontSize: 26, fontWeight: 900, lineHeight: 1,
+              fontFamily: "'Bangers', sans-serif", letterSpacing: 1.5,
+              textShadow: "0 0 14px #4fc3f7",
             }} dir="ltr">{formatNum(totalDiamonds)}</div>
             {sessionDiamonds > 0 && (
-              <div style={{ color: "#80deea", fontSize: 9, fontWeight: 700, lineHeight: 1, fontFamily: "'Fredoka', sans-serif" }} dir="ltr">
+              <div style={{ color: "#80deea", fontSize: 10, fontWeight: 700, lineHeight: 1, fontFamily: "'Fredoka', sans-serif" }} dir="ltr">
                 +{formatNum(sessionDiamonds)}
               </div>
             )}
@@ -503,6 +568,32 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
           <LevelBadge level={difficultyLevel} />
         </div>
       </div>
+
+      {/* ── Compte à rebours défi 3 jours ── */}
+      {(() => {
+        const secs = getChallengeSecondsLeft();
+        if (secs <= 0) return null;
+        const cd = formatCountdown(secs);
+        return (
+          <div style={{
+            display: "flex", justifyContent: "center",
+            marginTop: 2, marginBottom: 2,
+          }}>
+            <div style={{
+              background: "rgba(0,0,0,0.72)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,160,0,0.45)",
+              borderRadius: 10, padding: "3px 12px",
+              display: "flex", alignItems: "center", gap: 6,
+            }}>
+              <span style={{ fontSize: 12 }}>⏳</span>
+              <span style={{ color: "#ffd54f", fontSize: 11, fontWeight: 800, fontFamily: "'Bangers', sans-serif", letterSpacing: 1 }}>
+                {cd}
+              </span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Power-ups actifs — sous la barre, centrés */}
       {(shieldActive || magnetActive) && (
@@ -1955,7 +2046,10 @@ export function GameUI({
           se superposer aux écrans qui ont déjà leurs propres boutons
           (instructions, start, game-over, réclamation menu). */}
       {phase === "playing" && !showReward && !showInstructions && (
-        <FloatingActions />
+        <>
+          <FloatingActions />
+          <FloatingActionsRight />
+        </>
       )}
 
       {showReward && (
