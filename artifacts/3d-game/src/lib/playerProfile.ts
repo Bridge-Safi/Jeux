@@ -433,7 +433,13 @@ export function longestQualifyingStreak(playDays: PlayDay[]): number {
    Pure function : ne touche pas la base, marche sur le Profile passé.
    ─────────────────────────────────────────────────────────────── */
 export function getMenuEligibility(profile: Profile | null): MenuEligibility {
-  const diamondsCollected = profile?.diamonds_collected ?? 0;
+  /* On prend le MAX entre diamonds_collected (cumulatif) et period_diamonds
+     (cycle en cours) pour corriger les cas où l'une des colonnes est à 0
+     suite à un bug de synchronisation antérieur. */
+  const diamondsCollected = Math.max(
+    profile?.diamonds_collected ?? 0,
+    profile?.period_diamonds ?? 0,
+  );
   const menusClaimed      = profile?.menus_claimed ?? 0;
   const menusEarnedRaw    = Math.floor(diamondsCollected / DIAMONDS_PER_MENU);
   const menusAvailable    = Math.max(0, menusEarnedRaw - menusClaimed);

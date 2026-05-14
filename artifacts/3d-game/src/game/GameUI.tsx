@@ -197,63 +197,63 @@ function FloatingActions() {
   );
 }
 
-/* ─── Boutons flottants DROITE — WhatsApp + Son + Mode nuit ─── */
+/* ─── Boutons flottants DROITE — Son + Mode nuit + WhatsApp (colonne verticale) ─── */
 function FloatingActionsRight() {
   const { enabled: musicOn, toggle: toggleMusic } = useMusic();
   const [dark, toggleDark] = useDarkMode();
 
   const baseBtn: React.CSSProperties = {
-    width: 38, height: 38, borderRadius: "50%",
-    border: "1.5px solid rgba(255,255,255,0.25)",
+    width: 52, height: 52, borderRadius: "50%",
     display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 18, cursor: "pointer",
-    boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
+    fontSize: 24, cursor: "pointer",
+    boxShadow: "0 4px 18px rgba(0,0,0,0.55)",
     transition: "transform 0.15s, box-shadow 0.15s",
-    backdropFilter: "blur(8px)",
+    backdropFilter: "blur(10px)",
   };
   return (
     <div
       style={{
         position: "fixed",
-        top: 72,
+        top: "50%",
+        transform: "translateY(-50%)",
         right: "max(10px, env(safe-area-inset-right, 10px))",
-        display: "flex", flexDirection: "row", gap: 6,
+        display: "flex", flexDirection: "column", gap: 10,
         zIndex: 30,
         pointerEvents: "auto",
       }}
     >
-      {/* WhatsApp */}
+      {/* Son */}
+      <button
+        onClick={toggleMusic}
+        title={musicOn ? "Couper la musique" : "Activer la musique"}
+        style={{ ...baseBtn, background: musicOn ? "linear-gradient(135deg,#c2185b,#e91e63)" : "rgba(30,30,50,0.8)", color: "#fff", border: "none" }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        <span aria-hidden>{musicOn ? "🎵" : "🔇"}</span>
+      </button>
+      {/* Mode nuit */}
+      <button
+        onClick={toggleDark}
+        title={dark ? "Mode jour" : "Mode nuit"}
+        style={{ ...baseBtn, background: dark ? "linear-gradient(135deg,#1a237e,#283593)" : "linear-gradient(135deg,#37474f,#546e7a)", color: "#fff", border: "none" }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        <span aria-hidden>🌙</span>
+      </button>
+      {/* WhatsApp Bridge Eats */}
       <a
         href={WHATSAPP_URL}
         target="_blank"
         rel="noopener noreferrer"
         title="WhatsApp Bridge Eats"
         style={{ ...baseBtn, background: "linear-gradient(135deg,#1b5e20,#2e7d32)", color: "#fff", textDecoration: "none" }}
-        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
         onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
       >
         <span aria-hidden>💬</span>
       </a>
-      {/* Son */}
-      <button
-        onClick={toggleMusic}
-        title={musicOn ? "Couper la musique" : "Activer la musique"}
-        style={{ ...baseBtn, background: musicOn ? "linear-gradient(135deg,#0d47a1,#1565c0)" : "rgba(30,30,50,0.75)", color: "#fff", border: "none" }}
-        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
-        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-      >
-        <span aria-hidden>{musicOn ? "🔊" : "🔇"}</span>
-      </button>
-      {/* Mode nuit */}
-      <button
-        onClick={toggleDark}
-        title={dark ? "Mode jour" : "Mode nuit"}
-        style={{ ...baseBtn, background: dark ? "linear-gradient(135deg,#311b92,#4527a0)" : "linear-gradient(135deg,#e65100,#bf360c)", color: "#fff", border: "none" }}
-        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
-        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-      >
-        <span aria-hidden>{dark ? "🌙" : "☀️"}</span>
-      </button>
     </div>
   );
 }

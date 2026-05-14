@@ -30,6 +30,8 @@ export type Profile = {
   menus_claimed?: number;
   bonus_days?: string[];                // dates already awarded the +2 000 💎 bonus
   free_delivery_credits?: number;       // crédits de livraison gratuite
+  period_diamonds?: number;             // 💎 du cycle en cours (3 jours)
+  period_start?: string;                // début du cycle ISO
   created_at?: string;
   updated_at?: string;
 };
