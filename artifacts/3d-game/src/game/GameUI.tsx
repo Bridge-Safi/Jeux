@@ -1440,13 +1440,12 @@ function StartScreen({ onStart, eligibility, profile, onClaim, onShowProfile }: 
   return (
     <div style={{
       position: "absolute", inset: 0, pointerEvents: "auto",
-      backgroundImage: "url(/assets/shark-warrior-night.jpeg)",
-      backgroundSize: "cover", backgroundPosition: "center top",
+      background: "#000",
     }}>
-      {/* Voile sombre teinté vert (mêmes tons que la médina nocturne) */}
+      {/* Voile sombre */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        background: "linear-gradient(to bottom,rgba(0,30,15,0.45) 0%,rgba(0,20,10,0.7) 35%,rgba(0,15,8,0.94) 65%,rgba(0,10,5,0.99) 100%)",
+        background: "transparent",
       }} />
 
       {/* ── Mini profil top-left — à côté du sélecteur de langue ── */}
@@ -1753,13 +1752,12 @@ function GameOverScreen({ score, checkpointNumber, eligibility, onRestart, onCla
   return (
     <div style={{
       position: "absolute", inset: 0,
-      backgroundImage: "url(/assets/shark-warrior-night.jpeg)",
-      backgroundSize: "cover", backgroundPosition: "center top",
+      background: "#000",
       pointerEvents: "auto",
     }}>
       <div style={{
         position: "absolute", inset: 0,
-        background: "linear-gradient(to bottom,rgba(60,0,0,0.7) 0%,rgba(10,0,0,0.97) 100%)",
+        background: "transparent",
         pointerEvents: "none",
       }} />
 
