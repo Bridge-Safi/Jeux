@@ -181,13 +181,13 @@ function FloatingActions() {
       >
         <span aria-hidden>🚕</span>
       </a>
-      {/* 🛵 Livraison — lien WhatsApp */}
+      {/* 🛵 Livraison — lien Bridge Safi */}
       <a
-        href={WHATSAPP_URL}
+        href={BRIDGE_EATS_URL}
         target="_blank"
         rel="noopener noreferrer"
-        title="WhatsApp Bridge Eats"
-        aria-label="Contacter sur WhatsApp"
+        title="Bridge Safi"
+        aria-label="Bridge Safi"
         style={{ ...baseBtn, background: "linear-gradient(135deg,#b71c1c,#e53935)", color: "#fff" }}
         onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
         onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
@@ -2073,12 +2073,12 @@ export function GameUI({
         }
       `}</style>
 
-      {/* Boutons flottants — uniquement pendant le jeu pour ne PAS
-          se superposer aux écrans qui ont déjà leurs propres boutons
-          (instructions, start, game-over, réclamation menu). */}
+      {/* Boutons flottants gauche — partout dans le jeu */}
+      {!showReward && !showInstructions && <FloatingActions />}
+
+      {/* Boutons flottants droite — uniquement pendant le jeu */}
       {phase === "playing" && !showReward && !showInstructions && (
         <>
-          <FloatingActions />
           <FloatingActionsRight
             avatarSrc={(() => {
               const ba = getBridgeAuth();
