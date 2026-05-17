@@ -74,6 +74,7 @@ interface GameUIProps {
   magnetTimeLeft: number;
   onStart: () => void;
   onRestart: () => void;
+  onReturnToStart?: () => void;
   onChangeLane: (dir: 1 | -1) => void;
   onJump: () => void;
   onBoost: () => void;
@@ -197,32 +198,36 @@ function FloatingActions() {
   );
 }
 
-/* ─── Boutons flottants DROITE — Son + Mode nuit + WhatsApp (colonne verticale) ─── */
-function FloatingActionsRight() {
+/* ─── Boutons flottants DROITE — 5 boutons en colonne (top-right) ─── */
+function FloatingActionsRight({ avatarSrc, onShowProfile, onReturnToStart }: {
+  avatarSrc: string;
+  onShowProfile: () => void;
+  onReturnToStart?: () => void;
+}) {
   const { enabled: musicOn, toggle: toggleMusic } = useMusic();
   const [dark, toggleDark] = useDarkMode();
 
   const baseBtn: React.CSSProperties = {
-    width: 52, height: 52, borderRadius: "50%",
+    width: 48, height: 48, borderRadius: "50%",
     display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 24, cursor: "pointer",
+    fontSize: 22, cursor: "pointer",
     boxShadow: "0 4px 18px rgba(0,0,0,0.55)",
     transition: "transform 0.15s, box-shadow 0.15s",
     backdropFilter: "blur(10px)",
+    flexShrink: 0,
   };
   return (
     <div
       style={{
         position: "fixed",
-        top: "50%",
-        transform: "translateY(-50%)",
+        top: 108,
         right: "max(10px, env(safe-area-inset-right, 10px))",
-        display: "flex", flexDirection: "column", gap: 10,
+        display: "flex", flexDirection: "column", gap: 8,
         zIndex: 30,
         pointerEvents: "auto",
       }}
     >
-      {/* Son */}
+      {/* 🎵 Son */}
       <button
         onClick={toggleMusic}
         title={musicOn ? "Couper la musique" : "Activer la musique"}
@@ -232,7 +237,7 @@ function FloatingActionsRight() {
       >
         <span aria-hidden>{musicOn ? "🎵" : "🔇"}</span>
       </button>
-      {/* Mode nuit */}
+      {/* 🌙 Mode nuit */}
       <button
         onClick={toggleDark}
         title={dark ? "Mode jour" : "Mode nuit"}
@@ -242,7 +247,7 @@ function FloatingActionsRight() {
       >
         <span aria-hidden>🌙</span>
       </button>
-      {/* WhatsApp Bridge Eats */}
+      {/* 💬 WhatsApp */}
       <a
         href={WHATSAPP_URL}
         target="_blank"
@@ -254,6 +259,32 @@ function FloatingActionsRight() {
       >
         <span aria-hidden>💬</span>
       </a>
+      {/* ← Retour menu */}
+      <button
+        onClick={onReturnToStart}
+        title="Retour au menu"
+        style={{ ...baseBtn, background: "linear-gradient(135deg,#004d40,#00695c)", color: "#80cbc4", border: "none" }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        <span aria-hidden style={{ fontSize: 20, fontWeight: 900 }}>←</span>
+      </button>
+      {/* 👤 Profil avatar */}
+      <button
+        onClick={onShowProfile}
+        title="Mon profil"
+        style={{
+          ...baseBtn,
+          background: `url(${avatarSrc}) center/cover, #0a1f14`,
+          border: "2.5px solid #00e676",
+          padding: 0,
+          overflow: "hidden",
+        }}
+        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        {!avatarSrc && <span aria-hidden>👤</span>}
+      </button>
     </div>
   );
 }
@@ -1995,7 +2026,7 @@ export function GameUI({
   phase, score, checkpointNumber, nextCheckpointAt, playTime,
   profile, boostMeter, boostActive, boostTimeLeft,
   difficultyLevel, shieldActive, magnetActive, magnetTimeLeft,
-  onStart, onRestart, onChangeLane, onJump, onBoost, onRefreshProfile,
+  onStart, onRestart, onReturnToStart, onChangeLane, onJump, onBoost, onRefreshProfile,
 }: GameUIProps) {
   const [showReward, setShowReward] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -2048,7 +2079,18 @@ export function GameUI({
       {phase === "playing" && !showReward && !showInstructions && (
         <>
           <FloatingActions />
-          <FloatingActionsRight />
+          <FloatingActionsRight
+            avatarSrc={(() => {
+              const ba = getBridgeAuth();
+              return (ba?.avatarUrl && ba.avatarUrl.length > 0)
+                ? ba.avatarUrl
+                : (profile?.avatar_url && profile.avatar_url.length > 0)
+                  ? profile.avatar_url
+                  : "/assets/player-avatar.jpeg";
+            })()}
+            onShowProfile={() => setShowProfile(true)}
+            onReturnToStart={onReturnToStart}
+          />
         </>
       )}
 

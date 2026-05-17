@@ -180,7 +180,7 @@ function GameScene({ state, tick, changeLane, jump, boost }: ReturnType<typeof u
 
 export function Game() {
   const gameState = useGameState();
-  const { state, startGame, resumeGame, changeLane, jump, tick, activateBoost } = gameState;
+  const { state, startGame, resumeGame, returnToStart, changeLane, jump, tick, activateBoost } = gameState;
   const { t } = useT();
   const [dark] = useDarkMode();
   const { startIfEnabled: startMusic, stop: stopMusic } = useMusic();
@@ -275,7 +275,7 @@ export function Game() {
       height: "100vh",
       minHeight: "100dvh" as never,
       position: "relative",
-      background: dark ? "#000" : "#0a0822",
+      background: "#000",
       overflow: "hidden",
     }}>
       {/* Voile sombre global appliqué au-dessus du canvas 3D quand le
@@ -320,6 +320,7 @@ export function Game() {
         magnetTimeLeft={state.magnetTimeLeft}
         onStart={handleStart}
         onRestart={handleResumeAfterDeath}
+        onReturnToStart={returnToStart}
         onChangeLane={changeLaneWithSfx}
         onJump={jumpWithSfx}
         onBoost={boostWithSfx}

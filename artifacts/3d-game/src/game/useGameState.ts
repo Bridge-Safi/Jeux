@@ -440,5 +440,9 @@ export function useGameState() {
     });
   }, []);
 
-  return { state, startGame, resumeGame, changeLane, jump, tick, activateBoost };
+  const returnToStart = useCallback(() => {
+    setState((s) => ({ ...initialState(), checkpointNumber: s.checkpointNumber }));
+  }, []);
+
+  return { state, startGame, resumeGame, returnToStart, changeLane, jump, tick, activateBoost };
 }
