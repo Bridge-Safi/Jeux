@@ -28,7 +28,7 @@ export function LanguageSelector({ position = "bottomRight" }: Props) {
   const isRight = isBelowScore || position.endsWith("Right");
 
   const pos: React.CSSProperties = isBelowScore
-    ? { position: "absolute", top: 108, right: 14, zIndex: 100 }
+    ? { position: "absolute", top: 66, right: 14, zIndex: 100 }
     : isBottom
     ? isRight
       ? { position: "absolute", bottom: 14, right: 14, zIndex: 100 }
