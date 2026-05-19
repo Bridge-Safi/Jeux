@@ -38,7 +38,7 @@ import {
 } from "../lib/happyHour";
 
 /* ─── Configuration Bridge Eats ─────────────────────────────── */
-export const BRIDGE_EATS_URL = "https://44474adc-9074-4015-a3b9-4e111cb8be39-00-11nld147gir6y.kirk.replit.dev/";
+export const BRIDGE_EATS_URL = "https://safi-bridge.ma";
 export { DIAMONDS_PER_MENU };
 
 /* Construit l'URL Bridge Eats avec les paramètres de complément 💎.
