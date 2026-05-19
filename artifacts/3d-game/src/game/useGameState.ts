@@ -216,6 +216,27 @@ export function useGameState() {
     return triggered;
   }, []);
 
+  /* ── Glissade (swipe haut→bas) : dash de vitesse 2.5s + bonus score ── */
+  const slide = useCallback(() => {
+    setState((s) => {
+      if (s.phase !== "playing") return s;
+      return {
+        ...s,
+        boostActive: true,
+        boostTimeLeft: 2.5,
+        score: s.score + 30,
+      };
+    });
+  }, []);
+
+  /* ── Grand saut (swipe bas→haut) : saut avec vélocité x1.8 ── */
+  const bigJump = useCallback(() => {
+    setState((s) => {
+      if (s.phase !== "playing") return s;
+      return { ...s, isJumping: true, jumpVelocity: 23, playerY: Math.max(s.playerY, 0) };
+    });
+  }, []);
+
   const tick = useCallback((dt: number) => {
     setState((s) => {
       if (s.phase !== "playing") return s;
@@ -444,5 +465,5 @@ export function useGameState() {
     setState((s) => ({ ...initialState(), checkpointNumber: s.checkpointNumber }));
   }, []);
 
-  return { state, startGame, resumeGame, returnToStart, changeLane, jump, tick, activateBoost };
+  return { state, startGame, resumeGame, returnToStart, changeLane, jump, slide, bigJump, tick, activateBoost };
 }

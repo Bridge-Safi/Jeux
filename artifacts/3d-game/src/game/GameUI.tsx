@@ -65,9 +65,7 @@ interface GameUIProps {
   nextCheckpointAt: number;
   playTime: number;
   profile: Profile | null;
-  boostMeter: number;
   boostActive: boolean;
-  boostTimeLeft: number;
   difficultyLevel: 1 | 2 | 3;
   shieldActive: boolean;
   magnetActive: boolean;
@@ -77,7 +75,8 @@ interface GameUIProps {
   onReturnToStart?: () => void;
   onChangeLane: (dir: 1 | -1) => void;
   onJump: () => void;
-  onBoost: () => void;
+  onSlide: () => void;
+  onBigJump: () => void;
   onRefreshProfile?: () => void;
 }
 
@@ -147,56 +146,6 @@ export const WHATSAPP_URL = `https://wa.me/${BRIDGE_EATS_WHATSAPP}?text=${WA_PRE
    des overlays (instructions, start, game-over, menu unlock).
    Volontairement masqués sur les écrans plein-contenu pour ne PAS
    recouvrir les boutons existants ("Démarrer", "Rejouer", etc.). */
-function FloatingActions() {
-  const baseBtn: React.CSSProperties = {
-    width: 38, height: 38, borderRadius: "50%",
-    border: "1.5px solid rgba(255,255,255,0.25)",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 19, cursor: "pointer", textDecoration: "none",
-    boxShadow: "0 4px 14px rgba(0,0,0,0.5)",
-    transition: "transform 0.15s, box-shadow 0.15s",
-    backdropFilter: "blur(8px)",
-  };
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 72,
-        left: "max(10px, env(safe-area-inset-left, 10px))",
-        display: "flex", flexDirection: "row", gap: 6,
-        zIndex: 30,
-        pointerEvents: "auto",
-      }}
-    >
-      {/* 🚕 Taxi — lien Bridge Eats (site) */}
-      <a
-        href={BRIDGE_EATS_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Bridge Eats"
-        aria-label="Bridge Eats"
-        style={{ ...baseBtn, background: "linear-gradient(135deg,#f9a825,#f57f17)", color: "#fff" }}
-        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
-        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-      >
-        <span aria-hidden>🚕</span>
-      </a>
-      {/* 🛵 Livraison — lien Bridge Safi */}
-      <a
-        href={BRIDGE_EATS_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Bridge Safi"
-        aria-label="Bridge Safi"
-        style={{ ...baseBtn, background: "linear-gradient(135deg,#b71c1c,#e53935)", color: "#fff" }}
-        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
-        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-      >
-        <span aria-hidden>🛵</span>
-      </a>
-    </div>
-  );
-}
 
 /* ─── Boutons flottants DROITE — 5 boutons en colonne (top-right) ─── */
 function FloatingActionsRight({ avatarSrc, onShowProfile, onReturnToStart }: {
@@ -436,8 +385,8 @@ function EngagementCard({ eligibility, compact = false }: {
   );
 }
 
-/* ─── Jauge NITRO (orange→rouge, pulse au max, flash en cours) ─── */
-function NitroMeter({ meter, active, timeLeft }: { meter: number; active: boolean; timeLeft: number }) {
+/* ─── [NITRO SUPPRIMÉ] ─── */
+function _NitroMeterUnused({ meter, active, timeLeft }: { meter: number; active: boolean; timeLeft: number }) {
   const { t } = useT();
   const ready = meter >= 100 && !active;
   return (
@@ -516,10 +465,10 @@ function LevelBadge({ level }: { level: 1 | 2 | 3 }) {
   );
 }
 
-function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility, boostMeter, boostActive, boostTimeLeft, difficultyLevel, shieldActive, magnetActive, magnetTimeLeft }: {
+function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility, boostActive, difficultyLevel, shieldActive, magnetActive, magnetTimeLeft }: {
   score: number; checkpointNumber: number; playTime: number;
   nextCheckpointAt: number; eligibility: MenuEligibility;
-  boostMeter: number; boostActive: boolean; boostTimeLeft: number;
+  boostActive: boolean;
   difficultyLevel: 1 | 2 | 3;
   shieldActive: boolean; magnetActive: boolean; magnetTimeLeft: number;
 }) {
@@ -664,15 +613,15 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
         </div>
       )}
 
-      {/* Voile rouge clignotant pendant le boost */}
+      {/* Voile cyan pendant la glissade/dash */}
       {boostActive && (
         <div style={{
           position: "fixed", inset: 0, pointerEvents: "none", zIndex: 5,
-          background: "radial-gradient(ellipse at center, transparent 40%, rgba(255,23,68,0.18) 100%)",
-          animation: "boostVignette 0.18s linear infinite",
+          background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,200,255,0.12) 100%)",
+          animation: "slideVignette 0.25s linear infinite",
           mixBlendMode: "screen",
         }}>
-          <style>{`@keyframes boostVignette{0%,100%{opacity:0.9}50%{opacity:1}}`}</style>
+          <style>{`@keyframes slideVignette{0%,100%{opacity:0.7}50%{opacity:1}}`}</style>
         </div>
       )}
     </div>
@@ -680,11 +629,21 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
 }
 
 /* ─── Zone SWIPE invisible plein écran — gestes NFS Mobile ─── */
-function SwipeArea({ onChangeLane, onJump }: {
-  onChangeLane: (dir: 1 | -1) => void; onJump: () => void;
+/* Gestes composés :
+   • Haut → Bas rapidement  (< 500ms) = GLISSADE (dash de vitesse)
+   • Bas  → Haut rapidement (< 500ms) = GRAND SAUT
+   • Simple haut             = saut normal
+   • Gauche / Droite         = changement de voie                   */
+function SwipeArea({ onChangeLane, onJump, onSlide, onBigJump }: {
+  onChangeLane: (dir: 1 | -1) => void;
+  onJump: () => void;
+  onSlide: () => void;
+  onBigJump: () => void;
 }) {
-  const startRef = useRef<{ x: number; y: number; t: number } | null>(null);
-  const firedRef = useRef(false);
+  const startRef    = useRef<{ x: number; y: number; t: number } | null>(null);
+  const firedRef    = useRef(false);
+  const lastSwipe   = useRef<{ dir: "up" | "down"; t: number } | null>(null);
+  const COMBO_MS    = 500;   // fenêtre de temps pour un combo
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType === "mouse") return;
@@ -694,18 +653,46 @@ function SwipeArea({ onChangeLane, onJump }: {
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!startRef.current || firedRef.current) return;
-    const dx = e.clientX - startRef.current.x;
-    const dy = e.clientY - startRef.current.y;
+    const dx  = e.clientX - startRef.current.x;
+    const dy  = e.clientY - startRef.current.y;
     const adx = Math.abs(dx);
     const ady = Math.abs(dy);
+
     if (adx > 35 && adx > ady * 1.2) {
+      /* ── Gauche / Droite ── */
       firedRef.current = true;
+      lastSwipe.current = null;
       onChangeLane(dx > 0 ? 1 : -1);
+
     } else if (-dy > 35 && ady > adx * 1.2) {
+      /* ── Haut ── */
       firedRef.current = true;
-      onJump();
+      const now = Date.now();
+      const prev = lastSwipe.current;
+      if (prev && prev.dir === "down" && now - prev.t < COMBO_MS) {
+        /* Bas → Haut : grand saut */
+        lastSwipe.current = null;
+        onBigJump();
+      } else {
+        /* Simple haut : saut normal */
+        lastSwipe.current = { dir: "up", t: now };
+        onJump();
+      }
+
+    } else if (dy > 35 && ady > adx * 1.2) {
+      /* ── Bas ── */
+      firedRef.current = true;
+      const now = Date.now();
+      const prev = lastSwipe.current;
+      if (prev && prev.dir === "up" && now - prev.t < COMBO_MS) {
+        /* Haut → Bas : glissade */
+        lastSwipe.current = null;
+        onSlide();
+      } else {
+        lastSwipe.current = { dir: "down", t: now };
+      }
     }
-  }, [onChangeLane, onJump]);
+  }, [onChangeLane, onJump, onSlide, onBigJump]);
 
   const handlePointerUp = useCallback(() => { startRef.current = null; }, []);
 
@@ -724,72 +711,17 @@ function SwipeArea({ onChangeLane, onJump }: {
   );
 }
 
-/* ─── Bouton NITRO — flamme orange/rouge, pulsation quand prêt, désactivé sinon ─── */
-function NitroButton({ ready, active, onBoost }: { ready: boolean; active: boolean; onBoost: () => void }) {
-  const [pressed, setPressed] = useState(false);
-  const lastFireRef = useRef(0);
-  const handleDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    if (!ready || active) return;
-    const now = Date.now();
-    if (now - lastFireRef.current < 60) return;
-    lastFireRef.current = now;
-    setPressed(true);
-    onBoost();
-  }, [ready, active, onBoost]);
-  const handleUp = useCallback(() => setPressed(false), []);
-
-  const accent = active ? "#fff176" : ready ? "#ff1744" : "#666";
-  const glow   = active ? "#ff5252" : ready ? "#ff8a80" : "#333";
-
-  return (
-    <button
-      onPointerDown={handleDown}
-      onPointerUp={handleUp}
-      onPointerCancel={handleUp}
-      onPointerLeave={handleUp}
-      onContextMenu={(e) => e.preventDefault()}
-      disabled={!ready || active}
-      style={{
-        width: 64, height: 64, borderRadius: "50%",
-        border: `2px solid ${accent}`,
-        background: pressed
-          ? `radial-gradient(circle at 50% 50%, ${glow}cc, rgba(40,0,0,0.85) 70%)`
-          : `radial-gradient(circle at 50% 50%, rgba(40,0,0,0.7), rgba(20,0,0,0.9) 70%)`,
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        color: accent,
-        fontSize: 30, fontWeight: 900,
-        cursor: ready && !active ? "pointer" : "not-allowed",
-        opacity: ready || active ? 1 : 0.45,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        boxShadow: active
-          ? `0 0 32px ${glow}, 0 0 60px ${accent}, inset 0 0 16px ${accent}aa`
-          : ready
-          ? `0 0 24px ${glow}, 0 0 12px ${accent}88, inset 0 0 10px ${accent}55`
-          : `inset 0 0 8px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.6)`,
-        transform: pressed ? "scale(0.92)" : "scale(1)",
-        transition: "transform 0.08s ease, opacity 0.2s",
-        userSelect: "none", WebkitUserSelect: "none",
-        touchAction: "manipulation",
-        textShadow: ready ? `0 0 10px ${accent}, 0 0 20px ${glow}` : "none",
-        animation: ready && !active ? "nitroBtnPulse 0.7s ease-in-out infinite" : "none",
-      }}
-    >
-      <span style={{ lineHeight: 1, marginTop: -2 }}>🔥</span>
-      <style>{`@keyframes nitroBtnPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}`}</style>
-    </button>
-  );
-}
 
 /* ─── Contrôles NFS Mobile : boutons glass + swipe ─────────── */
-function TouchControls({ onChangeLane, onJump, onBoost, boostReady, boostActive }: {
-  onChangeLane: (dir: 1 | -1) => void; onJump: () => void; onBoost: () => void;
-  boostReady: boolean; boostActive: boolean;
+function TouchControls({ onChangeLane, onJump, onSlide, onBigJump }: {
+  onChangeLane: (dir: 1 | -1) => void;
+  onJump: () => void;
+  onSlide: () => void;
+  onBigJump: () => void;
 }) {
   return (
     <>
-      <SwipeArea onChangeLane={onChangeLane} onJump={onJump} />
+      <SwipeArea onChangeLane={onChangeLane} onJump={onJump} onSlide={onSlide} onBigJump={onBigJump} />
       <div dir="ltr" style={{
         position: "absolute", bottom: 22, left: 0, right: 0,
         display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -804,13 +736,6 @@ function TouchControls({ onChangeLane, onJump, onBoost, boostReady, boostActive 
         <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10 }}>
           <NFSButton icon="›" glow="#ff1493" accent="#ff1493" onClick={() => onChangeLane(1)} />
         </div>
-      </div>
-      {/* Bouton NITRO flottant juste au-dessus des contrôles, à droite */}
-      <div style={{
-        position: "absolute", bottom: 130, right: 16, zIndex: 30,
-        pointerEvents: "auto",
-      }}>
-        <NitroButton ready={boostReady} active={boostActive} onBoost={onBoost} />
       </div>
     </>
   );
@@ -2022,9 +1947,9 @@ function AdminPanel() {
 /* ─── Export principal ───────────────────────────────────────── */
 export function GameUI({
   phase, score, checkpointNumber, nextCheckpointAt, playTime,
-  profile, boostMeter, boostActive, boostTimeLeft,
+  profile, boostActive,
   difficultyLevel, shieldActive, magnetActive, magnetTimeLeft,
-  onStart, onRestart, onReturnToStart, onChangeLane, onJump, onBoost, onRefreshProfile,
+  onStart, onRestart, onReturnToStart, onChangeLane, onJump, onSlide, onBigJump, onRefreshProfile,
 }: GameUIProps) {
   const [showReward, setShowReward] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -2070,9 +1995,6 @@ export function GameUI({
           50%{box-shadow:0 0 50px #42a5f5cc,0 8px 32px rgba(0,0,0,0.7)}
         }
       `}</style>
-
-      {/* Boutons flottants gauche — partout dans le jeu */}
-      {!showReward && !showInstructions && <FloatingActions />}
 
       {/* Boutons flottants droite — uniquement pendant le jeu */}
       {phase === "playing" && !showReward && !showInstructions && (
@@ -2148,9 +2070,7 @@ export function GameUI({
             playTime={playTime}
             nextCheckpointAt={nextCheckpointAt}
             eligibility={eligibility}
-            boostMeter={boostMeter}
             boostActive={boostActive}
-            boostTimeLeft={boostTimeLeft}
             difficultyLevel={difficultyLevel}
             shieldActive={shieldActive}
             magnetActive={magnetActive}
@@ -2163,13 +2083,10 @@ export function GameUI({
             <TouchControls
               onChangeLane={onChangeLane}
               onJump={onJump}
-              onBoost={onBoost}
-              boostReady={boostMeter >= 100 && !boostActive}
-              boostActive={boostActive}
+              onSlide={onSlide}
+              onBigJump={onBigJump}
             />
           </div>
-          {/* Jauge NITRO — centrée juste au-dessus des contrôles, monte un peu */}
-          <NitroMeter meter={boostMeter} active={boostActive} timeLeft={boostTimeLeft} />
           <style>{`
             @media (hover: hover) and (pointer: fine) {
               .touch-only { display: none !important; }

@@ -180,7 +180,7 @@ function GameScene({ state, tick, changeLane, jump, boost }: ReturnType<typeof u
 
 export function Game() {
   const gameState = useGameState();
-  const { state, startGame, resumeGame, returnToStart, changeLane, jump, tick, activateBoost } = gameState;
+  const { state, startGame, resumeGame, returnToStart, changeLane, jump, slide, bigJump, tick, activateBoost } = gameState;
   const { t } = useT();
   const [dark] = useDarkMode();
   const { startIfEnabled: startMusic, stop: stopMusic } = useMusic();
@@ -217,16 +217,15 @@ export function Game() {
     if (activateBoost()) sfxNitro();
   }, [activateBoost]);
 
-  /* Petit "ding" cristallin dès que la jauge atteint 100% pour signaler
-     visuellement+sonorement au joueur que le boost est dispo. */
-  const prevBoostReady = useRef(false);
-  useEffect(() => {
-    const ready = state.boostMeter >= 100 && !state.boostActive;
-    if (ready && !prevBoostReady.current && state.phase === "playing") {
-      sfxNitroReady();
-    }
-    prevBoostReady.current = ready;
-  }, [state.boostMeter, state.boostActive, state.phase]);
+  const slideWithSfx = useCallback(() => {
+    sfxNitro();
+    slide();
+  }, [slide]);
+
+  const bigJumpWithSfx = useCallback(() => {
+    sfxJump();
+    bigJump();
+  }, [bigJump]);
 
   /* Diamant ramassé → tintement cristallin (détecté via score++) */
   const prevScore = useRef(0);
@@ -311,9 +310,7 @@ export function Game() {
         nextCheckpointAt={state.nextCheckpointAt}
         playTime={state.playTime}
         profile={profile}
-        boostMeter={state.boostMeter}
         boostActive={state.boostActive}
-        boostTimeLeft={state.boostTimeLeft}
         difficultyLevel={state.difficultyLevel}
         shieldActive={state.shieldActive}
         magnetActive={state.magnetActive}
@@ -323,7 +320,8 @@ export function Game() {
         onReturnToStart={returnToStart}
         onChangeLane={changeLaneWithSfx}
         onJump={jumpWithSfx}
-        onBoost={boostWithSfx}
+        onSlide={slideWithSfx}
+        onBigJump={bigJumpWithSfx}
         onRefreshProfile={refreshProfile}
       />
 
