@@ -217,15 +217,15 @@ export function Game() {
     if (activateBoost()) sfxNitro();
   }, [activateBoost]);
 
-  const slideWithSfx = useCallback(() => {
-    sfxNitro();
-    slide();
-  }, [slide]);
-
-  const bigJumpWithSfx = useCallback(() => {
-    sfxJump();
-    bigJump();
-  }, [bigJump]);
+  /* Petit "ding" cristallin dès que la jauge atteint 100% */
+  const prevBoostReady = useRef(false);
+  useEffect(() => {
+    const ready = state.boostMeter >= 100 && !state.boostActive;
+    if (ready && !prevBoostReady.current && state.phase === "playing") {
+      sfxNitroReady();
+    }
+    prevBoostReady.current = ready;
+  }, [state.boostMeter, state.boostActive, state.phase]);
 
   /* Diamant ramassé → tintement cristallin (détecté via score++) */
   const prevScore = useRef(0);
@@ -310,7 +310,9 @@ export function Game() {
         nextCheckpointAt={state.nextCheckpointAt}
         playTime={state.playTime}
         profile={profile}
+        boostMeter={state.boostMeter}
         boostActive={state.boostActive}
+        boostTimeLeft={state.boostTimeLeft}
         difficultyLevel={state.difficultyLevel}
         shieldActive={state.shieldActive}
         magnetActive={state.magnetActive}
@@ -320,8 +322,7 @@ export function Game() {
         onReturnToStart={returnToStart}
         onChangeLane={changeLaneWithSfx}
         onJump={jumpWithSfx}
-        onSlide={slideWithSfx}
-        onBigJump={bigJumpWithSfx}
+        onBoost={boostWithSfx}
         onRefreshProfile={refreshProfile}
       />
 

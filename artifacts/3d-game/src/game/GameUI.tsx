@@ -65,7 +65,9 @@ interface GameUIProps {
   nextCheckpointAt: number;
   playTime: number;
   profile: Profile | null;
+  boostMeter: number;
   boostActive: boolean;
+  boostTimeLeft: number;
   difficultyLevel: 1 | 2 | 3;
   shieldActive: boolean;
   magnetActive: boolean;
@@ -75,8 +77,7 @@ interface GameUIProps {
   onReturnToStart?: () => void;
   onChangeLane: (dir: 1 | -1) => void;
   onJump: () => void;
-  onSlide: () => void;
-  onBigJump: () => void;
+  onBoost: () => void;
   onRefreshProfile?: () => void;
 }
 
@@ -385,8 +386,8 @@ function EngagementCard({ eligibility, compact = false }: {
   );
 }
 
-/* ─── [NITRO SUPPRIMÉ] ─── */
-function _NitroMeterUnused({ meter, active, timeLeft }: { meter: number; active: boolean; timeLeft: number }) {
+/* ─── Jauge NITRO (orange→rouge, pulse au max, flash en cours) ─── */
+function NitroMeter({ meter, active, timeLeft }: { meter: number; active: boolean; timeLeft: number }) {
   const { t } = useT();
   const ready = meter >= 100 && !active;
   return (
@@ -443,6 +444,56 @@ function _NitroMeterUnused({ meter, active, timeLeft }: { meter: number; active:
   );
 }
 
+/* ─── Bouton NITRO — flamme orange/rouge, pulsation quand prêt ─── */
+function NitroButton({ ready, active, onBoost }: { ready: boolean; active: boolean; onBoost: () => void }) {
+  const [pressed, setPressed] = useState(false);
+  const lastFireRef = useRef(0);
+  const handleDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    if (!ready || active) return;
+    const now = Date.now();
+    if (now - lastFireRef.current < 60) return;
+    lastFireRef.current = now;
+    setPressed(true);
+    onBoost();
+  }, [ready, active, onBoost]);
+  const handleUp = useCallback(() => setPressed(false), []);
+  const accent = active ? "#fff176" : ready ? "#ff1744" : "#666";
+  const glow   = active ? "#ff5252" : ready ? "#ff8a80" : "#333";
+  return (
+    <button
+      onPointerDown={handleDown} onPointerUp={handleUp}
+      onPointerCancel={handleUp} onPointerLeave={handleUp}
+      onContextMenu={(e) => e.preventDefault()}
+      disabled={!ready || active}
+      style={{
+        width: 64, height: 64, borderRadius: "50%",
+        border: `2px solid ${accent}`,
+        background: pressed
+          ? `radial-gradient(circle at 50% 50%, ${glow}cc, rgba(40,0,0,0.85) 70%)`
+          : `radial-gradient(circle at 50% 50%, rgba(40,0,0,0.7), rgba(20,0,0,0.9) 70%)`,
+        backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        color: accent, fontSize: 30, fontWeight: 900,
+        cursor: ready && !active ? "pointer" : "not-allowed",
+        opacity: ready || active ? 1 : 0.45,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: active
+          ? `0 0 32px ${glow}, 0 0 60px ${accent}, inset 0 0 16px ${accent}aa`
+          : ready ? `0 0 24px ${glow}, 0 0 12px ${accent}88, inset 0 0 10px ${accent}55`
+          : `inset 0 0 8px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.6)`,
+        transform: pressed ? "scale(0.92)" : "scale(1)",
+        transition: "transform 0.08s ease, opacity 0.2s",
+        userSelect: "none", WebkitUserSelect: "none", touchAction: "manipulation",
+        textShadow: ready ? `0 0 10px ${accent}, 0 0 20px ${glow}` : "none",
+        animation: ready && !active ? "nitroBtnPulse 0.7s ease-in-out infinite" : "none",
+      }}
+    >
+      <span style={{ lineHeight: 1, marginTop: -2 }}>🔥</span>
+      <style>{`@keyframes nitroBtnPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}`}</style>
+    </button>
+  );
+}
+
 /* ─── HUD en jeu ─────────────────────────────────────────────── */
 function LevelBadge({ level }: { level: 1 | 2 | 3 }) {
   const cfg = [
@@ -465,10 +516,10 @@ function LevelBadge({ level }: { level: 1 | 2 | 3 }) {
   );
 }
 
-function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility, boostActive, difficultyLevel, shieldActive, magnetActive, magnetTimeLeft }: {
+function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility, boostMeter, boostActive, boostTimeLeft, difficultyLevel, shieldActive, magnetActive, magnetTimeLeft }: {
   score: number; checkpointNumber: number; playTime: number;
   nextCheckpointAt: number; eligibility: MenuEligibility;
-  boostActive: boolean;
+  boostMeter: number; boostActive: boolean; boostTimeLeft: number;
   difficultyLevel: 1 | 2 | 3;
   shieldActive: boolean; magnetActive: boolean; magnetTimeLeft: number;
 }) {
@@ -613,15 +664,15 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
         </div>
       )}
 
-      {/* Voile cyan pendant la glissade/dash */}
+      {/* Voile rouge clignotant pendant le boost */}
       {boostActive && (
         <div style={{
           position: "fixed", inset: 0, pointerEvents: "none", zIndex: 5,
-          background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,200,255,0.12) 100%)",
-          animation: "slideVignette 0.25s linear infinite",
+          background: "radial-gradient(ellipse at center, transparent 40%, rgba(255,23,68,0.18) 100%)",
+          animation: "boostVignette 0.18s linear infinite",
           mixBlendMode: "screen",
         }}>
-          <style>{`@keyframes slideVignette{0%,100%{opacity:0.7}50%{opacity:1}}`}</style>
+          <style>{`@keyframes boostVignette{0%,100%{opacity:0.9}50%{opacity:1}}`}</style>
         </div>
       )}
     </div>
@@ -629,21 +680,11 @@ function HUD({ score, checkpointNumber, playTime, nextCheckpointAt, eligibility,
 }
 
 /* ─── Zone SWIPE invisible plein écran — gestes NFS Mobile ─── */
-/* Gestes composés :
-   • Haut → Bas rapidement  (< 500ms) = GLISSADE (dash de vitesse)
-   • Bas  → Haut rapidement (< 500ms) = GRAND SAUT
-   • Simple haut             = saut normal
-   • Gauche / Droite         = changement de voie                   */
-function SwipeArea({ onChangeLane, onJump, onSlide, onBigJump }: {
-  onChangeLane: (dir: 1 | -1) => void;
-  onJump: () => void;
-  onSlide: () => void;
-  onBigJump: () => void;
+function SwipeArea({ onChangeLane, onJump }: {
+  onChangeLane: (dir: 1 | -1) => void; onJump: () => void;
 }) {
-  const startRef    = useRef<{ x: number; y: number; t: number } | null>(null);
-  const firedRef    = useRef(false);
-  const lastSwipe   = useRef<{ dir: "up" | "down"; t: number } | null>(null);
-  const COMBO_MS    = 500;   // fenêtre de temps pour un combo
+  const startRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const firedRef = useRef(false);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType === "mouse") return;
@@ -653,46 +694,18 @@ function SwipeArea({ onChangeLane, onJump, onSlide, onBigJump }: {
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!startRef.current || firedRef.current) return;
-    const dx  = e.clientX - startRef.current.x;
-    const dy  = e.clientY - startRef.current.y;
+    const dx = e.clientX - startRef.current.x;
+    const dy = e.clientY - startRef.current.y;
     const adx = Math.abs(dx);
     const ady = Math.abs(dy);
-
     if (adx > 35 && adx > ady * 1.2) {
-      /* ── Gauche / Droite ── */
       firedRef.current = true;
-      lastSwipe.current = null;
       onChangeLane(dx > 0 ? 1 : -1);
-
     } else if (-dy > 35 && ady > adx * 1.2) {
-      /* ── Haut ── */
       firedRef.current = true;
-      const now = Date.now();
-      const prev = lastSwipe.current;
-      if (prev && prev.dir === "down" && now - prev.t < COMBO_MS) {
-        /* Bas → Haut : grand saut */
-        lastSwipe.current = null;
-        onBigJump();
-      } else {
-        /* Simple haut : saut normal */
-        lastSwipe.current = { dir: "up", t: now };
-        onJump();
-      }
-
-    } else if (dy > 35 && ady > adx * 1.2) {
-      /* ── Bas ── */
-      firedRef.current = true;
-      const now = Date.now();
-      const prev = lastSwipe.current;
-      if (prev && prev.dir === "up" && now - prev.t < COMBO_MS) {
-        /* Haut → Bas : glissade */
-        lastSwipe.current = null;
-        onSlide();
-      } else {
-        lastSwipe.current = { dir: "down", t: now };
-      }
+      onJump();
     }
-  }, [onChangeLane, onJump, onSlide, onBigJump]);
+  }, [onChangeLane, onJump]);
 
   const handlePointerUp = useCallback(() => { startRef.current = null; }, []);
 
@@ -713,28 +726,23 @@ function SwipeArea({ onChangeLane, onJump, onSlide, onBigJump }: {
 
 
 /* ─── Contrôles NFS Mobile : boutons glass + swipe ─────────── */
-function TouchControls({ onChangeLane, onJump, onSlide, onBigJump }: {
-  onChangeLane: (dir: 1 | -1) => void;
-  onJump: () => void;
-  onSlide: () => void;
-  onBigJump: () => void;
+function TouchControls({ onChangeLane, onJump, onBoost, boostReady, boostActive }: {
+  onChangeLane: (dir: 1 | -1) => void; onJump: () => void; onBoost: () => void;
+  boostReady: boolean; boostActive: boolean;
 }) {
   return (
     <>
-      <SwipeArea onChangeLane={onChangeLane} onJump={onJump} onSlide={onSlide} onBigJump={onBigJump} />
+      <SwipeArea onChangeLane={onChangeLane} onJump={onJump} />
       <div dir="ltr" style={{
         position: "absolute", bottom: 22, left: 0, right: 0,
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "0 24px", pointerEvents: "none", zIndex: 20,
+        display: "flex", justifyContent: "center", alignItems: "center",
+        gap: 32, padding: "0 24px", pointerEvents: "none", zIndex: 20,
       }}>
-        <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <NFSButton icon="‹" glow="#00f0ff" accent="#00f0ff" onClick={() => onChangeLane(-1)} />
-        </div>
         <div style={{ pointerEvents: "auto" }}>
           <NFSButton icon="▲" glow="#ffd700" accent="#ffd700" size={88} onClick={onJump} />
         </div>
-        <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <NFSButton icon="›" glow="#ff1493" accent="#ff1493" onClick={() => onChangeLane(1)} />
+        <div style={{ pointerEvents: "auto" }}>
+          <NitroButton ready={boostReady} active={boostActive} onBoost={onBoost} />
         </div>
       </div>
     </>
@@ -1947,9 +1955,9 @@ function AdminPanel() {
 /* ─── Export principal ───────────────────────────────────────── */
 export function GameUI({
   phase, score, checkpointNumber, nextCheckpointAt, playTime,
-  profile, boostActive,
+  profile, boostMeter, boostActive, boostTimeLeft,
   difficultyLevel, shieldActive, magnetActive, magnetTimeLeft,
-  onStart, onRestart, onReturnToStart, onChangeLane, onJump, onSlide, onBigJump, onRefreshProfile,
+  onStart, onRestart, onReturnToStart, onChangeLane, onJump, onBoost, onRefreshProfile,
 }: GameUIProps) {
   const [showReward, setShowReward] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -2070,23 +2078,24 @@ export function GameUI({
             playTime={playTime}
             nextCheckpointAt={nextCheckpointAt}
             eligibility={eligibility}
+            boostMeter={boostMeter}
             boostActive={boostActive}
+            boostTimeLeft={boostTimeLeft}
             difficultyLevel={difficultyLevel}
             shieldActive={shieldActive}
             magnetActive={magnetActive}
             magnetTimeLeft={magnetTimeLeft}
           />
-          {/* Touch controls visibles sur tactile (mobile/tablette).
-              Sur PC/TV avec souris ou manette : masqués via media query
-              pour ne pas encombrer l'écran. */}
           <div className="touch-only">
             <TouchControls
               onChangeLane={onChangeLane}
               onJump={onJump}
-              onSlide={onSlide}
-              onBigJump={onBigJump}
+              onBoost={onBoost}
+              boostReady={boostMeter >= 100 && !boostActive}
+              boostActive={boostActive}
             />
           </div>
+          <NitroMeter meter={boostMeter} active={boostActive} timeLeft={boostTimeLeft} />
           <style>{`
             @media (hover: hover) and (pointer: fine) {
               .touch-only { display: none !important; }
