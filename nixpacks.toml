@@ -5,4 +5,5 @@ cmds = ["npx --yes pnpm@10 install --no-frozen-lockfile"]
 cmds = ["npx --yes pnpm@10 --filter @workspace/3d-game run build"]
 
 [start]
-cmd = "npx serve artifacts/3d-game/dist --listen $PORT"
+cmd = "npx serve artifacts/3d-game/dist/public --listen $PORT"
+
