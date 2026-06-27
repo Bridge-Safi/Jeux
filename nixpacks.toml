@@ -2,4 +2,7 @@
 cmds = ["npx --yes pnpm@10 install --no-frozen-lockfile"]
 
 [phases.build]
-cmds = ["npx --yes pnpm@10 run build"]
+cmds = ["npx --yes pnpm@10 --filter @workspace/3d-game run build"]
+
+[start]
+cmd = "npx serve dist --listen $PORT"
